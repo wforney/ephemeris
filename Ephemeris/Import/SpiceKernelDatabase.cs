@@ -35,4 +35,33 @@ public class SpiceKernelDatabase
 
     public double[] GetPosition(string target, double ephemerisTime, string frame, string observer) => _stateProvider.GetStateVector(target, ephemerisTime, frame, observer);
 }
-    }
+
+internal class DefaultStateVectorProvider : IStateVectorProvider
+{
+    public double[] GetStateVector(string target, double ephemerisTime, string frame, string observer) => throw new NotImplementedException();
+}
+
+internal class DefaultTimeConverter : ITimeConverter
+{
+    public double UtcToEt(DateTime utc) => throw new NotImplementedException();
+}
+
+internal class DefaultKernelProvider : ISpaceKernelProvider
+{
+    public void Load(string kernelPath) => throw new NotImplementedException();
+}
+
+internal interface IStateVectorProvider
+{
+    double[] GetStateVector(string target, double ephemerisTime, string frame, string observer);
+}
+
+internal interface ITimeConverter
+{
+    double UtcToEt(DateTime utc);
+}
+
+internal interface ISpaceKernelProvider
+{
+    void Load(string kernelPath);
+}

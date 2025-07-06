@@ -14,11 +14,12 @@ internal static class Program
         // see https://aka.ms/applicationconfiguration.
         ApplicationConfiguration.Initialize();
 
-        var sunData = EphemerisData.GetEphemerisData("Sun", 2023, 1, 1, 2023, 12, 31);
-        var moonData = EphemerisData.GetEphemerisData("Moon", 2023, 1, 1, 2023, 12, 31);
-        var marsData = EphemerisData.GetEphemerisData("Mars", 2023, 1, 1, 2023, 12, 31);
+        //var sunData = EphemerisData.GetEphemerisData("Sun", 2023, 1, 1, 2023, 12, 31);
+        //var moonData = EphemerisData.GetEphemerisData("Moon", 2023, 1, 1, 2023, 12, 31);
+        //var marsData = EphemerisData.GetEphemerisData("Mars", 2023, 1, 1, 2023, 12, 31);
 
-        var allData = sunData.Concat(moonData).Concat(marsData).ToList();
+        //var allData = sunData.Concat(moonData).Concat(marsData).ToList();
+        List<EphemerisRecord> allData = [];
 
         var plotForm = new EphemerisPlotForm(allData, "Sun");
 

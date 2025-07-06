@@ -1,8 +1,10 @@
+using DotNext;
+
 namespace Ephemeris.UI;
 
 public partial class EphemerisPlotForm : Form
 {
-    private ScottPlot.WinForms.FormsPlot formsPlot;
+    private readonly ScottPlot.WinForms.FormsPlot formsPlot;
 
     public EphemerisPlotForm(IEnumerable<EphemerisRecord> records, string body)
     {
@@ -38,16 +40,16 @@ public partial class EphemerisPlotForm : Form
         double[] times = data.Select(r => r.TimeUtc.ToOADate()).ToArray();
         double[] altitudes = data.Select(r => r.Altitude).ToArray();
 
-        var plt = formsPlot.Plot;
+        ScottPlot.Plot plt = formsPlot.Plot;
         plt.Clear();
 
-        plt.AddScatter(times, altitudes, label: "Altitude (deg)");
-        plt.XAxis.DateTimeFormat(true);
+
+        plt.Add.Scatter(times, altitudes);
         plt.Title($"{body} Altitude vs Time");
         plt.YLabel("Altitude (degrees)");
-        plt.Legend();
+        _ = plt.Add.Legend();
 
-        plt.AxisAuto();
+        plt.Axes.AutoScale();
         formsPlot.Refresh();
     }
 }
