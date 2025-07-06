@@ -1,4 +1,6 @@
-﻿namespace Ephemeris.Tests;
+﻿using Ephemeris.Export;
+
+namespace Ephemeris.Tests;
 
 public static class EphemerisExampleRun
 {

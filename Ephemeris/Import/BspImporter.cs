@@ -1,7 +1,7 @@
 ﻿using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 
-namespace Ephemeris;
+namespace Ephemeris.Import;
 
 using SpiceSharpParser.Models;
 using SpiceSharpParser.Parsers;

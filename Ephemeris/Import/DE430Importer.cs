@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Ephemeris;
+namespace Ephemeris.Import;
 
 public static class DE430Importer
 {
@@ -23,7 +23,7 @@ public static class DE430Importer
             double ra = br.ReadDouble();
             double dec = br.ReadDouble();
 
-            DateTime utc = new DateTime(ticks, DateTimeKind.Utc);
+            var utc = new DateTime(ticks, DateTimeKind.Utc);
             double jd = TimeZoneUtils.ToJulianDay(utc);
             var (az, alt) = ObserverGeometry.EquatorialToHorizontal(ra, dec, jd, longitude, latitude);
 
