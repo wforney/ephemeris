@@ -1,0 +1,59 @@
+﻿using Ephemeris.Chronology;
+using Ephemeris.Geometry;
+
+namespace Ephemeris;
+
+using SpiceSharpParser.Models;
+using SpiceSharpParser.Parsers;
+
+public static class BspImporter
+{
+    public static List<EphemerisRecord> LoadFromSpiceSharp(
+        List<string> kernelPaths,
+        string target, string observer,
+        DateTime startUtc, int intervalMinutes, int count,
+        double longitude, double latitude)
+    {
+        // This assumes you’ve built SpiceSharp-Parser interfaces for SPICE kernel loading.
+        var kernelDb = new SpiceKernelDatabase();
+        foreach (var path in kernelPaths)
+        {
+            kernelDb.LoadKernel(path);
+        }
+
+        var records = new List<EphemerisRecord>();
+        for (int i = 0; i < count; i++)
+        {
+            var dt = startUtc.AddMinutes(i * intervalMinutes);
+            double et = kernelDb.ConvertUtcToEphemerisTime(dt);
+
+            var state = kernelDb.GetPosition(target, et, "J2000", observer);
+            var (ra, dec) = CartesianToRaDec(state);
+
+            double jd = TimeZoneUtils.ToJulianDay(dt);
+            var (az, alt) = ObserverGeometry.EquatorialToHorizontal(ra, dec, jd, longitude, latitude);
+
+            records.Add(new EphemerisRecord
+            {
+                TimeUtc = dt,
+                Body = target,
+                RightAscension = ra,
+                Declination = dec,
+                Azimuth = az,
+                Altitude = alt
+            });
+        }
+
+        return records;
+    }
+
+    private static (double ra, double dec) CartesianToRaDec(double[] vec)
+    {
+        double x = vec[0], y = vec[1], z = vec[2];
+        double r = Math.Sqrt(x * x + y * y + z * z);
+        double ra = Math.Atan2(y, x) * 180 / Math.PI;
+        if (ra < 0) ra += 360;
+        double dec = Math.Asin(z / r) * 180 / Math.PI;
+        return (ra, dec);
+    }
+}
