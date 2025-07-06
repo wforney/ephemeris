@@ -1,9 +1,22 @@
 ﻿namespace Ephemeris.Chronology;
 
+/// <summary>
+/// Utility class for time-related calculations, including Julian Day, GMST, Delta T, and angle normalization.
+/// </summary>
 public static class TimeUtils
 {
+    /// <summary>
+    /// The Julian Day for the epoch J2000.0, which is the reference point for many astronomical calculations.
+    /// </summary>
     private const double J2000 = 2451545.0;
 
+    /// <summary>
+    /// Calculates the Delta T (difference between Terrestrial Time and Universal Time) for a given year.
+    /// </summary>
+    /// <param name="year">
+    /// The year for which to calculate Delta T. It can be a fractional year (e.g., 2000.5 for mid-year).
+    /// </param>
+    /// <returns>Delta T in seconds for the specified year.</returns>
     public static double DeltaT(double year)
     {
         double y = year;
@@ -30,6 +43,13 @@ public static class TimeUtils
         }
     }
 
+    /// <summary>
+    /// Calculates the Greenwich Mean Sidereal Time (GMST) for a given Julian Day.
+    /// </summary>
+    /// <param name="jd">
+    /// The Julian Day for which to calculate GMST. This is a continuous count of days since the epoch J2000.0.
+    /// </param>
+    /// <returns>GMST in degrees for the specified Julian Day.</returns>
     public static double GMST(double jd)
     {
         double T = JulianCentury(jd);
@@ -38,8 +58,22 @@ public static class TimeUtils
         return NormalizeDegrees(gmst);
     }
 
+    /// <summary>
+    /// Calculates the Julian Century from a given Julian Day.
+    /// </summary>
+    /// <param name="jd">The Julian Day for which the Julian Century is calculated.</param>
+    /// <returns>The Julian Century.</returns>
     public static double JulianCentury(double jd) => (jd - J2000) / 36525.0;
 
+
+    /// <summary>
+    /// Calculates the Julian Day for a given date specified by year, month, day, and hour.
+    /// </summary>
+    /// <param name="year">The year of the date.</param>
+    /// <param name="month">The month of the date.</param>
+    /// <param name="day">The day of the date.</param>
+    /// <param name="hour">The hour of the date, default is 0.0.</param>
+    /// <returns>The Julian Day for the specified date.</returns>
     public static double JulianDay(int year, int month, int day, double hour = 0.0)
     {
         if (month <= 2)
@@ -56,6 +90,11 @@ public static class TimeUtils
                day + (hour / 24.0) + B - 1524.5;
     }
 
+    /// <summary>
+    /// Normalizes an angle in degrees to the range [0, 360).
+    /// </summary>
+    /// <param name="angle">The angle in degrees to normalize.</param>
+    /// <returns>The normalized angle in degrees.</returns>
     public static double NormalizeDegrees(double angle)
     {
         angle %= 360.0;
@@ -67,7 +106,17 @@ public static class TimeUtils
         return angle;
     }
 
-    public static double ToDegrees(double rad) => rad * 180.0 / Math.PI;
+    /// <summary>
+    /// Converts an angle in radians to degrees.
+    /// </summary>
+    /// <param name="rad">The angle in radians to convert.</param>
+    /// <returns>The angle in degrees.</returns>
+    public static double ToDegrees(double rad) => double.RadiansToDegrees(rad); // rad * 180.0 / Math.PI;
 
-    public static double ToRadians(double deg) => deg * Math.PI / 180.0;
+    /// <summary>
+    /// Converts an angle in degrees to radians.
+    /// </summary>
+    /// <param name="deg">The angle in degrees to convert.</param>
+    /// <returns>The angle in radians.</returns>
+    public static double ToRadians(double deg) => double.DegreesToRadians(deg); // deg * Math.PI / 180.0;
 }
