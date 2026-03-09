@@ -6,8 +6,7 @@ This document describes the text format of the Swiss Ephemeris fixed-star catalo
 The format is described here based on empirical analysis of the file and the Swiss Ephemeris C source.
 
 > **This file is external data, not included in this repository.**  
-> It may be obtained from the [Swiss Ephemeris project](https://www.astro.com/swisseph/) or from
-> <https://github.com/nodeomega/SwissEphemerisDataFiles>.
+> It may be obtained from the [Swiss Ephemeris project](https://www.astro.com/swisseph/).
 
 ---
 
@@ -121,4 +120,3 @@ For **Sirius** (alCMa):
 ## References
 
 - Swiss Ephemeris source: <https://github.com/aloistr/swisseph>
-- Swiss Ephemeris data files: <https://github.com/nodeomega/SwissEphemerisDataFiles>

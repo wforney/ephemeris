@@ -10,8 +10,8 @@ namespace Ephemeris.Tests;
 /// analysis of the file binary format.
 /// </summary>
 /// <remarks>
-/// To run these tests locally, clone the data files from
-/// https://github.com/nodeomega/SwissEphemerisDataFiles into ~/sweph-data/.
+/// To run these tests locally, obtain the Swiss Ephemeris data files from
+/// https://www.astro.com/swisseph/ and place them in ~/sweph-data/.
 /// </remarks>
 public class Se1EphemerisReaderTests
 {
