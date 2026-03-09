@@ -1,9 +1,9 @@
-<!-- Updated: 2026-03-09 04:06 UTC -->
+<!-- Updated: 2026-03-09 04:10 UTC -->
 ---
 mode: agent
 model: anthropic/claude-sonnet-4-5
 tools: [codebase, editFiles, runCommands]
-description: Write TUnit tests for Ephemeris calculation methods using known reference values.
+description: Write TUnit tests for Ephemeris calculation methods using Imposter for mocking and Verify for snapshot assertions.
 ---
 
 You are writing TUnit tests for the Ephemeris .NET 10 library.
@@ -11,49 +11,125 @@ You are writing TUnit tests for the Ephemeris .NET 10 library.
 ## Test project layout
 
 - Test files live in `Ephemeris.Tests/Ephemeris.Tests/`
-- Framework: **TUnit** (not xUnit, not NUnit) — use `[Test]` attribute
+- Framework: **TUnit** — use `[Test]` attribute (not xUnit, not NUnit)
 - Namespace: `namespace Ephemeris.Tests`
-- Assembly is decorated `[assembly: ExcludeFromCodeCoverage]`
+- Three libraries available: **TUnit**, **Imposter** (mocking), **Verify.TUnit** (snapshot assertions)
 
-## What makes a good test here
+---
 
-Astronomical calculations must be verified against **external reference values**, not just round-tripped through the same code. Always cite the source:
+## Imposter — compile-time source-generated mocks
+
+Imposter generates mocks at compile time via Roslyn — no runtime proxies, no `It.IsAny<T>()`.
+
+### Setup
+Declare the mock at **assembly level** (once per interface, typically in `GlobalSetup.cs` or a dedicated `Mocks.cs`):
+
+```csharp
+[assembly: GenerateImposter(typeof(IStateVectorProvider))]
+[assembly: GenerateImposter(typeof(ITimeConverter))]
+[assembly: GenerateImposter(typeof(ISpaceKernelProvider))]
+```
+
+### Usage pattern
+```csharp
+[Test]
+public async Task GetPosition_ValidKernel_ReturnsCartesianVector()
+{
+    var imposter = IStateVectorProvider.Imposter();
+    imposter
+        .GetStateVector(Arg<string>.Any(), Arg<double>.Any(), Arg<string>.Any(), Arg<string>.Any())
+        .Returns(new double[] { 1.0, 2.0, 3.0 });
+
+    var provider = imposter.Instance();
+    var result = provider.GetStateVector("Sun", 0.0, "J2000", "Earth");
+
+    await Assert.That(result).IsEquivalentTo(new double[] { 1.0, 2.0, 3.0 });
+}
+```
+
+### Argument matchers
+| Matcher | Meaning |
+|---------|---------|
+| `Arg<T>.Any()` | Any value of type T |
+| `Arg<T>.Is(x => x > 0)` | Predicate match |
+| Literal value | Exact equality |
+
+### Chained returns
+```csharp
+imposter.Method(Arg<int>.Any())
+    .Returns(1)
+    .Then().Returns(2)   // second call returns 2
+    .Then().Throws(new InvalidOperationException());
+```
+
+---
+
+## Verify.TUnit — snapshot assertions
+
+Use Verify for complex outputs (series of `EphemerisRecord`, plot data, exported CSV/JSON) where a precise numeric assertion would be brittle.
+
+### First run flow
+1. Run the test — it **fails** and writes `*.received.txt` next to the test file.
+2. Inspect `received` file; if correct, copy/rename to `*.verified.txt`.
+3. Subsequent runs diff against the `verified` file.
+
+`*.received.*` files are in `.gitignore`. Commit only `*.verified.*` files.
+
+### Pattern
+```csharp
+[Test]
+public async Task GenerateSunSeries_TwentyFourHours_MatchesSnapshot()
+{
+    var start = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    var records = EphemerisBatch.GenerateSunSeries(start, 60, 24, -122.4, 37.8);
+
+    await Verify(records);
+}
+```
+
+### Scrub volatile data before verifying
+```csharp
+var settings = new VerifySettings();
+settings.ScrubMember<EphemerisRecord>(r => r.TimeUtc);  // remove wall-clock timestamps
+
+await Verify(records, settings);
+```
+
+---
+
+## Assertion style (non-snapshot tests)
+
+Astronomical calculations must be verified against **external reference values**. Always cite the source:
 
 ```csharp
 [Test]
 public async Task SunRA_J2000_MatchesUsno()
 {
     // Reference: USNO Astronomical Almanac 2000, Table C-3
-    // Sun RA at J2000.0 (JD 2451545.0) ≈ 18h 45m 39.8s = 281.416°
+    // Sun RA at J2000.0 ≈ 281.416°
     double T = 0.0;
     var (ra, _) = SunEphemeris.ApparentEquatorialCoordinates(T);
     await Assert.That(ra).IsEqualTo(281.416).Within(0.1);
 }
 ```
 
-Good reference sources:
-- JPL Horizons web interface (https://ssd.jpl.nasa.gov/horizons/) — use "Observer Table" output
-- USNO Solar/Lunar tables
-- Published ephemeris test vectors (cite URL or publication)
+Reference sources: JPL Horizons (https://ssd.jpl.nasa.gov/horizons/), USNO Almanac, Meeus "Astronomical Algorithms".
+
+---
 
 ## Test naming convention
 
 `<MethodUnderTest>_<Scenario>_<ExpectedBehaviour>`
 
-Examples:
-- `GeocentricCoordinates_AtJ2000_MatchesJplHorizons`
-- `EquatorialToHorizontal_BodyDueNorth_AzimuthIsZero`
-- `NormalizeDegrees_NegativeInput_ReturnsPositive`
-
 ## Coverage priorities
 
-Write tests in this order:
-1. Known reference value at a specific epoch (J2000.0 or a dated event)
-2. Edge cases: body at zenith, body below horizon, midnight sun, polar observer
-3. Round-trip: `EclipticToEquatorial` → `EquatorialToEcliptic` returns original
-4. Public API wrappers: `EphemerisCalculator.GetSunPosition`, `GetMoonPosition`, `GetPlanetPosition`
+1. Reference-value assertions at a known epoch (J2000.0 or a dated event)
+2. Mocked provider tests (use Imposter for `IStateVectorProvider`, `ITimeConverter`)
+3. Snapshot tests for batch output and export round-trips (use Verify)
+4. Edge cases: polar observer, body below horizon, midnight sun
+5. Round-trip: `EclipticToEquatorial` → `EquatorialToEcliptic`
 
 ## After writing tests
 
-1. Run `dotnet test` and confirm they pass.
-2. Commit with `test(<scope>): <imperative description>`.
+1. Run `dotnet test` — first run of Verify tests will fail; approve snapshots.
+2. Commit approved `*.verified.*` files with `test(<scope>): <description>`.

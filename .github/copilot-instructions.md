@@ -1,4 +1,4 @@
-<!-- Updated: 2026-03-09 04:06 UTC -->
+<!-- Updated: 2026-03-09 04:10 UTC -->
 # Copilot Instructions
 
 ## Session Checkpoints and Evolution
@@ -55,7 +55,7 @@ Reusable prompt files in `.github/prompts/`. Invoke via `/implement-calculation`
 | Agent | Model tier | Use for |
 |-------|------------|---------|
 | `implement-calculation` | opus | New astronomical calculations — fetches reference values, enforces static/pure pattern, verifies against JPL Horizons |
-| `write-tests` | sonnet | TUnit tests with external reference values, edge cases, round-trip checks |
+| `write-tests` | sonnet | TUnit tests with Imposter mocks, Verify snapshots, and external reference values |
 | `add-xml-docs` | haiku | Eliminate all CS1591 warnings; consistent domain terminology |
 | `implement-spice` | opus | Implement `ISpaceKernelProvider`, `ITimeConverter`, `IStateVectorProvider` stubs via SpiceSharp-Parser |
 | `review-pr` | opus | PR review focused on astronomical correctness, algorithm accuracy, convention adherence |
@@ -412,3 +412,5 @@ Configured in `.vscode/mcp.json`. Four servers are available:
 - **OpenTK + SkiaSharp** — OpenGL and Skia rendering in the WinForms UI (reserved for future use)
 - **SpiceSharp-Parser** — SPICE kernel parsing (provider stubs not yet implemented)
 - **TUnit** — test framework (not xUnit/NUnit)
+- **Imposter** — compile-time source-generated mocks (Roslyn); declare with `[assembly: GenerateImposter(typeof(IMyInterface))]`, use `IMyInterface.Imposter()` in tests
+- **Verify.TUnit** — snapshot assertions for complex outputs (`EphemerisRecord` series, CSV/JSON export); `*.received.*` files are git-ignored, commit only `*.verified.*`

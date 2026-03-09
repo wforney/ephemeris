@@ -361,3 +361,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Verify snapshot testing - received files (approve to create .verified)
+*.received.txt
+*.received.xml
+*.received.json
+*.received.*
