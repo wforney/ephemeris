@@ -58,4 +58,24 @@ public static class CoordinateConverter
 
         return (lon, lat);
     }
+
+    /// <summary>
+    /// Calculates the angular separation between two celestial objects using the haversine formula.
+    /// </summary>
+    /// <param name="ra1">Right ascension of the first object in degrees [0, 360).</param>
+    /// <param name="dec1">Declination of the first object in degrees [-90, 90].</param>
+    /// <param name="ra2">Right ascension of the second object in degrees [0, 360).</param>
+    /// <param name="dec2">Declination of the second object in degrees [-90, 90].</param>
+    /// <returns>Angular separation in degrees [0, 180].</returns>
+    public static double AngularSeparation(double ra1, double dec1, double ra2, double dec2)
+    {
+        double dRa = TimeUtils.ToRadians(ra2 - ra1);
+        double dDec = TimeUtils.ToRadians(dec2 - dec1);
+        double d1 = TimeUtils.ToRadians(dec1);
+        double d2 = TimeUtils.ToRadians(dec2);
+
+        double a = (Math.Sin(dDec / 2) * Math.Sin(dDec / 2))
+                 + (Math.Cos(d1) * Math.Cos(d2) * Math.Sin(dRa / 2) * Math.Sin(dRa / 2));
+        return TimeUtils.ToDegrees(2 * Math.Asin(Math.Sqrt(a)));
+    }
 }

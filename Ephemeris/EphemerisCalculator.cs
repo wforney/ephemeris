@@ -135,4 +135,15 @@ public static class EphemerisCalculator
         var (Az, Alt) = ObserverGeometry.EquatorialToHorizontal(RA, Dec, jd, longitude, latitude);
         return (RA, Dec, Az, Alt);
     }
+
+    /// <summary>
+    /// Calculates the angular separation between two celestial objects using the haversine formula.
+    /// </summary>
+    /// <param name="ra1">Right ascension of the first object in degrees.</param>
+    /// <param name="dec1">Declination of the first object in degrees.</param>
+    /// <param name="ra2">Right ascension of the second object in degrees.</param>
+    /// <param name="dec2">Declination of the second object in degrees.</param>
+    /// <returns>Angular separation in degrees [0, 180].</returns>
+    public static double AngularSeparation(double ra1, double dec1, double ra2, double dec2)
+        => CoordinateConverter.AngularSeparation(ra1, dec1, ra2, dec2);
 }
