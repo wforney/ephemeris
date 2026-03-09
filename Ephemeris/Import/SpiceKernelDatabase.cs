@@ -1,25 +1,27 @@
+// Updated: 2026-03-09
 namespace Ephemeris.Import;
 
 /// <summary>
 /// Manages loaded SPICE kernels and provides ephemeris time conversion and state vector queries.
 /// </summary>
-public class SpiceKernelDatabase
+public class SpiceKernelDatabase : IDisposable
 {
     private readonly List<string> _loadedKernels = [];
     private readonly List<string> _furnshStatements = [];
     private readonly ISpaceKernelProvider _kernelProvider;
     private readonly ITimeConverter _timeConverter;
     private readonly IStateVectorProvider _stateProvider;
+    private bool _disposed;
 
     /// <summary>
     /// Initializes a new instance using the default SPICE provider implementations.
     /// </summary>
     public SpiceKernelDatabase()
     {
-        var loadedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        _kernelProvider = new DefaultKernelProvider(loadedPaths);
+        var readers = new List<SpkReader>();
+        _kernelProvider = new DefaultKernelProvider(readers);
         _timeConverter = new DefaultTimeConverter();
-        _stateProvider = new DefaultStateVectorProvider(loadedPaths);
+        _stateProvider = new DefaultStateVectorProvider(readers);
     }
 
     /// <summary>
@@ -59,50 +61,72 @@ public class SpiceKernelDatabase
     /// <returns>A six-element array [x, y, z, vx, vy, vz] in kilometres and km/s.</returns>
     public double[] GetPosition(string target, double ephemerisTime, string frame, string observer) =>
         _stateProvider.GetStateVector(target, ephemerisTime, frame, observer);
+
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            (_kernelProvider as IDisposable)?.Dispose();
+            _disposed = true;
+        }
+
+        GC.SuppressFinalize(this);
+    }
 }
 
-internal class DefaultKernelProvider(HashSet<string> loadedPaths) : ISpaceKernelProvider
+internal class DefaultKernelProvider(List<SpkReader> readers) : ISpaceKernelProvider, IDisposable
 {
     public void Load(string kernelPath)
     {
-        // Validates the file is accessible and records it as loaded.
-        // TODO: Implement full BSP binary parsing when a NAIF-compatible .NET library is available.
         if (!File.Exists(kernelPath))
             throw new FileNotFoundException("SPICE kernel not found.", kernelPath);
 
-        loadedPaths.Add(Path.GetFullPath(kernelPath));
+        readers.Add(new SpkReader(kernelPath));
+    }
+
+    public void Dispose()
+    {
+        foreach (var reader in readers)
+            reader.Dispose();
+
+        readers.Clear();
     }
 }
 
 internal class DefaultTimeConverter : ITimeConverter
 {
-    // J2000.0 epoch: 2000-Jan-1 12:00:00 TT ≈ UTC for this approximation
-    private static readonly DateTime J2000Epoch = new(2000, 1, 1, 12, 0, 0, DateTimeKind.Utc);
-
-    public double UtcToEt(DateTime utc)
-    {
-        // ET ≈ (JD − 2451545.0) × 86400.0  seconds past J2000.0
-        // Ignores leap seconds (~1 second/year drift). Acceptable for positional accuracy to ~arc-seconds.
-        // TODO: incorporate IERS leap-second table for sub-arc-second precision applications.
-        return (utc.ToUniversalTime() - J2000Epoch).TotalSeconds;
-    }
+    public double UtcToEt(DateTime utc) => SpkLeapSeconds.UtcToEt(utc);
 }
 
-internal class DefaultStateVectorProvider(HashSet<string> loadedKernels) : IStateVectorProvider
+internal class DefaultStateVectorProvider(List<SpkReader> readers) : IStateVectorProvider
 {
     public double[] GetStateVector(string target, double ephemerisTime, string frame, string observer)
     {
-        if (loadedKernels.Count == 0)
+        if (readers.Count == 0)
             throw new InvalidOperationException(
                 "No SPICE kernels loaded. Call LoadKernel() with a .bsp kernel file before querying state vectors.");
 
-        // TODO: Implement BSP binary record parsing (SPK Type 2/3 Chebyshev coefficients) for full
-        // state vector support. SpiceSharp-Parser targets circuit netlists and does not parse
-        // binary planetary kernel (BSP) files. A NAIF-compatible library or custom SPK reader is required.
-        // See: https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/src/spicelib/spkr02.f
-        throw new NotSupportedException(
-            "Binary BSP state vector extraction is not yet implemented. " +
-            "Use DE430Importer for pre-converted binary records, or implement an SPK Type 2/3 reader.");
+        int targetId = SpkReader.ResolveBodyId(target);
+        int centerId = SpkReader.ResolveBodyId(observer);
+
+        // Try each loaded reader until one can service the request
+        foreach (var reader in readers)
+        {
+            try
+            {
+                double[] pos = reader.GetPosition(targetId, ephemerisTime, centerId);
+                // Return 6-element state vector; velocity is zero (Type 2 provides position only)
+                return [pos[0], pos[1], pos[2], 0.0, 0.0, 0.0];
+            }
+            catch (InvalidOperationException)
+            {
+                // This reader has no matching segment; try the next one.
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"No loaded SPK kernel contains data for target={target} observer={observer} at ET={ephemerisTime:F3}.");
     }
 }
 

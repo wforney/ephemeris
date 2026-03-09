@@ -1,14 +1,11 @@
-﻿// Updated: 2026-03-09
+// Updated: 2026-03-09
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 
 namespace Ephemeris.Import;
 
-using SpiceSharpParser.Models;
-using SpiceSharpParser.Parsers;
-
 /// <summary>
-/// Loads ephemeris data from SPICE .bsp kernel files using SpiceSharp-Parser.
+/// Loads ephemeris data from SPICE .bsp kernel files via the native DAF/SPK reader.
 /// </summary>
 public static class BspImporter
 {
