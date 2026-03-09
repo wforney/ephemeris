@@ -1,12 +1,11 @@
-# Swiss Ephemeris Fixed Star Catalog Format (`sefstars.txt`)
+# Fixed Star Catalog Format (`sefstars.txt`)
 
-<!-- Updated: 2026-05-01 -->
+<!-- Updated: 2026-03-09 -->
 
-This document describes the text format of the Swiss Ephemeris fixed-star catalog file `sefstars.txt`.
-The format is described here based on empirical analysis of the file and the Swiss Ephemeris C source.
+This document describes the text format of the `sefstars.txt` fixed-star catalog file.
+The format was established by empirical analysis of the file contents.
 
-> **This file is external data, not included in this repository.**  
-> It may be obtained from the [Swiss Ephemeris project](https://www.astro.com/swisseph/).
+> **This file is external data, not included in this repository.**
 
 ---
 
@@ -119,4 +118,5 @@ For **Sirius** (alCMa):
 
 ## References
 
-- Swiss Ephemeris source: <https://github.com/aloistr/swisseph>
+- JPL Horizons: <https://ssd.jpl.nasa.gov/horizons/>
+- SIMBAD Astronomical Database: <https://simbad.u-strasbg.fr/simbad/>

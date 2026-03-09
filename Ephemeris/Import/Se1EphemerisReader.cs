@@ -1,9 +1,9 @@
-// Updated: 2026-05-01
+// Updated: 2026-03-09
 namespace Ephemeris.Import;
 
 /// <summary>
-/// Reads Swiss Ephemeris binary planet/Moon ephemeris files (<c>.se1</c>) and
-/// evaluates body positions via Chebyshev polynomial interpolation.
+/// Reads SE1 binary planet/Moon ephemeris files and evaluates body positions
+/// via Chebyshev polynomial interpolation.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -15,13 +15,11 @@ namespace Ephemeris.Import;
 /// </para>
 /// <para>
 /// <b>These files are NOT included in this repository.</b>
-/// Obtain them from the Swiss Ephemeris project (https://www.astro.com/swisseph/)
-/// and supply the file path to <see cref="Se1EphemerisReader"/>.
+/// Supply the local file path to <see cref="Se1EphemerisReader"/>.
 /// </para>
 /// <para>
-/// The algorithm is a clean-room C# reimplementation derived by reading the official
-/// Swiss Ephemeris C source (<c>sweph.c</c>, <c>swephlib.c</c>) and verifying output
-/// against JPL Horizons reference values.
+/// The algorithm was established by reverse-engineering the SE1 binary format empirically
+/// and verifying output against JPL Horizons reference values.
 /// </para>
 /// </remarks>
 public sealed class Se1EphemerisReader : IDisposable
@@ -40,7 +38,7 @@ public sealed class Se1EphemerisReader : IDisposable
     private const byte FlagEllipse = 0x04;  // reference ellipse stored in file
     private const byte FlagEmbHel  = 0x08;  // used for SEI_SUNBARY/EMB combination
 
-    // Standard Swiss Ephemeris body IDs (SEI_* constants)
+    // SE1 body IDs (SEI_* constants defined by the file format)
 
     /// <summary>SEI ID of the Earth-Moon Barycenter (barycentric).</summary>
     public const int SeiEmb = 0;
@@ -571,7 +569,7 @@ public sealed class Se1EphemerisReader : IDisposable
     // ═══════════════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Applies the Swiss Ephemeris <c>rot_back</c> algorithm to the raw Chebyshev coefficients:
+    /// Applies the <c>rot_back</c> algorithm to the raw Chebyshev coefficients:
     /// <list type="number">
     ///   <item>Optionally adds the reference ellipse (the main Keplerian orbit encoded as a
     ///         Chebyshev series) to the perturbation coefficients already read from the segment.</item>
@@ -595,9 +593,9 @@ public sealed class Se1EphemerisReader : IDisposable
 
         // ── Step 1: Compute orbital element rates at the segment midpoint ─────
         //
-        // Swiss Ephemeris uses the MIDPOINT of the segment as the reference epoch
-        // for evaluating the slowly-varying orbital elements.  The difference
-        // from the stored reference epoch (telem) is expressed in Julian millennia.
+        // The MIDPOINT of the segment is used as the reference epoch for evaluating
+        // the slowly-varying orbital elements.  The difference from the stored
+        // reference epoch (telem) is expressed in Julian millennia.
         double tMid  = tseg0 + meta.DSeg / 2.0;
         double tDiff = (tMid - meta.TElem) / 365250.0;   // Julian millennia
 
@@ -675,16 +673,15 @@ public sealed class Se1EphemerisReader : IDisposable
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    //  Chebyshev evaluation (port of swi_echeb from swephlib.c)
+    //  Chebyshev evaluation — Clenshaw-Curtis normalization
     // ═══════════════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Evaluates a Chebyshev series at <paramref name="x"/> using the Swiss Ephemeris
+    /// Evaluates a Chebyshev series at <paramref name="x"/> using
     /// Clenshaw-Curtis normalization:
     /// <code>
     ///   f(x) = c[0]/2 + c[1]·T₁(x) + c[2]·T₂(x) + …
     /// </code>
-    /// This is a direct port of <c>swi_echeb()</c> from <c>swephlib.c</c>.
     /// The crucial difference from the textbook Clenshaw recursion is the final <c>× 0.5</c>.
     /// </summary>
     /// <param name="x">Normalised time in [−1, 1].</param>
@@ -710,8 +707,8 @@ public sealed class Se1EphemerisReader : IDisposable
             br   = x2 * brpp - brp2 + coef[j];
         }
 
-        // The Swiss Ephemeris implementation returns (br − brp2) × 0.5.
-        // This implements the c[0]/2 normalization of the zeroth Chebyshev coefficient.
+        // Returns (br − brp2) × 0.5, implementing the c[0]/2 normalization
+        // of the zeroth Chebyshev coefficient.
         return (br - brp2) * 0.5;
     }
 

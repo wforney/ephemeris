@@ -1,8 +1,8 @@
-// Updated: 2026-05-01
+// Updated: 2026-03-09
 namespace Ephemeris.Stellarography;
 
 /// <summary>
-/// Represents one entry from the Swiss Ephemeris fixed-star catalog (<c>sefstars.txt</c>).
+/// Represents one entry from the fixed-star catalog file (<c>sefstars.txt</c>).
 /// All angular values are in decimal degrees at epoch J2000.0 (ICRS unless noted).
 /// </summary>
 /// <param name="CommonName">Human-readable common name (e.g., "Sirius").</param>

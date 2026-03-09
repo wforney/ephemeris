@@ -1,8 +1,8 @@
-// Updated: 2026-05-01
+// Updated: 2026-03-09
 namespace Ephemeris.Stellarography;
 
 /// <summary>
-/// Reads the Swiss Ephemeris fixed-star catalog file (<c>sefstars.txt</c>) and
+/// Reads the fixed-star catalog file (<c>sefstars.txt</c>) and
 /// exposes its entries as <see cref="FixedStar"/> records.
 /// </summary>
 /// <remarks>
@@ -13,9 +13,8 @@ namespace Ephemeris.Stellarography;
 /// full field specification.
 /// </para>
 /// <para>
-/// The catalog is NOT included in this repository; it must be obtained separately
-/// from the Swiss Ephemeris project (https://www.astro.com/swisseph/) and its
-/// path passed to <see cref="Load"/>.
+/// The catalog is NOT included in this repository; supply its local path to
+/// <see cref="Load"/>.
 /// </para>
 /// </remarks>
 public static class StarCatalog

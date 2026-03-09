@@ -1,13 +1,12 @@
-# Swiss Ephemeris SE1 Binary File Format
+# SE1 Binary Planet Ephemeris File Format
 
-<!-- Updated: 2026-05-01 -->
+<!-- Updated: 2026-03-09 -->
 
-This document describes the binary file format used by Swiss Ephemeris `.se1` planet ephemeris files
-(e.g., `sepl_18.se1`, `semo_18.se1`). The format is reverse-engineered from the official Swiss Ephemeris
-C source (`sweph.c` / `sweph.h`) and verified empirically against `sepl_18.se1` (DE431, 1800–2400 CE).
+This document describes the binary file format used by `.se1` planet ephemeris files
+(e.g., `sepl_18.se1`, `semo_18.se1`). The format was established by reverse-engineering
+the binary layout empirically and verified against `sepl_18.se1` (DE431, 1800–2400 CE).
 
-> **These files are external data, not included in this repository.**  
-> They may be obtained from the [Swiss Ephemeris project](https://www.astro.com/swisseph/).
+> **These files are external data, not included in this repository.**
 
 ---
 
@@ -42,7 +41,7 @@ where `NN` is the century start year (e.g., 18 = 1800 CE).
 ### ASCII Text Header (bytes 0–115)
 
 Three CRLF-terminated lines padded with spaces to exactly 116 bytes total:
-- Line 1: Swiss Ephemeris version string (e.g., `SE 2.10.03`)
+- Line 1: Software version string (e.g., `SE 2.10.03`)
 - Line 2: Filename (e.g., `sepl_18.se1`)
 - Line 3: Copyright notice
 
@@ -220,14 +219,14 @@ The X coefficients precede Y coefficients, which precede Z coefficients.
 
 ## Chebyshev Polynomial Evaluation
 
-Swiss Ephemeris uses the **Clenshaw-Curtis** normalization, where the zeroth coefficient is
+The SE1 format uses the **Clenshaw-Curtis** normalization, where the zeroth coefficient is
 halved relative to the standard Chebyshev sum:
 
 ```
 f(x) = c[0]/2 + c[1]·T₁(x) + c[2]·T₂(x) + ···
 ```
 
-This is implemented via Clenshaw's recursion as follows (port of `swi_echeb` from `swephlib.c`):
+This is implemented via Clenshaw's recursion:
 
 ```csharp
 // x is in [-1, 1]; coef is the coefficient array; ncf is the count
@@ -338,6 +337,5 @@ From `sepl_18.se1`, DE431, at J2000.0 (JD 2451545.0):
 
 ## References
 
-- Swiss Ephemeris source: <https://github.com/aloistr/swisseph>
-- `sweph.c`: `read_const()`, `get_new_segment()`, `rot_back()`, `sweph()`
-- `swephlib.c`: `swi_echeb()`, `swi_edcheb()`
+- JPL Horizons: <https://ssd.jpl.nasa.gov/horizons/>
+- DE431 ephemeris documentation: <https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/>

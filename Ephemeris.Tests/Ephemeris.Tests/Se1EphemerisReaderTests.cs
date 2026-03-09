@@ -4,14 +4,13 @@ using TUnit;
 namespace Ephemeris.Tests;
 
 /// <summary>
-/// Tests for <see cref="Se1EphemerisReader"/> using locally available Swiss Ephemeris data files.
+/// Tests for <see cref="Se1EphemerisReader"/> using locally available SE1 binary ephemeris data files.
 /// Tests are skipped automatically when the SE1 file is not present on the local machine.
 /// The expected reference values come from JPL Horizons (DE431) and from our own verified Python
 /// analysis of the file binary format.
 /// </summary>
 /// <remarks>
-/// To run these tests locally, obtain the Swiss Ephemeris data files from
-/// https://www.astro.com/swisseph/ and place them in ~/sweph-data/.
+/// To run these tests locally, place the SE1 data files in ~/ephem-data/.
 /// </remarks>
 public class Se1EphemerisReaderTests
 {
@@ -19,7 +18,7 @@ public class Se1EphemerisReaderTests
     private static readonly string SeFile =
         Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            "sweph-data", "sepl_18.se1");
+            "ephem-data", "sepl_18.se1");
 
     // J2000.0 Julian Day — standard reference epoch (2000-Jan-01.5 TT).
     private const double JdJ2000 = 2451545.0;

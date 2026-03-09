@@ -14,7 +14,7 @@ public class StarCatalogTests
     private static readonly string SefstarsFile =
         Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            "sweph-data", "sefstars.txt");
+            "ephem-data", "sefstars.txt");
 
     private static bool FileAvailable => File.Exists(SefstarsFile);
 
