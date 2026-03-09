@@ -63,3 +63,10 @@ jobs:
           name: coverage-report
           path: coverage-report/
           if-no-files-found: warn
+
+      - name: Upload TUnit test report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: Ephemeris.Tests/Ephemeris.Tests/TestResults/
+          if-no-files-found: warn
