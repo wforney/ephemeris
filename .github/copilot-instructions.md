@@ -1,4 +1,4 @@
-<!-- Updated: 2026-03-09 03:49 UTC -->
+<!-- Updated: 2026-03-09 03:57 UTC -->
 # Copilot Instructions
 
 ## Project Overview
@@ -248,6 +248,31 @@ BREAKING CHANGE: timeZoneId string parameter replaced with TimeZoneInfo object
 - Work directly on `main` for small changes.
 - For larger features create a short-lived branch: `feat/<scope>/<description>` (e.g., `feat/import/spicesharp-providers`).
 - Delete branches after merge.
+
+### Pull requests
+
+**Creating a PR:** Use the GitHub MCP server or `gh pr create`. Every PR should use the template at `.github/pull_request_template.md` — fill in the Summary, Changes, and tick the checklist before requesting review.
+
+**Branch → PR flow:**
+```
+# Short-lived feature branch
+git checkout -b feat/selenography/libration
+# ... commits ...
+gh pr create --fill --base main
+```
+
+**Merging:** Squash-merge into `main` with a Conventional Commits subject line. The squash commit message becomes the canonical history entry — ensure it follows the format exactly.
+
+**Reviewing with MCP:** Use the `github` MCP server to:
+```
+# List open PRs
+# Get PR diff and review comments
+# Approve or request changes
+# Check CI status on a PR head commit
+# Merge when checks pass
+```
+
+**CI:** `.github/workflows/ci.yml` runs `dotnet build` + `dotnet test` on every push to `main` and on every PR. A PR must be green before merging.
 
 ### GitHub operations via MCP
 Use the **GitHub MCP server** (configured in `.vscode/mcp.json`) for:
