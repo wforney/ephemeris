@@ -6,8 +6,23 @@ namespace Ephemeris.Import;
 using SpiceSharpParser.Models;
 using SpiceSharpParser.Parsers;
 
+/// <summary>
+/// Loads ephemeris data from SPICE .bsp kernel files using SpiceSharp-Parser.
+/// </summary>
 public static class BspImporter
 {
+    /// <summary>
+    /// Loads a time series of ephemeris records from SPICE binary planet kernel (BSP) files.
+    /// </summary>
+    /// <param name="kernelPaths">A list of paths to SPICE kernel files to load.</param>
+    /// <param name="target">The target body name (e.g., "SUN", "MOON", "EARTH").</param>
+    /// <param name="observer">The observer body name (e.g., "EARTH").</param>
+    /// <param name="startUtc">The starting UTC time.</param>
+    /// <param name="intervalMinutes">The interval in minutes between successive calculations.</param>
+    /// <param name="count">The number of records to generate.</param>
+    /// <param name="longitude">Observer longitude in degrees (east positive).</param>
+    /// <param name="latitude">Observer latitude in degrees (north positive).</param>
+    /// <returns>A list of EphemerisRecord containing body positions from the SPICE kernel.</returns>
     public static List<EphemerisRecord> LoadFromSpiceSharp(
         List<string> kernelPaths,
         string target, string observer,

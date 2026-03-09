@@ -1,8 +1,15 @@
 ﻿namespace Ephemeris.Chronology;
 
+/// <summary>
+/// Provides utilities for converting between Julian Day numbers and DateTime, and for timezone conversions.
+/// </summary>
 public static class TimeZoneUtils
 {
-    // Converts Julian Day to DateTime (UTC)
+    /// <summary>
+    /// Converts a Julian Day number to a UTC DateTime.
+    /// </summary>
+    /// <param name="jd">The Julian Day number (fractional).</param>
+    /// <returns>The corresponding UTC DateTime.</returns>
     public static DateTime FromJulianDay(double jd)
     {
         double J = jd + 0.5;
@@ -36,21 +43,35 @@ public static class TimeZoneUtils
         return new DateTime(year, month, day, hour, minute, second, millisecond, DateTimeKind.Utc);
     }
 
-    // Converts DateTime to Julian Day number with fractional day
+    /// <summary>
+    /// Converts a UTC DateTime to a Julian Day number.
+    /// </summary>
+    /// <param name="dt">The UTC DateTime to convert.</param>
+    /// <returns>The corresponding Julian Day number (fractional).</returns>
     public static double ToJulianDay(DateTime dt)
     {
         return TimeUtils.JulianDay(dt.Year, dt.Month, dt.Day,
             dt.Hour + (dt.Minute / 60.0) + (dt.Second / 3600.0) + (dt.Millisecond / 3600000.0));
     }
 
-    // Converts UTC DateTime to local DateTime given a time zone ID
+    /// <summary>
+    /// Converts a UTC DateTime to a local DateTime in the specified timezone.
+    /// </summary>
+    /// <param name="utcTime">The UTC DateTime.</param>
+    /// <param name="timeZoneId">The IANA or Windows timezone identifier (e.g., "Pacific Standard Time").</param>
+    /// <returns>The local DateTime in the specified timezone.</returns>
     public static DateTime ToLocal(DateTime utcTime, string timeZoneId)
     {
         var tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
         return TimeZoneInfo.ConvertTimeFromUtc(utcTime, tz);
     }
 
-    // Converts local DateTime to UTC DateTime given a time zone ID
+    /// <summary>
+    /// Converts a local DateTime to UTC DateTime given a timezone identifier.
+    /// </summary>
+    /// <param name="localTime">The local DateTime.</param>
+    /// <param name="timeZoneId">The IANA or Windows timezone identifier (e.g., "Pacific Standard Time").</param>
+    /// <returns>The equivalent UTC DateTime.</returns>
     public static DateTime ToUtc(DateTime localTime, string timeZoneId)
     {
         var tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);

@@ -6,8 +6,21 @@ using Ephemeris.Selenography;
 
 namespace Ephemeris;
 
+/// <summary>
+/// Provides simple high-level queries for celestial body positions at specific times.
+/// </summary>
 public static class EphemerisCalculator
 {
+    /// <summary>
+    /// Calculates the Moon's position in equatorial and horizontal coordinates for a given date and time.
+    /// </summary>
+    /// <param name="year">The year.</param>
+    /// <param name="month">The month (1-12).</param>
+    /// <param name="day">The day of month.</param>
+    /// <param name="hour">The hour in decimal (0-24).</param>
+    /// <param name="longitude">Observer longitude in degrees (east positive).</param>
+    /// <param name="latitude">Observer latitude in degrees (north positive).</param>
+    /// <returns>A tuple of (RA, Dec, Azimuth, Altitude, Illumination) in degrees, with illumination as [0, 1].</returns>
     public static (double RA, double Dec, double Az, double Alt, double Illumination) GetMoonPosition(int year, int month, int day, double hour, double longitude, double latitude)
     {
         double jd = TimeUtils.JulianDay(year, month, day, hour);
@@ -19,6 +32,16 @@ public static class EphemerisCalculator
         return (RA, Dec, Az, Alt, illumination);
     }
 
+    /// <summary>
+    /// Calculates the Sun's position in equatorial and horizontal coordinates for a given date and time.
+    /// </summary>
+    /// <param name="year">The year.</param>
+    /// <param name="month">The month (1-12).</param>
+    /// <param name="day">The day of month.</param>
+    /// <param name="hour">The hour in decimal (0-24).</param>
+    /// <param name="longitude">Observer longitude in degrees (east positive).</param>
+    /// <param name="latitude">Observer latitude in degrees (north positive).</param>
+    /// <returns>A tuple of (RA, Dec, Azimuth, Altitude) in degrees.</returns>
     public static (double RA, double Dec, double Az, double Alt) GetSunPosition(int year, int month, int day, double hour, double longitude, double latitude)
     {
         double jd = TimeUtils.JulianDay(year, month, day, hour);
@@ -28,7 +51,14 @@ public static class EphemerisCalculator
         return (RA, Dec, Az, Alt);
     }
 
-    // Get Sun position by DateTime and time zone ID (e.g., "Pacific Standard Time")
+    /// <summary>
+    /// Calculates the Sun's position in equatorial and horizontal coordinates for a local date and time.
+    /// </summary>
+    /// <param name="localDateTime">The local DateTime.</param>
+    /// <param name="timeZoneId">The IANA or Windows timezone identifier (e.g., "Pacific Standard Time").</param>
+    /// <param name="longitude">Observer longitude in degrees (east positive).</param>
+    /// <param name="latitude">Observer latitude in degrees (north positive).</param>
+    /// <returns>A tuple of (RA, Dec, Azimuth, Altitude) in degrees.</returns>
     public static (double RA, double Dec, double Az, double Alt) GetSunPosition(
         DateTime localDateTime, string timeZoneId, double longitude, double latitude)
     {
@@ -42,7 +72,14 @@ public static class EphemerisCalculator
         return (RA, Dec, Az, Alt);
     }
 
-    // Get Moon position by DateTime and time zone ID
+    /// <summary>
+    /// Calculates the Moon's position in equatorial and horizontal coordinates for a local date and time.
+    /// </summary>
+    /// <param name="localDateTime">The local DateTime.</param>
+    /// <param name="timeZoneId">The IANA or Windows timezone identifier (e.g., "Pacific Standard Time").</param>
+    /// <param name="longitude">Observer longitude in degrees (east positive).</param>
+    /// <param name="latitude">Observer latitude in degrees (north positive).</param>
+    /// <returns>A tuple of (RA, Dec, Azimuth, Altitude, Illumination) in degrees, with illumination as [0, 1].</returns>
     public static (double RA, double Dec, double Az, double Alt, double Illumination) GetMoonPosition(
         DateTime localDateTime, string timeZoneId, double longitude, double latitude)
     {
@@ -58,7 +95,15 @@ public static class EphemerisCalculator
         return (RA, Dec, Az, Alt, illumination);
     }
 
-    // Get Planet position by DateTime and time zone ID
+    /// <summary>
+    /// Calculates a planet's position in equatorial and horizontal coordinates for a local date and time.
+    /// </summary>
+    /// <param name="planet">The planet name (mercury, venus, mars, jupiter, saturn, uranus, neptune, pluto).</param>
+    /// <param name="localDateTime">The local DateTime.</param>
+    /// <param name="timeZoneId">The IANA or Windows timezone identifier (e.g., "Pacific Standard Time").</param>
+    /// <param name="longitude">Observer longitude in degrees (east positive).</param>
+    /// <param name="latitude">Observer latitude in degrees (north positive).</param>
+    /// <returns>A tuple of (RA, Dec, Azimuth, Altitude) in degrees.</returns>
     public static (double RA, double Dec, double Az, double Alt) GetPlanetPosition(
         string planet, DateTime localDateTime, string timeZoneId, double longitude, double latitude)
     {

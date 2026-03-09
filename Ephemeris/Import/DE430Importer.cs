@@ -8,8 +8,19 @@ using System.Threading.Tasks;
 
 namespace Ephemeris.Import;
 
+/// <summary>
+/// Loads ephemeris data from DE430 binary ephemeris files.
+/// </summary>
 public static class DE430Importer
 {
+    /// <summary>
+    /// Loads ephemeris records from a DE430 binary file.
+    /// </summary>
+    /// <param name="filePath">The path to the DE430 binary ephemeris file.</param>
+    /// <param name="body">The name of the celestial body to store in each record.</param>
+    /// <param name="longitude">Observer longitude in degrees (east positive).</param>
+    /// <param name="latitude">Observer latitude in degrees (north positive).</param>
+    /// <returns>A list of EphemerisRecord parsed from the binary file, with horizontal coordinates computed.</returns>
     public static List<EphemerisRecord> LoadFromBinary(string filePath, string body, double longitude, double latitude)
     {
         var records = new List<EphemerisRecord>();

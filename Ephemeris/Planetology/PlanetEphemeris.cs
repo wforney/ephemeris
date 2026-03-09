@@ -2,8 +2,22 @@
 
 namespace Ephemeris.Planetology;
 
+/// <summary>
+/// Calculates planetary positions using simplified Kepler orbital elements and ecliptic to equatorial conversion.
+/// </summary>
 public static class PlanetEphemeris
 {
+    /// <summary>
+    /// Calculates a planet's equatorial coordinates using simplified Kepler orbital elements.
+    /// </summary>
+    /// <param name="T">Julian centuries since J2000.0.</param>
+    /// <param name="N">Longitude of ascending node in degrees.</param>
+    /// <param name="i">Inclination in degrees.</param>
+    /// <param name="w">Argument of perihelion in degrees.</param>
+    /// <param name="a">Semi-major axis in AU.</param>
+    /// <param name="e">Eccentricity.</param>
+    /// <param name="M">Mean anomaly in degrees.</param>
+    /// <returns>A tuple of (RA, Dec) in degrees.</returns>
     public static (double RA, double Dec) SimplifiedPlanetPosition(double T, double N, double i, double w, double a, double e, double M)
     {
         M = TimeUtils.NormalizeDegrees(M);

@@ -3,8 +3,22 @@ using Ephemeris.Geometry;
 
 namespace Ephemeris.Planetology;
 
+/// <summary>
+/// Calculates planetary positions in both equatorial and horizontal coordinate systems.
+/// </summary>
 public static class PlanetPositionService
 {
+    /// <summary>
+    /// Calculates a planet's position in both equatorial and horizontal coordinates for a given date and time.
+    /// </summary>
+    /// <param name="planet">The planet name (mercury, venus, mars, jupiter, saturn, uranus, neptune, pluto).</param>
+    /// <param name="year">The year.</param>
+    /// <param name="month">The month (1-12).</param>
+    /// <param name="day">The day of month.</param>
+    /// <param name="hour">The hour in decimal (0-24).</param>
+    /// <param name="longitude">Observer longitude in degrees (east positive).</param>
+    /// <param name="latitude">Observer latitude in degrees (north positive).</param>
+    /// <returns>A tuple of (RA, Dec, Azimuth, Altitude) in degrees.</returns>
     public static (double RA, double Dec, double Az, double Alt) GetPlanetPosition(
         string planet, int year, int month, int day, double hour,
         double longitude, double latitude)

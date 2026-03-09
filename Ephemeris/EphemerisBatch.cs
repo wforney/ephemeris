@@ -6,8 +6,20 @@ using Ephemeris.Selenography;
 
 namespace Ephemeris;
 
+/// <summary>
+/// Generates ephemeris time series for celestial bodies at regular intervals.
+/// </summary>
 public static class EphemerisBatch
 {
+    /// <summary>
+    /// Generates a time series of solar positions at specified intervals.
+    /// </summary>
+    /// <param name="startUtc">The starting UTC time.</param>
+    /// <param name="intervalMinutes">The interval in minutes between successive calculations.</param>
+    /// <param name="count">The number of records to generate.</param>
+    /// <param name="longitude">Observer longitude in degrees (east positive).</param>
+    /// <param name="latitude">Observer latitude in degrees (north positive).</param>
+    /// <returns>A list of EphemerisRecord containing solar positions.</returns>
     public static List<EphemerisRecord> GenerateSunSeries(
         DateTime startUtc, int intervalMinutes, int count,
         double longitude, double latitude)
@@ -34,6 +46,15 @@ public static class EphemerisBatch
         return records;
     }
 
+    /// <summary>
+    /// Generates a time series of lunar positions at specified intervals.
+    /// </summary>
+    /// <param name="startUtc">The starting UTC time.</param>
+    /// <param name="intervalMinutes">The interval in minutes between successive calculations.</param>
+    /// <param name="count">The number of records to generate.</param>
+    /// <param name="longitude">Observer longitude in degrees (east positive).</param>
+    /// <param name="latitude">Observer latitude in degrees (north positive).</param>
+    /// <returns>A list of EphemerisRecord containing lunar positions and illumination.</returns>
     public static List<EphemerisRecord> GenerateMoonSeries(
         DateTime startUtc, int intervalMinutes, int count,
         double longitude, double latitude)
@@ -62,6 +83,16 @@ public static class EphemerisBatch
         return records;
     }
 
+    /// <summary>
+    /// Generates a time series of planetary positions at specified intervals.
+    /// </summary>
+    /// <param name="planetName">The name of the planet (mercury, venus, mars, jupiter, saturn, uranus, neptune, pluto).</param>
+    /// <param name="startUtc">The starting UTC time.</param>
+    /// <param name="intervalMinutes">The interval in minutes between successive calculations.</param>
+    /// <param name="count">The number of records to generate.</param>
+    /// <param name="longitude">Observer longitude in degrees (east positive).</param>
+    /// <param name="latitude">Observer latitude in degrees (north positive).</param>
+    /// <returns>A list of EphemerisRecord containing planetary positions.</returns>
     public static List<EphemerisRecord> GeneratePlanetSeries(
         string planetName,
         DateTime startUtc, int intervalMinutes, int count,

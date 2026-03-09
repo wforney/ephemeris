@@ -2,8 +2,16 @@
 
 namespace Ephemeris.Selenography;
 
+/// <summary>
+/// Calculates the Moon's geocentric coordinates, phase angle, and illumination.
+/// </summary>
 public static class MoonEphemeris
 {
+    /// <summary>
+    /// Calculates the Moon's geocentric equatorial coordinates and distance from Earth.
+    /// </summary>
+    /// <param name="T">Julian centuries since J2000.0.</param>
+    /// <returns>A tuple of (RA, Dec, distanceKm) where RA and Dec are in degrees, distance is in kilometres.</returns>
     public static (double RA, double Dec, double distanceKm) GeocentricEquatorialCoordinates(double T)
     {
         // Mean elongation of the Moon
@@ -33,12 +41,22 @@ public static class MoonEphemeris
         return (RA, Dec, dist);
     }
 
+    /// <summary>
+    /// Calculates the Moon's illumination fraction given its phase angle.
+    /// </summary>
+    /// <param name="phaseAngle">The phase angle in degrees (angle between Sun and Moon as seen from Earth).</param>
+    /// <returns>Illumination fraction in [0, 1], where 0 is new moon and 1 is full moon.</returns>
     public static double Illumination(double phaseAngle)
     {
         double i = TimeUtils.ToRadians(phaseAngle);
         return (1 + Math.Cos(i)) / 2;
     }
 
+    /// <summary>
+    /// Calculates the Moon's phase angle (the geocentric elongation angle between Sun and Moon).
+    /// </summary>
+    /// <param name="T">Julian centuries since J2000.0.</param>
+    /// <returns>The phase angle in degrees.</returns>
     public static double PhaseAngle(double T)
     {
         double D = TimeUtils.NormalizeDegrees(297.8501921 + (445267.1114034 * T));

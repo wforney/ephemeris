@@ -6,8 +6,16 @@ using System.Threading.Tasks;
 
 namespace Ephemeris;
 
+/// <summary>
+/// Provides console-based ASCII plotting of celestial body positions.
+/// </summary>
 public static class EphemerisPlotter
 {
+    /// <summary>
+    /// Plots altitude over time as an ASCII chart in the console.
+    /// </summary>
+    /// <param name="records">The collection of ephemeris records to plot.</param>
+    /// <param name="body">The name of the celestial body to filter and plot.</param>
     public static void PlotAltitudes(IEnumerable<EphemerisRecord> records, string body)
     {
         var data = records

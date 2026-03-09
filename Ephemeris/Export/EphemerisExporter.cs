@@ -4,22 +4,42 @@ using System.Text.Json;
 
 namespace Ephemeris.Export;
 
+/// <summary>
+/// Provides serialization and deserialization of ephemeris data to/from CSV and JSON formats.
+/// </summary>
 public static class EphemerisExporter
 {
-    // Save CSV to file
+    /// <summary>
+    /// Saves a collection of data as CSV to a file.
+    /// </summary>
+    /// <typeparam name="T">The type of items in the collection.</typeparam>
+    /// <param name="data">The collection of items to serialize.</param>
+    /// <param name="filePath">The file path where CSV will be written.</param>
     public static void SaveCsvToFile<T>(IEnumerable<T> data, string filePath)
     {
         string csv = ToCsv(data);
         File.WriteAllText(filePath, csv);
     }
 
-    // Save JSON to file
+    /// <summary>
+    /// Saves a collection of data as JSON to a file.
+    /// </summary>
+    /// <typeparam name="T">The type of items in the collection.</typeparam>
+    /// <param name="data">The collection of items to serialize.</param>
+    /// <param name="filePath">The file path where JSON will be written.</param>
+    /// <param name="indented">If true, the JSON output will be formatted with indentation; otherwise, it will be compact.</param>
     public static void SaveJsonToFile<T>(IEnumerable<T> data, string filePath, bool indented = false)
     {
         string json = ToJson(data, indented);
         File.WriteAllText(filePath, json);
     }
 
+    /// <summary>
+    /// Converts a collection of items to a CSV string.
+    /// </summary>
+    /// <typeparam name="T">The type of items in the collection.</typeparam>
+    /// <param name="data">The collection of items to serialize.</param>
+    /// <returns>A CSV-formatted string with headers and data rows.</returns>
     public static string ToCsv<T>(IEnumerable<T> data)
     {
         System.Reflection.PropertyInfo[] properties = typeof(T).GetProperties();
@@ -38,13 +58,24 @@ public static class EphemerisExporter
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Converts a collection of items to a JSON string.
+    /// </summary>
+    /// <typeparam name="T">The type of items in the collection.</typeparam>
+    /// <param name="data">The collection of items to serialize.</param>
+    /// <param name="indented">If true, the JSON output will be formatted with indentation; otherwise, it will be compact.</param>
+    /// <returns>A JSON-formatted string.</returns>
     public static string ToJson<T>(IEnumerable<T> data, bool indented = false)
     {
         var options = new JsonSerializerOptions { WriteIndented = indented };
         return JsonSerializer.Serialize(data, options);
     }
 
-    // Load CSV from file into list of EphemerisRecord
+    /// <summary>
+    /// Loads ephemeris records from a CSV file.
+    /// </summary>
+    /// <param name="filePath">The path to the CSV file.</param>
+    /// <returns>A list of parsed EphemerisRecord objects.</returns>
     public static List<EphemerisRecord> LoadCsvFromFile(string filePath)
     {
         var lines = File.ReadAllLines(filePath);
@@ -70,7 +101,11 @@ public static class EphemerisExporter
         return records;
     }
 
-    // Load JSON from file into list of EphemerisRecord
+    /// <summary>
+    /// Loads ephemeris records from a JSON file.
+    /// </summary>
+    /// <param name="filePath">The path to the JSON file.</param>
+    /// <returns>A list of parsed EphemerisRecord objects.</returns>
     public static List<EphemerisRecord> LoadJsonFromFile(string filePath)
     {
         var json = File.ReadAllText(filePath);

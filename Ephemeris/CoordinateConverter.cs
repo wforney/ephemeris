@@ -2,8 +2,18 @@
 
 namespace Ephemeris;
 
+/// <summary>
+/// Converts between ecliptic and equatorial coordinate systems using the obliquity of the ecliptic.
+/// </summary>
 public static class CoordinateConverter
 {
+    /// <summary>
+    /// Converts ecliptic longitude and latitude to equatorial coordinates (RA/Dec).
+    /// </summary>
+    /// <param name="lon">Ecliptic longitude in degrees [0, 360).</param>
+    /// <param name="lat">Ecliptic latitude in degrees [-90, 90].</param>
+    /// <param name="T">Julian centuries since J2000.0.</param>
+    /// <returns>A tuple of (RA, Dec) in degrees.</returns>
     public static (double RA, double Dec) EclipticToEquatorial(double lon, double lat, double T)
     {
         double eps = 23.439291 - (0.0130042 * T);
@@ -21,6 +31,13 @@ public static class CoordinateConverter
         return (RA, Dec);
     }
 
+    /// <summary>
+    /// Converts equatorial coordinates (RA/Dec) to ecliptic longitude and latitude.
+    /// </summary>
+    /// <param name="RA">Right ascension in degrees [0, 360).</param>
+    /// <param name="Dec">Declination in degrees [-90, 90].</param>
+    /// <param name="T">Julian centuries since J2000.0.</param>
+    /// <returns>A tuple of (longitude, latitude) in degrees.</returns>
     public static (double lon, double lat) EquatorialToEcliptic(double RA, double Dec, double T)
     {
         double eps = 23.439291 - (0.0130042 * T);
