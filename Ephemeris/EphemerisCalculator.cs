@@ -1,4 +1,4 @@
-﻿// Updated: 2026-07-14
+﻿// Updated: 2025-07-17
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 using Ephemeris.Heliology;
@@ -14,6 +14,8 @@ public static class EphemerisCalculator
 {
     /// <summary>
     /// Calculates the Moon's position in equatorial and horizontal coordinates for a given date and time.
+    /// Applies topocentric parallax correction (Meeus Ch. 40) to shift geocentric RA/Dec to the
+    /// apparent position as seen from the observer's location on Earth's surface.
     /// </summary>
     /// <param name="year">The year.</param>
     /// <param name="month">The month (1-12).</param>
@@ -21,12 +23,20 @@ public static class EphemerisCalculator
     /// <param name="hour">The hour in decimal (0-24).</param>
     /// <param name="longitude">Observer longitude in degrees (east positive).</param>
     /// <param name="latitude">Observer latitude in degrees (north positive).</param>
+    /// <param name="altitudeMeters">Observer altitude above sea level in metres (default 0).</param>
     /// <returns>A <see cref="CelestialObservation"/> with (RA, Dec, Azimuth, Altitude, Illumination) in degrees, with illumination as [0, 1].</returns>
-    public static CelestialObservation GetMoonPosition(int year, int month, int day, double hour, double longitude, double latitude)
+    public static CelestialObservation GetMoonPosition(int year, int month, int day, double hour, double longitude, double latitude, double altitudeMeters = 0)
     {
         double jd = TimeUtils.JulianDay(year, month, day, hour);
         double T = TimeUtils.JulianCentury(jd);
-        (double RA, double Dec, double _) = MoonEphemeris.GeocentricEquatorialCoordinates(T);
+        (double RA, double Dec, double distanceKm) = MoonEphemeris.GeocentricEquatorialCoordinates(T);
+
+        // Apply topocentric parallax to correct for observer's position on Earth's surface.
+        // This shifts the Moon's apparent RA/Dec by up to ~1° near the horizon.
+        var topocentricMoon = TopocentricParallax.ApplyLunarParallax(
+            new EquatorialCoordinates(RA, Dec), distanceKm, jd, longitude, latitude, altitudeMeters);
+        (RA, Dec) = (topocentricMoon.RightAscension, topocentricMoon.Declination);
+
         var horizontalPos = ObserverGeometry.EquatorialToHorizontal(RA, Dec, jd, longitude, latitude);
         double phaseAngle = MoonEphemeris.PhaseAngle(T);
         double illumination = MoonEphemeris.Illumination(phaseAngle);
@@ -75,20 +85,30 @@ public static class EphemerisCalculator
 
     /// <summary>
     /// Calculates the Moon's position in equatorial and horizontal coordinates for a local date and time.
+    /// Applies topocentric parallax correction (Meeus Ch. 40) to shift geocentric RA/Dec to the
+    /// apparent position as seen from the observer's location on Earth's surface.
     /// </summary>
     /// <param name="localDateTime">The local DateTime.</param>
     /// <param name="timeZoneId">The IANA or Windows timezone identifier (e.g., "Pacific Standard Time").</param>
     /// <param name="longitude">Observer longitude in degrees (east positive).</param>
     /// <param name="latitude">Observer latitude in degrees (north positive).</param>
+    /// <param name="altitudeMeters">Observer altitude above sea level in metres (default 0).</param>
     /// <returns>A <see cref="CelestialObservation"/> with (RA, Dec, Azimuth, Altitude, Illumination) in degrees, with illumination as [0, 1].</returns>
     public static CelestialObservation GetMoonPosition(
-        DateTime localDateTime, string timeZoneId, double longitude, double latitude)
+        DateTime localDateTime, string timeZoneId, double longitude, double latitude, double altitudeMeters = 0)
     {
         DateTime utcTime = TimeZoneUtils.ToUtc(localDateTime, timeZoneId);
         double jd = TimeZoneUtils.ToJulianDay(utcTime);
         double T = TimeUtils.JulianCentury(jd);
 
-        var (RA, Dec, _) = MoonEphemeris.GeocentricEquatorialCoordinates(T);
+        var (RA, Dec, distanceKm) = MoonEphemeris.GeocentricEquatorialCoordinates(T);
+
+        // Apply topocentric parallax to correct for observer's position on Earth's surface.
+        // This shifts the Moon's apparent RA/Dec by up to ~1° near the horizon.
+        var topocentricMoon = TopocentricParallax.ApplyLunarParallax(
+            new EquatorialCoordinates(RA, Dec), distanceKm, jd, longitude, latitude, altitudeMeters);
+        (RA, Dec) = (topocentricMoon.RightAscension, topocentricMoon.Declination);
+
         var horizontalPos = ObserverGeometry.EquatorialToHorizontal(RA, Dec, jd, longitude, latitude);
         double phaseAngle = MoonEphemeris.PhaseAngle(T);
         double illumination = MoonEphemeris.Illumination(phaseAngle);

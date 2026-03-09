@@ -1,4 +1,6 @@
 // Updated: 2026-03-09
+using Ephemeris;
+
 namespace Ephemeris.Stellarography;
 
 /// <summary>
@@ -105,10 +107,70 @@ public static class StarCatalog
         // ── Field 14: apparent magnitude ─────────────────────────────────────
         double mag = ParseDouble(f[13], "magnitude");
 
+        // ── Field 15 (optional): spectral type ────────────────────────────────────
+        string spectralType = f.Length > 14 ? f[14].Trim() : string.Empty;
+
         return new FixedStar(
             commonName, bayerDesig, frame,
             ra, dec,
-            pmRaCosD, pmDec, radVel, parallax, mag);
+            pmRaCosD, pmDec, radVel, parallax, mag,
+            spectralType);
+    }
+
+    // ── Public query / filter methods ──────────────────────────────────────
+
+    /// <summary>
+    /// Returns all stars from <paramref name="catalog"/> whose common name or Bayer designation
+    /// contains <paramref name="name"/> (case-insensitive).
+    /// </summary>
+    public static IEnumerable<FixedStar> GetByName(IReadOnlyList<FixedStar> catalog, string name) =>
+        catalog.Where(s =>
+            s.CommonName.Contains(name, StringComparison.OrdinalIgnoreCase) ||
+            s.BayerDesignation.Contains(name, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Returns all stars from <paramref name="catalog"/> with visual magnitude ≤ <paramref name="magnitudeLimit"/>.
+    /// Lower magnitude = brighter (Sirius is −1.46).
+    /// </summary>
+    public static IEnumerable<FixedStar> GetBrighter(IReadOnlyList<FixedStar> catalog, double magnitudeLimit) =>
+        catalog.Where(s => s.Magnitude <= magnitudeLimit);
+
+    /// <summary>
+    /// Returns all stars from <paramref name="catalog"/> within <paramref name="radiusDeg"/> degrees
+    /// of the given sky position, using the <see cref="CoordinateConverter.AngularSeparation"/> formula.
+    /// </summary>
+    public static IEnumerable<FixedStar> GetInRegion(
+        IReadOnlyList<FixedStar> catalog,
+        double raDeg, double decDeg, double radiusDeg) =>
+        catalog.Where(s =>
+            CoordinateConverter.AngularSeparation(s.RightAscensionJ2000, s.DeclinationJ2000, raDeg, decDeg) <= radiusDeg);
+
+    /// <summary>
+    /// Loads the built-in reference catalog of the 25 brightest named stars.
+    /// No external file is required; the data is embedded in the assembly.
+    /// </summary>
+    /// <returns>An <see cref="IReadOnlyList{FixedStar}"/> of the built-in star entries.</returns>
+    public static IReadOnlyList<FixedStar> LoadBuiltIn()
+    {
+        var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+        string resourceName = "Ephemeris.Stellarography.Resources.BrightStars.csv";
+
+        using Stream? stream = assembly.GetManifestResourceStream(resourceName);
+        if (stream is null)
+            throw new InvalidOperationException(
+                $"Embedded resource '{resourceName}' not found in assembly '{assembly.FullName}'.");
+
+        using var reader = new StreamReader(stream);
+        List<FixedStar> stars = [];
+        string? line;
+        while ((line = reader.ReadLine()) is not null)
+        {
+            string trimmed = line.Trim();
+            if (trimmed.Length == 0 || trimmed[0] == '#')
+                continue;
+            stars.Add(ParseLine(trimmed));
+        }
+        return stars.AsReadOnly();
     }
 
     // ── Private parsing helpers ─────────────────────────────────────────────

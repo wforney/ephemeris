@@ -31,6 +31,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Stellarography/Resources/BrightStars.csv" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="..\README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>

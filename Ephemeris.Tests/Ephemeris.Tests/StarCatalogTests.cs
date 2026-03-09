@@ -1,3 +1,4 @@
+// Updated: 2026-03-09
 using Ephemeris.Stellarography;
 using TUnit;
 
@@ -139,5 +140,105 @@ public class StarCatalogTests
         double dist = sirius.DistanceParsecs;
         await Assert.That(dist).IsGreaterThan(2.5);
         await Assert.That(dist).IsLessThan(2.8);
+    }
+
+    // ── Built-in catalog ──────────────────────────────────────────────────────
+
+    [Test]
+    public async Task LoadBuiltIn_ReturnsTwentyFiveStars()
+    {
+        var catalog = StarCatalog.LoadBuiltIn();
+        await Assert.That(catalog.Count).IsEqualTo(25);
+    }
+
+    [Test]
+    public async Task LoadBuiltIn_ContainsSirius()
+    {
+        var catalog = StarCatalog.LoadBuiltIn();
+        var sirius = catalog.FirstOrDefault(s =>
+            s.CommonName.Equals("Sirius", StringComparison.OrdinalIgnoreCase));
+
+        await Assert.That(sirius).IsNotNull();
+        // Sirius: RA ≈ 101.29°, Dec ≈ −16.72°, mag ≈ −1.46
+        await Assert.That(sirius!.RightAscensionJ2000).IsGreaterThan(100.0);
+        await Assert.That(sirius.RightAscensionJ2000).IsLessThan(103.0);
+        await Assert.That(sirius.DeclinationJ2000).IsGreaterThan(-18.0);
+        await Assert.That(sirius.DeclinationJ2000).IsLessThan(-15.0);
+        await Assert.That(sirius.Magnitude).IsLessThan(0.0);
+    }
+
+    [Test]
+    public async Task GetBrighter_WithMag2_ReturnsBrightestStars()
+    {
+        var catalog = StarCatalog.LoadBuiltIn();
+        var bright = StarCatalog.GetBrighter(catalog, 2.0).ToList();
+
+        var names = bright.Select(s => s.CommonName).ToList();
+        await Assert.That(names).Contains("Sirius");
+        await Assert.That(names).Contains("Canopus");
+        await Assert.That(names).Contains("Arcturus");
+        await Assert.That(names).Contains("Vega");
+        await Assert.That(names).Contains("Capella");
+        await Assert.That(names).Contains("Rigel");
+    }
+
+    [Test]
+    public async Task GetByName_CaseInsensitive()
+    {
+        var catalog = StarCatalog.LoadBuiltIn();
+        var results = StarCatalog.GetByName(catalog, "sirius").ToList();
+
+        await Assert.That(results.Count).IsGreaterThan(0);
+        await Assert.That(results[0].CommonName).IsEqualTo("Sirius");
+    }
+
+    [Test]
+    public async Task GetInRegion_AroundOrion()
+    {
+        // Orion center ≈ RA 83°, Dec +5°; radius 30° should capture Betelgeuse and Rigel
+        var catalog = StarCatalog.LoadBuiltIn();
+        var region = StarCatalog.GetInRegion(catalog, 83.0, 5.0, 30.0).ToList();
+
+        var names = region.Select(s => s.CommonName).ToList();
+        await Assert.That(names).Contains("Betelgeuse");
+        await Assert.That(names).Contains("Rigel");
+    }
+
+    [Test]
+    public async Task AtEpoch_J2000_MatchesJ2000Position()
+    {
+        var catalog = StarCatalog.LoadBuiltIn();
+        var star = catalog[0]; // Sirius
+
+        var coords = star.AtEpoch(2451545.0);
+        // At J2000.0 exactly, result should match J2000 position within 0.001°
+        await Assert.That(coords.RightAscension).IsEqualTo(star.RightAscensionJ2000).Within(0.001);
+        await Assert.That(coords.Declination).IsEqualTo(star.DeclinationJ2000).Within(0.001);
+    }
+
+    [Test]
+    public async Task AtEpoch_Shifts_WithTime()
+    {
+        var catalog = StarCatalog.LoadBuiltIn();
+        // Sirius has large proper motion (-546 mas/yr in RA, -1223 mas/yr in Dec)
+        var sirius = catalog.First(s => s.CommonName == "Sirius");
+
+        var coordsJ2000 = sirius.AtEpoch(2451545.0);
+        var coordsFuture = sirius.AtEpoch(2451545.0 + 365.25 * 25); // 25 years later
+
+        // Position should have shifted measurably
+        double deltaRa  = Math.Abs(coordsFuture.RightAscension - coordsJ2000.RightAscension);
+        double deltaDec = Math.Abs(coordsFuture.Declination     - coordsJ2000.Declination);
+
+        await Assert.That(deltaRa + deltaDec).IsGreaterThan(0.001);
+    }
+
+    [Test]
+    public async Task SpectralType_IsPopulated_ForBuiltInStars()
+    {
+        var catalog = StarCatalog.LoadBuiltIn();
+        var sirius = catalog.First(s => s.CommonName == "Sirius");
+
+        await Assert.That(sirius.SpectralType).IsEqualTo("A1V");
     }
 }

@@ -1,4 +1,4 @@
-// Updated: 2026-05-29
+// Updated: 2026-03-09
 using Ephemeris.Geometry;
 
 namespace Ephemeris.Stellarography;
@@ -20,6 +20,7 @@ namespace Ephemeris.Stellarography;
 /// <param name="RadialVelocityKmS">Radial velocity in km/s (positive = receding).</param>
 /// <param name="ParallaxMas">Annual trigonometric parallax in milli-arcseconds.</param>
 /// <param name="Magnitude">Visual (V-band) apparent magnitude.</param>
+/// <param name="SpectralType">Spectral classification string (e.g. "A1V", "G2V"); empty when not available.</param>
 public record FixedStar(
     string CommonName,
     string BayerDesignation,
@@ -30,7 +31,8 @@ public record FixedStar(
     double ProperMotionDec,
     double RadialVelocityKmS,
     double ParallaxMas,
-    double Magnitude)
+    double Magnitude,
+    string SpectralType = "")
 {
     /// <summary>
     /// Distance in parsecs derived from the parallax.
@@ -38,6 +40,26 @@ public record FixedStar(
     /// </summary>
     public double DistanceParsecs =>
         ParallaxMas > 0 ? 1000.0 / ParallaxMas : double.PositiveInfinity;
+
+    /// <summary>
+    /// Returns equatorial coordinates corrected for both proper motion and precession at the target epoch.
+    /// For epochs within a few years of J2000, proper motion dominates; precession accumulates at
+    /// ~50 arcseconds per year and becomes significant for multi-decade extrapolation.
+    /// </summary>
+    /// <param name="julianDay">Target Julian Day (ET/TT approximated as UTC for typical use).</param>
+    /// <returns>Precessed and proper-motion-corrected <see cref="EquatorialCoordinates"/> in degrees.</returns>
+    public EquatorialCoordinates AtEpoch(double julianDay)
+    {
+        // Step 1: apply proper motion (linear shift from J2000.0)
+        EquatorialCoordinates pmCorrected = ApplyProperMotion(julianDay);
+
+        // Step 2: apply precession from J2000.0 to target epoch
+        double julianCenturies = (julianDay - 2451545.0) / 36525.0; // Julian centuries since J2000.0
+        return Ephemeris.Geodesy.PrecessionCalculator.PrecessFromJ2000(
+            pmCorrected.RightAscension,
+            pmCorrected.Declination,
+            julianCenturies);
+    }
 
     /// <summary>
     /// Applies proper-motion correction to this star's position for the given Julian Day.
