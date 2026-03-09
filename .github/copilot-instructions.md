@@ -1,4 +1,4 @@
-<!-- Updated: 2026-03-09 03:42 UTC -->
+<!-- Updated: 2026-03-09 03:49 UTC -->
 # Copilot Instructions
 
 ## Project Overview
@@ -194,7 +194,7 @@ When modifying any of the following file types, **automatically update all relat
 **Default branch:** `main` (single branch; no long-lived feature branches in history)
 
 ### Commit message convention
-Use **Conventional Commits** format. Subject line ≤ 72 characters, imperative mood ("Add", not "Added"):
+Use **Conventional Commits** format. **All commits** must follow this style — no exceptions. Subject line ≤ 72 characters, **imperative mood** ("Add", not "Added"; "Fix", not "Fixed"; "Remove", not "Removed"):
 
 ```
 <type>(<scope>): <short description>
