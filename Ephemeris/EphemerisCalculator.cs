@@ -46,7 +46,7 @@ public static class EphemerisCalculator
     {
         double jd = TimeUtils.JulianDay(year, month, day, hour);
         double T = TimeUtils.JulianCentury(jd);
-        (double RA, double Dec) = SunEphemeris.ApparentEquatorialCoordinates(T);
+        (double RA, double Dec, double _) = SunEphemeris.ApparentEquatorialCoordinates(T);
         (double Az, double Alt) = ObserverGeometry.EquatorialToHorizontal(RA, Dec, jd, longitude, latitude);
         return (RA, Dec, Az, Alt);
     }
@@ -66,7 +66,7 @@ public static class EphemerisCalculator
         double jd = TimeZoneUtils.ToJulianDay(utcTime);
         double T = TimeUtils.JulianCentury(jd);
 
-        var (RA, Dec) = SunEphemeris.ApparentEquatorialCoordinates(T);
+        var (RA, Dec, _) = SunEphemeris.ApparentEquatorialCoordinates(T);
         var (Az, Alt) = ObserverGeometry.EquatorialToHorizontal(RA, Dec, jd, longitude, latitude);
 
         return (RA, Dec, Az, Alt);

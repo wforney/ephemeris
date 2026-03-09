@@ -18,7 +18,7 @@ public class SunEphemerisBenchmark
     public void Setup() => _T = TimeUtils.JulianCentury(TimeUtils.JulianDay(2024, 6, 21, 12.0));
 
     [Benchmark(Description = "SunEphemeris single call")]
-    public (double RA, double Dec) SingleCall()
+    public (double RA, double Dec, double R) SingleCall()
         => SunEphemeris.ApparentEquatorialCoordinates(_T);
 
     [Benchmark(Description = "EphemerisBatch.GenerateSunSeries 1440 records")]

@@ -30,7 +30,7 @@ public static class EphemerisBatch
             var dt = startUtc.AddMinutes(i * intervalMinutes);
             double jd = TimeZoneUtils.ToJulianDay(dt);
             double T = TimeUtils.JulianCentury(jd);
-            var (ra, dec) = SunEphemeris.ApparentEquatorialCoordinates(T);
+            var (ra, dec, sunDist) = SunEphemeris.ApparentEquatorialCoordinates(T);
             var (az, alt) = ObserverGeometry.EquatorialToHorizontal(ra, dec, jd, longitude, latitude);
 
             records.Add(new EphemerisRecord(
@@ -40,7 +40,8 @@ public static class EphemerisBatch
                 Declination: dec,
                 Azimuth: az,
                 Altitude: alt,
-                Illumination: null));
+                Illumination: null,
+                Distance: sunDist));
         }
         return records;
     }
@@ -136,5 +137,60 @@ public static class EphemerisBatch
                 Illumination: null));
         }
         return records;
+    }
+
+    /// <summary>
+    /// Returns time windows during which a celestial body is above a given altitude threshold.
+    /// </summary>
+    /// <param name="body">Body name: "Sun", "Moon", or a planet name.</param>
+    /// <param name="startUtc">Start of the search window (UTC).</param>
+    /// <param name="windowDuration">Total duration of the search window.</param>
+    /// <param name="longitude">Observer longitude in degrees (east positive).</param>
+    /// <param name="latitude">Observer latitude in degrees (north positive).</param>
+    /// <param name="altitudeThresholdDeg">Minimum altitude in degrees to count as visible. Defaults to 0°.</param>
+    /// <param name="stepMinutes">Sampling resolution in minutes. Defaults to 1.</param>
+    /// <returns>
+    /// A list of (Start, End) UTC DateTimes, each pair representing one continuous visibility window.
+    /// </returns>
+    public static List<(DateTime Start, DateTime End)> VisibilityWindows(
+        string body,
+        DateTime startUtc,
+        TimeSpan windowDuration,
+        double longitude,
+        double latitude,
+        double altitudeThresholdDeg = 0.0,
+        int stepMinutes = 1)
+    {
+        int count = (int)Math.Ceiling(windowDuration.TotalMinutes / stepMinutes) + 1;
+        List<EphemerisRecord> series = body.ToLowerInvariant() switch
+        {
+            "sun"  => GenerateSunSeries(startUtc, stepMinutes, count, longitude, latitude),
+            "moon" => GenerateMoonSeries(startUtc, stepMinutes, count, longitude, latitude),
+            _      => GeneratePlanetSeries(body, startUtc, stepMinutes, count, longitude, latitude),
+        };
+
+        var windows = new List<(DateTime Start, DateTime End)>();
+        DateTime? windowStart = null;
+        DateTime? lastAbove = null;
+
+        foreach (EphemerisRecord record in series)
+        {
+            if (record.Altitude >= altitudeThresholdDeg)
+            {
+                windowStart ??= record.TimeUtc;
+                lastAbove = record.TimeUtc;
+            }
+            else if (windowStart.HasValue)
+            {
+                windows.Add((windowStart.Value, lastAbove!.Value));
+                windowStart = null;
+                lastAbove = null;
+            }
+        }
+
+        if (windowStart.HasValue)
+            windows.Add((windowStart.Value, lastAbove!.Value));
+
+        return windows;
     }
 }
