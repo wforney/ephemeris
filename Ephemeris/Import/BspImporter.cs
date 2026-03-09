@@ -10,7 +10,8 @@ namespace Ephemeris.Import;
 public static class BspImporter
 {
     /// <summary>
-    /// Loads a time series of ephemeris records from SPICE binary planet kernel (BSP) files.
+    /// Loads a time series of ephemeris records from SPICE binary planet kernel (BSP) files
+    /// using the native DAF/SPK reader.
     /// </summary>
     /// <param name="kernelPaths">A list of paths to SPICE kernel files to load.</param>
     /// <param name="target">The target body name (e.g., "SUN", "MOON", "EARTH").</param>
@@ -21,13 +22,13 @@ public static class BspImporter
     /// <param name="longitude">Observer longitude in degrees (east positive).</param>
     /// <param name="latitude">Observer latitude in degrees (north positive).</param>
     /// <returns>A list of EphemerisRecord containing body positions from the SPICE kernel.</returns>
-    public static List<EphemerisRecord> LoadFromSpiceSharp(
+    public static List<EphemerisRecord> LoadFromBspKernel(
         List<string> kernelPaths,
         string target, string observer,
         DateTime startUtc, int intervalMinutes, int count,
         double longitude, double latitude)
     {
-        // This assumes you’ve built SpiceSharp-Parser interfaces for SPICE kernel loading.
+        // Load each BSP kernel file into the native DAF/SPK reader via SpiceKernelDatabase.
         var kernelDb = new SpiceKernelDatabase();
         foreach (var path in kernelPaths)
         {
