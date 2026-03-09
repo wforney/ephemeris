@@ -1,4 +1,4 @@
-﻿// Updated: 2026-05-29
+﻿// Updated: 2026-03-09
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 using Ephemeris.Heliology;
@@ -222,18 +222,10 @@ public static class EphemerisCalculator
     /// <param name="longitude">Observer longitude in degrees (East positive).</param>
     /// <param name="latitude">Observer latitude in degrees (North positive).</param>
     /// <returns>UTC DateTime of the next sunrise, or <c>null</c> if circumpolar.</returns>
-    public static DateTime? NextSunrise(DateTime after, double longitude, double latitude)
-    {
-        var dt = after.Date;
-        for (int i = 0; i < 400; i++)
-        {
-            var rts = Phenomenology.RiseSetCalculator.Sun(dt, longitude, latitude);
-            if (rts.Rise.HasValue && rts.Rise.Value > after)
-                return rts.Rise.Value;
-            dt = dt.AddDays(1);
-        }
-        return null;
-    }
+    public static DateTime? NextSunrise(DateTime after, double longitude, double latitude) =>
+        Enumerable.Range(0, 400)
+            .Select(i => Phenomenology.RiseSetCalculator.Sun(after.Date.AddDays(i), longitude, latitude).Rise)
+            .FirstOrDefault(r => r.HasValue && r.Value > after);
 
     /// <summary>
     /// Returns the next sunset for the specified location after the given UTC date.
@@ -242,18 +234,10 @@ public static class EphemerisCalculator
     /// <param name="longitude">Observer longitude in degrees (East positive).</param>
     /// <param name="latitude">Observer latitude in degrees (North positive).</param>
     /// <returns>UTC DateTime of the next sunset, or <c>null</c> if circumpolar.</returns>
-    public static DateTime? NextSunset(DateTime after, double longitude, double latitude)
-    {
-        var dt = after.Date;
-        for (int i = 0; i < 400; i++)
-        {
-            var rts = Phenomenology.RiseSetCalculator.Sun(dt, longitude, latitude);
-            if (rts.Set.HasValue && rts.Set.Value > after)
-                return rts.Set.Value;
-            dt = dt.AddDays(1);
-        }
-        return null;
-    }
+    public static DateTime? NextSunset(DateTime after, double longitude, double latitude) =>
+        Enumerable.Range(0, 400)
+            .Select(i => Phenomenology.RiseSetCalculator.Sun(after.Date.AddDays(i), longitude, latitude).Set)
+            .FirstOrDefault(r => r.HasValue && r.Value > after);
 
     /// <summary>
     /// Returns the next moonrise for the specified location after the given UTC date.
@@ -262,18 +246,10 @@ public static class EphemerisCalculator
     /// <param name="longitude">Observer longitude in degrees (East positive).</param>
     /// <param name="latitude">Observer latitude in degrees (North positive).</param>
     /// <returns>UTC DateTime of the next moonrise, or <c>null</c> if the Moon is circumpolar.</returns>
-    public static DateTime? NextMoonrise(DateTime after, double longitude, double latitude)
-    {
-        var dt = after.Date;
-        for (int i = 0; i < 400; i++)
-        {
-            var rts = Phenomenology.RiseSetCalculator.Moon(dt, longitude, latitude);
-            if (rts.Rise.HasValue && rts.Rise.Value > after)
-                return rts.Rise.Value;
-            dt = dt.AddDays(1);
-        }
-        return null;
-    }
+    public static DateTime? NextMoonrise(DateTime after, double longitude, double latitude) =>
+        Enumerable.Range(0, 400)
+            .Select(i => Phenomenology.RiseSetCalculator.Moon(after.Date.AddDays(i), longitude, latitude).Rise)
+            .FirstOrDefault(r => r.HasValue && r.Value > after);
 
     /// <summary>
     /// Returns the next moonset for the specified location after the given UTC date.
@@ -282,18 +258,10 @@ public static class EphemerisCalculator
     /// <param name="longitude">Observer longitude in degrees (East positive).</param>
     /// <param name="latitude">Observer latitude in degrees (North positive).</param>
     /// <returns>UTC DateTime of the next moonset, or <c>null</c> if the Moon is circumpolar.</returns>
-    public static DateTime? NextMoonset(DateTime after, double longitude, double latitude)
-    {
-        var dt = after.Date;
-        for (int i = 0; i < 400; i++)
-        {
-            var rts = Phenomenology.RiseSetCalculator.Moon(dt, longitude, latitude);
-            if (rts.Set.HasValue && rts.Set.Value > after)
-                return rts.Set.Value;
-            dt = dt.AddDays(1);
-        }
-        return null;
-    }
+    public static DateTime? NextMoonset(DateTime after, double longitude, double latitude) =>
+        Enumerable.Range(0, 400)
+            .Select(i => Phenomenology.RiseSetCalculator.Moon(after.Date.AddDays(i), longitude, latitude).Set)
+            .FirstOrDefault(r => r.HasValue && r.Value > after);
 
     // Returns the Moon's phase angle (0°=new, 180°=full) for a given UTC DateTime.
     private static double GetPhase(DateTime utc)

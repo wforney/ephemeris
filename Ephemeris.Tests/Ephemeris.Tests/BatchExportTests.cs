@@ -15,7 +15,7 @@ public class BatchExportTests
     public async Task GenerateSunSeries_Returns24Records()
     {
         var records = EphemerisBatch.GenerateSunSeries(s_start, intervalMinutes: 60, count: 24, Lon, Lat);
-        await Assert.That(records.Count).IsEqualTo(24);
+        await Assert.That(records.Count()).IsEqualTo(24);
     }
 
     [Test]
@@ -47,7 +47,7 @@ public class BatchExportTests
     public async Task GenerateMoonSeries_IlluminationInRange()
     {
         var records = EphemerisBatch.GenerateMoonSeries(s_start, 60, 24, Lon, Lat);
-        await Assert.That(records.Count).IsEqualTo(24);
+        await Assert.That(records.Count()).IsEqualTo(24);
         foreach (var r in records)
         {
             if (r.Illumination.HasValue)
@@ -62,7 +62,7 @@ public class BatchExportTests
     public async Task GenerateMoonSeries_DistanceInReasonableRange()
     {
         var records = EphemerisBatch.GenerateMoonSeries(s_start, 60, 1, Lon, Lat);
-        var r = records[0];
+        var r = records.First();
         // Moon distance: perigee ~356,500 km, apogee ~406,700 km
         if (r.Distance.HasValue)
         {
@@ -75,7 +75,7 @@ public class BatchExportTests
     public async Task GeneratePlanetSeries_Mars_Returns10Records()
     {
         var records = EphemerisBatch.GeneratePlanetSeries("mars", s_start, 60, 10, Lon, Lat);
-        await Assert.That(records.Count).IsEqualTo(10);
+        await Assert.That(records.Count()).IsEqualTo(10);
         foreach (var r in records)
             await Assert.That(r.Body).IsEqualTo("mars");
     }

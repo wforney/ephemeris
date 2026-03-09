@@ -1,4 +1,4 @@
-// Updated: 2026-05-29
+// Updated: 2026-03-09
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 using Ephemeris.Heliology;
@@ -20,12 +20,11 @@ public static class EphemerisBatch
     /// <param name="count">The number of records to generate.</param>
     /// <param name="longitude">Observer longitude in degrees (east positive).</param>
     /// <param name="latitude">Observer latitude in degrees (north positive).</param>
-    /// <returns>A list of EphemerisRecord containing solar positions.</returns>
-    public static List<EphemerisRecord> GenerateSunSeries(
+    /// <returns>A lazily-evaluated sequence of EphemerisRecord containing solar positions.</returns>
+    public static IEnumerable<EphemerisRecord> GenerateSunSeries(
         DateTime startUtc, int intervalMinutes, int count,
         double longitude, double latitude)
     {
-        var records = new List<EphemerisRecord>();
         for (int i = 0; i < count; i++)
         {
             var dt = startUtc.AddMinutes(i * intervalMinutes);
@@ -34,7 +33,7 @@ public static class EphemerisBatch
             var (ra, dec, sunDist) = SunEphemeris.ApparentEquatorialCoordinates(T);
             var (az, alt) = ObserverGeometry.EquatorialToHorizontal(ra, dec, jd, longitude, latitude);
 
-            records.Add(new EphemerisRecord(
+            yield return new EphemerisRecord(
                 TimeUtc: dt,
                 Body: "Sun",
                 RightAscension: ra,
@@ -42,9 +41,8 @@ public static class EphemerisBatch
                 Azimuth: az,
                 Altitude: alt,
                 Illumination: null,
-                Distance: sunDist));
+                Distance: sunDist);
         }
-        return records;
     }
 
     /// <summary>
@@ -55,12 +53,11 @@ public static class EphemerisBatch
     /// <param name="count">The number of records to generate.</param>
     /// <param name="longitude">Observer longitude in degrees (east positive).</param>
     /// <param name="latitude">Observer latitude in degrees (north positive).</param>
-    /// <returns>A list of EphemerisRecord containing lunar positions and illumination.</returns>
-    public static List<EphemerisRecord> GenerateMoonSeries(
+    /// <returns>A lazily-evaluated sequence of EphemerisRecord containing lunar positions and illumination.</returns>
+    public static IEnumerable<EphemerisRecord> GenerateMoonSeries(
         DateTime startUtc, int intervalMinutes, int count,
         double longitude, double latitude)
     {
-        var records = new List<EphemerisRecord>();
         for (int i = 0; i < count; i++)
         {
             var dt = startUtc.AddMinutes(i * intervalMinutes);
@@ -70,7 +67,7 @@ public static class EphemerisBatch
             var (az, alt) = ObserverGeometry.EquatorialToHorizontal(ra, dec, jd, longitude, latitude);
             double illum = MoonEphemeris.Illumination(MoonEphemeris.PhaseAngle(T));
 
-            records.Add(new EphemerisRecord(
+            yield return new EphemerisRecord(
                 TimeUtc: dt,
                 Body: "Moon",
                 RightAscension: ra,
@@ -78,9 +75,8 @@ public static class EphemerisBatch
                 Azimuth: az,
                 Altitude: alt,
                 Illumination: illum,
-                Distance: distKm));
+                Distance: distKm);
         }
-        return records;
     }
 
     /// <summary>
@@ -92,13 +88,12 @@ public static class EphemerisBatch
     /// <param name="count">The number of records to generate.</param>
     /// <param name="longitude">Observer longitude in degrees (east positive).</param>
     /// <param name="latitude">Observer latitude in degrees (north positive).</param>
-    /// <returns>A list of EphemerisRecord containing planetary positions.</returns>
-    public static List<EphemerisRecord> GeneratePlanetSeries(
+    /// <returns>A lazily-evaluated sequence of EphemerisRecord containing planetary positions.</returns>
+    public static IEnumerable<EphemerisRecord> GeneratePlanetSeries(
         string planetName,
         DateTime startUtc, int intervalMinutes, int count,
         double longitude, double latitude)
     {
-        var records = new List<EphemerisRecord>();
         for (int i = 0; i < count; i++)
         {
             var dt = startUtc.AddMinutes(i * intervalMinutes);
@@ -128,16 +123,15 @@ public static class EphemerisBatch
             var eq = PlanetEphemeris.SimplifiedPlanetPosition(T, elements);
             var hz = ObserverGeometry.EquatorialToHorizontal(eq.RightAscension, eq.Declination, jd, longitude, latitude);
 
-            records.Add(new EphemerisRecord(
+            yield return new EphemerisRecord(
                 TimeUtc: dt,
                 Body: planetName,
                 RightAscension: eq.RightAscension,
                 Declination: eq.Declination,
                 Azimuth: hz.Azimuth,
                 Altitude: hz.Altitude,
-                Illumination: null));
+                Illumination: null);
         }
-        return records;
     }
 
     /// <summary>
@@ -163,14 +157,14 @@ public static class EphemerisBatch
         int stepMinutes = 1)
     {
         int count = (int)Math.Ceiling(windowDuration.TotalMinutes / stepMinutes) + 1;
-        List<EphemerisRecord> series = body.ToLowerInvariant() switch
+        IEnumerable<EphemerisRecord> series = body.ToLowerInvariant() switch
         {
             "sun"  => GenerateSunSeries(startUtc, stepMinutes, count, longitude, latitude),
             "moon" => GenerateMoonSeries(startUtc, stepMinutes, count, longitude, latitude),
             _      => GeneratePlanetSeries(body, startUtc, stepMinutes, count, longitude, latitude),
         };
 
-        var windows = new List<(DateTime Start, DateTime End)>();
+        List<(DateTime Start, DateTime End)> windows = [];
         DateTime? windowStart = null;
         DateTime? lastAbove = null;
 

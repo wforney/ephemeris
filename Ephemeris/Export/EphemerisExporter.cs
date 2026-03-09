@@ -80,21 +80,19 @@ public static class EphemerisExporter
     {
         var lines = File.ReadAllLines(filePath);
         var header = lines.First().Split(',');
-        var records = new List<EphemerisRecord>();
+        List<EphemerisRecord> records = [];
 
         foreach (var line in lines.Skip(1))
         {
             var cells = line.Split(',');
-            var record = new EphemerisRecord
-            {
-                TimeUtc = DateTime.Parse(cells[0], null, DateTimeStyles.RoundtripKind),
-                Body = cells[1],
-                RightAscension = double.Parse(cells[2], CultureInfo.InvariantCulture),
-                Declination = double.Parse(cells[3], CultureInfo.InvariantCulture),
-                Azimuth = double.Parse(cells[4], CultureInfo.InvariantCulture),
-                Altitude = double.Parse(cells[5], CultureInfo.InvariantCulture),
-                Illumination = string.IsNullOrWhiteSpace(cells[6]) ? null : double.Parse(cells[6], CultureInfo.InvariantCulture)
-            };
+            var record = new EphemerisRecord(
+                TimeUtc: DateTime.Parse(cells[0], null, DateTimeStyles.RoundtripKind),
+                Body: cells[1],
+                RightAscension: double.Parse(cells[2], CultureInfo.InvariantCulture),
+                Declination: double.Parse(cells[3], CultureInfo.InvariantCulture),
+                Azimuth: double.Parse(cells[4], CultureInfo.InvariantCulture),
+                Altitude: double.Parse(cells[5], CultureInfo.InvariantCulture),
+                Illumination: string.IsNullOrWhiteSpace(cells[6]) ? null : double.Parse(cells[6], CultureInfo.InvariantCulture));
             records.Add(record);
         }
 
@@ -109,7 +107,7 @@ public static class EphemerisExporter
     public static List<EphemerisRecord> LoadJsonFromFile(string filePath)
     {
         var json = File.ReadAllText(filePath);
-        return JsonSerializer.Deserialize<List<EphemerisRecord>>(json) ?? new List<EphemerisRecord>();
+        return JsonSerializer.Deserialize<List<EphemerisRecord>>(json) ?? [];
     }
 
     private static string FormatValue(object? value)

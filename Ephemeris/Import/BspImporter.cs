@@ -37,7 +37,7 @@ public static class BspImporter
             kernelDb.LoadKernel(path);
         }
 
-        var records = new List<EphemerisRecord>();
+        List<EphemerisRecord> records = [];
         for (int i = 0; i < count; i++)
         {
             var dt = startUtc.AddMinutes(i * intervalMinutes);
@@ -49,15 +49,14 @@ public static class BspImporter
             double jd = TimeZoneUtils.ToJulianDay(dt);
             var hz = ObserverGeometry.EquatorialToHorizontal(coords.RightAscension, coords.Declination, jd, longitude, latitude);
 
-            records.Add(new EphemerisRecord
-            {
-                TimeUtc = dt,
-                Body = target,
-                RightAscension = coords.RightAscension,
-                Declination = coords.Declination,
-                Azimuth = hz.Azimuth,
-                Altitude = hz.Altitude
-            });
+            records.Add(new EphemerisRecord(
+                TimeUtc: dt,
+                Body: target,
+                RightAscension: coords.RightAscension,
+                Declination: coords.Declination,
+                Azimuth: hz.Azimuth,
+                Altitude: hz.Altitude,
+                Illumination: null));
         }
 
         return records;
@@ -67,9 +66,9 @@ public static class BspImporter
     {
         double x = vec[0], y = vec[1], z = vec[2];
         double r = Math.Sqrt(x * x + y * y + z * z);
-        double ra = Math.Atan2(y, x) * 180 / Math.PI;
+        double ra = double.RadiansToDegrees(Math.Atan2(y, x));
         if (ra < 0) ra += 360;
-        double dec = Math.Asin(z / r) * 180 / Math.PI;
+        double dec = double.RadiansToDegrees(Math.Asin(z / r));
         return (new EquatorialCoordinates(ra, dec), r);
     }
 }

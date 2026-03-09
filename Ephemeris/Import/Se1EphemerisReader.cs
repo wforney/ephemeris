@@ -203,8 +203,8 @@ public sealed class Se1EphemerisReader : IDisposable
     public static (EquatorialCoordinates Coordinates, double DistanceAu) CartesianToRaDec(double x, double y, double z)
     {
         double r   = Math.Sqrt(x * x + y * y + z * z);
-        double ra  = (Math.Atan2(y, x) * 180.0 / Math.PI + 360.0) % 360.0;
-        double dec = (r > 0) ? Math.Asin(z / r) * 180.0 / Math.PI : 0.0;
+        double ra  = (double.RadiansToDegrees(Math.Atan2(y, x)) + 360.0) % 360.0;
+        double dec = (r > 0) ? double.RadiansToDegrees(Math.Asin(z / r)) : 0.0;
         return (new EquatorialCoordinates(ra, dec), r);
     }
 

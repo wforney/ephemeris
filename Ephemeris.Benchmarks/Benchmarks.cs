@@ -22,7 +22,7 @@ public class SunEphemerisBenchmark
         => SunEphemeris.ApparentEquatorialCoordinates(_T);
 
     [Benchmark(Description = "EphemerisBatch.GenerateSunSeries 1440 records")]
-    public List<EphemerisRecord> Batch1440()
+    public IEnumerable<EphemerisRecord> Batch1440()
         => EphemerisBatch.GenerateSunSeries(
             new DateTime(2024, 6, 21, 0, 0, 0, DateTimeKind.Utc),
             intervalMinutes: 1, count: 1440,
@@ -45,7 +45,7 @@ public class MoonEphemerisBenchmark
         => MoonEphemeris.GeocentricEquatorialCoordinates(_T);
 
     [Benchmark(Description = "EphemerisBatch.GenerateMoonSeries 1440 records")]
-    public List<EphemerisRecord> Batch1440()
+    public IEnumerable<EphemerisRecord> Batch1440()
         => EphemerisBatch.GenerateMoonSeries(
             new DateTime(2024, 6, 21, 0, 0, 0, DateTimeKind.Utc),
             intervalMinutes: 1, count: 1440,
@@ -62,7 +62,7 @@ public class PlanetBenchmark
         ["mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"];
 
     [Benchmark(Description = "All planets 1440 records each")]
-    public List<EphemerisRecord> AllPlanets1440()
+    public IEnumerable<EphemerisRecord> AllPlanets1440()
     {
         var all = new List<EphemerisRecord>();
         var start = new DateTime(2024, 6, 21, 0, 0, 0, DateTimeKind.Utc);

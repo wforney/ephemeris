@@ -23,7 +23,7 @@ public static class DE430Importer
     /// <returns>A list of EphemerisRecord parsed from the binary file, with horizontal coordinates computed.</returns>
     public static List<EphemerisRecord> LoadFromBinary(string filePath, string body, double longitude, double latitude)
     {
-        var records = new List<EphemerisRecord>();
+        List<EphemerisRecord> records = [];
 
         using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read);
         using var br = new BinaryReader(fs);

@@ -33,7 +33,7 @@ public static class StarCatalog
         if (!File.Exists(filePath))
             throw new FileNotFoundException($"Star catalog file not found: {filePath}", filePath);
 
-        var stars = new List<FixedStar>();
+        List<FixedStar> stars = [];
 
         foreach (string rawLine in File.ReadLines(filePath))
         {

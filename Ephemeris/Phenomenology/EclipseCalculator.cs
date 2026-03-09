@@ -93,7 +93,7 @@ public static class EclipseCalculator
 
     private static List<EclipseEvent> FindEclipses(int startYear, int endYear, bool lunar)
     {
-        var results = new List<EclipseEvent>();
+        List<EclipseEvent> results = [];
 
         // Starting k: new moon (k integer) or full moon (k + 0.5) near startYear
         double k0 = (startYear - 2000.0) * 12.3685;

@@ -12,9 +12,9 @@ public static class EphemerisExampleRun
         double longitude = -122.4194; // San Francisco
         double latitude = 37.7749;
 
-        List<EphemerisRecord> sunData = EphemerisBatch.GenerateSunSeries(startUtc, intervalMinutes, count, longitude, latitude);
-        List<EphemerisRecord> moonData = EphemerisBatch.GenerateMoonSeries(startUtc, intervalMinutes, count, longitude, latitude);
-        List<EphemerisRecord> marsData = EphemerisBatch.GeneratePlanetSeries("Mars", startUtc, intervalMinutes, count, longitude, latitude);
+        IEnumerable<EphemerisRecord> sunData = EphemerisBatch.GenerateSunSeries(startUtc, intervalMinutes, count, longitude, latitude);
+        IEnumerable<EphemerisRecord> moonData = EphemerisBatch.GenerateMoonSeries(startUtc, intervalMinutes, count, longitude, latitude);
+        IEnumerable<EphemerisRecord> marsData = EphemerisBatch.GeneratePlanetSeries("Mars", startUtc, intervalMinutes, count, longitude, latitude);
 
         var allData = sunData.Concat(moonData).Concat(marsData).ToList();
 

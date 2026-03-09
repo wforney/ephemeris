@@ -49,7 +49,7 @@ public record FixedStar(
         // Elapsed years since J2000.0 (JD 2451545.0).
         double dtYears = (julianDay - 2451545.0) / 365.25;
 
-        double decRad = DeclinationJ2000 * Math.PI / 180.0;
+        double decRad = double.DegreesToRadians(DeclinationJ2000);
 
         // pm_ra in the catalog is already μα·cos(δ) in mas/yr.
         // Convert to degrees/yr and divide by cos(δ) to get Δα in degrees/yr.
