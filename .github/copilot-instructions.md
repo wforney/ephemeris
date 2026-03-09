@@ -1,4 +1,4 @@
-<!-- Updated: 2026-03-09 04:03 UTC -->
+<!-- Updated: 2026-03-09 04:06 UTC -->
 # Copilot Instructions
 
 ## Session Checkpoints and Evolution
@@ -47,6 +47,22 @@ Closes #42
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
 ```
+
+## Agents
+
+Reusable prompt files in `.github/prompts/`. Invoke via `/implement-calculation`, `/write-tests`, etc. in Copilot Chat, or assign to an issue via the GitHub Copilot coding agent.
+
+| Agent | Model tier | Use for |
+|-------|------------|---------|
+| `implement-calculation` | opus | New astronomical calculations — fetches reference values, enforces static/pure pattern, verifies against JPL Horizons |
+| `write-tests` | sonnet | TUnit tests with external reference values, edge cases, round-trip checks |
+| `add-xml-docs` | haiku | Eliminate all CS1591 warnings; consistent domain terminology |
+| `implement-spice` | opus | Implement `ISpaceKernelProvider`, `ITimeConverter`, `IStateVectorProvider` stubs via SpiceSharp-Parser |
+| `review-pr` | opus | PR review focused on astronomical correctness, algorithm accuracy, convention adherence |
+| `refactor` | sonnet | Internal restructuring — preserves all public API contracts and angle conventions |
+| `evolve` | sonnet | Maintain and evolve instructions, MCP config, workflows, and prompt files over time |
+
+When creating a new agent: add a row here, pick the lowest model tier sufficient for the task, and follow the `<!-- Updated: -->` + frontmatter schema in the existing prompts.
 
 ## Model Selection
 
