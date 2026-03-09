@@ -1,4 +1,5 @@
-﻿using Ephemeris.Chronology;
+﻿// Updated: 2026-05-29
+using Ephemeris.Chronology;
 
 namespace Ephemeris.Geometry;
 
@@ -33,8 +34,8 @@ public static class ObserverGeometry
     /// <param name="longitude">Observer longitude in degrees (east positive).</param>
     /// <param name="latitude">Observer latitude in degrees (north positive).</param>
     /// <param name="applyRefraction">If <see langword="true"/> (default), applies Bennett's atmospheric refraction correction.</param>
-    /// <returns>A tuple of (Azimuth, Altitude) in degrees, where Azimuth is [0, 360) measured from North clockwise, and Altitude is [-90, 90].</returns>
-    public static (double Azimuth, double Altitude) EquatorialToHorizontal(double RA, double Dec, double jd, double longitude, double latitude, bool applyRefraction = true)
+    /// <returns>A <see cref="HorizontalCoordinates"/> where Azimuth is [0, 360) measured from North clockwise, and Altitude is [-90, 90], in degrees.</returns>
+    public static HorizontalCoordinates EquatorialToHorizontal(double RA, double Dec, double jd, double longitude, double latitude, bool applyRefraction = true)
     {
         double LST = TimeUtils.GMST(jd) + longitude;
         LST = TimeUtils.NormalizeDegrees(LST);
@@ -57,6 +58,6 @@ public static class ObserverGeometry
         if (applyRefraction)
             altDeg = ApplyRefraction(altDeg);
 
-        return (TimeUtils.NormalizeDegrees(TimeUtils.ToDegrees(Az)), altDeg);
+        return new HorizontalCoordinates(TimeUtils.NormalizeDegrees(TimeUtils.ToDegrees(Az)), altDeg);
     }
 }

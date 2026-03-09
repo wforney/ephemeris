@@ -1,3 +1,6 @@
+// Updated: 2026-05-29
+using Ephemeris.Geometry;
+
 namespace Ephemeris.Geodesy;
 
 /// <summary>
@@ -47,8 +50,8 @@ public static class PrecessionCalculator
     /// <param name="ra2000">Right ascension at J2000.0 in degrees.</param>
     /// <param name="dec2000">Declination at J2000.0 in degrees.</param>
     /// <param name="T">Julian centuries from J2000.0 to the target epoch.</param>
-    /// <returns>Precessed (RA, Dec) in degrees at the target epoch.</returns>
-    public static (double RA, double Dec) PrecessFromJ2000(double ra2000, double dec2000, double T)
+    /// <returns>Precessed <see cref="EquatorialCoordinates"/> in degrees at the target epoch.</returns>
+    public static EquatorialCoordinates PrecessFromJ2000(double ra2000, double dec2000, double T)
     {
         (double zetaA, double zA, double thetaA) = PrecessionAngles(0.0, T);
 
@@ -68,6 +71,6 @@ public static class PrecessionCalculator
                                 Ephemeris.Chronology.TimeUtils.ToDegrees(Math.Atan2(A, B)) + zA);
         double decPrecessed = Ephemeris.Chronology.TimeUtils.ToDegrees(Math.Asin(C));
 
-        return (raPrecessed, decPrecessed);
+        return new EquatorialCoordinates(raPrecessed, decPrecessed);
     }
 }

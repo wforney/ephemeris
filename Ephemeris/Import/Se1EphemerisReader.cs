@@ -1,4 +1,6 @@
-// Updated: 2026-03-09
+// Updated: 2026-05-29
+using Ephemeris.Geometry;
+
 namespace Ephemeris.Import;
 
 /// <summary>
@@ -164,10 +166,10 @@ public sealed class Se1EphemerisReader : IDisposable
     /// barycentric Sun (computed as EMB − heliocentric-Earth).
     /// </param>
     /// <param name="julianDay">Target Julian Day (ET / TT).</param>
-    /// <returns>Position vector (X, Y, Z) in AU, J2000 equatorial (ICRS).</returns>
+    /// <returns>Position vector as <see cref="CartesianPosition"/> in AU, J2000 equatorial (ICRS).</returns>
     /// <exception cref="ArgumentException">When the SEI ID is not in this file.</exception>
     /// <exception cref="ArgumentOutOfRangeException">When <paramref name="julianDay"/> is outside the file range.</exception>
-    public (double X, double Y, double Z) GetBarycentricPosition(int seiId, double julianDay)
+    public CartesianPosition GetBarycentricPosition(int seiId, double julianDay)
     {
         if (seiId == SeiSunBary)
             return ComputeBarycentricSun(julianDay);
@@ -181,13 +183,13 @@ public sealed class Se1EphemerisReader : IDisposable
     /// </summary>
     /// <param name="seiId">SEI body ID (not EMB itself; use <see cref="GetBarycentricPosition"/> for EMB).</param>
     /// <param name="julianDay">Target Julian Day (ET / TT).</param>
-    /// <returns>Geocentric position vector (X, Y, Z) in AU, J2000 equatorial (ICRS).</returns>
-    public (double X, double Y, double Z) GetGeocentricPosition(int seiId, double julianDay)
+    /// <returns>Geocentric position vector as <see cref="CartesianPosition"/> in AU, J2000 equatorial (ICRS).</returns>
+    public CartesianPosition GetGeocentricPosition(int seiId, double julianDay)
     {
-        (double px, double py, double pz) = GetBarycentricPosition(seiId, julianDay);
-        (double ex, double ey, double ez) = EvaluateBody(SeiEmb, julianDay);
+        var p = GetBarycentricPosition(seiId, julianDay);
+        var e = EvaluateBody(SeiEmb, julianDay);
 
-        return (px - ex, py - ey, pz - ez);
+        return new CartesianPosition(p.X - e.X, p.Y - e.Y, p.Z - e.Z);
     }
 
     /// <summary>
@@ -197,13 +199,13 @@ public sealed class Se1EphemerisReader : IDisposable
     /// <param name="x">X component in AU.</param>
     /// <param name="y">Y component in AU.</param>
     /// <param name="z">Z component in AU.</param>
-    /// <returns>(RA in [0,360), Dec in [−90,90], distance in AU).</returns>
-    public static (double Ra, double Dec, double DistanceAu) CartesianToRaDec(double x, double y, double z)
+    /// <returns>A tuple of (<see cref="EquatorialCoordinates"/> with RA in [0,360) and Dec in [−90,90]) and distance in AU.</returns>
+    public static (EquatorialCoordinates Coordinates, double DistanceAu) CartesianToRaDec(double x, double y, double z)
     {
         double r   = Math.Sqrt(x * x + y * y + z * z);
         double ra  = (Math.Atan2(y, x) * 180.0 / Math.PI + 360.0) % 360.0;
         double dec = (r > 0) ? Math.Asin(z / r) * 180.0 / Math.PI : 0.0;
-        return (ra, dec, r);
+        return (new EquatorialCoordinates(ra, dec), r);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -308,7 +310,7 @@ public sealed class Se1EphemerisReader : IDisposable
     /// Evaluates the Chebyshev series for a body at the given Julian Day and
     /// returns its J2000-equatorial Cartesian position in AU.
     /// </summary>
-    private (double X, double Y, double Z) EvaluateBody(int seiId, double julianDay)
+    private CartesianPosition EvaluateBody(int seiId, double julianDay)
     {
         if (!_bodies.TryGetValue(seiId, out BodyMeta? meta))
             throw new ArgumentException(
@@ -356,7 +358,7 @@ public sealed class Se1EphemerisReader : IDisposable
         double y = EvalChebyshev(t, rotatedCoeffs[1], ncoe);
         double z = EvalChebyshev(t, rotatedCoeffs[2], ncoe);
 
-        return (x, y, z);
+        return new CartesianPosition(x, y, z);
     }
 
     /// <summary>
@@ -367,11 +369,11 @@ public sealed class Se1EphemerisReader : IDisposable
     /// stores the HELIOCENTRIC Earth, not the barycentric Sun. The true barycentric Sun
     /// is derived by: BarycentricSun = EMB − HelioCentricEarth.
     /// </remarks>
-    private (double X, double Y, double Z) ComputeBarycentricSun(double julianDay)
+    private CartesianPosition ComputeBarycentricSun(double julianDay)
     {
-        (double ex, double ey, double ez) = EvaluateBody(SeiEmb, julianDay);
-        (double hx, double hy, double hz) = EvaluateBody(SeiSunBary, julianDay);
-        return (ex - hx, ey - hy, ez - hz);
+        var e = EvaluateBody(SeiEmb, julianDay);
+        var h = EvaluateBody(SeiSunBary, julianDay);
+        return new CartesianPosition(e.X - h.X, e.Y - h.Y, e.Z - h.Z);
     }
 
     // ═══════════════════════════════════════════════════════════════════════

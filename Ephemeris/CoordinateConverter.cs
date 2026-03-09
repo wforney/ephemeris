@@ -1,4 +1,6 @@
-﻿using Ephemeris.Chronology;
+﻿// Updated: 2026-05-29
+using Ephemeris.Chronology;
+using Ephemeris.Geometry;
 
 namespace Ephemeris;
 
@@ -13,8 +15,8 @@ public static class CoordinateConverter
     /// <param name="lon">Ecliptic longitude in degrees [0, 360).</param>
     /// <param name="lat">Ecliptic latitude in degrees [-90, 90].</param>
     /// <param name="T">Julian centuries since J2000.0.</param>
-    /// <returns>A tuple of (RA, Dec) in degrees.</returns>
-    public static (double RA, double Dec) EclipticToEquatorial(double lon, double lat, double T)
+    /// <returns>An <see cref="EquatorialCoordinates"/> of (RA, Dec) in degrees.</returns>
+    public static EquatorialCoordinates EclipticToEquatorial(double lon, double lat, double T)
     {
         double eps = 23.439291 - (0.0130042 * T);
         double lon_rad = TimeUtils.ToRadians(lon);
@@ -28,7 +30,7 @@ public static class CoordinateConverter
         double RA = TimeUtils.NormalizeDegrees(TimeUtils.ToDegrees(Math.Atan2(y, x)));
         double Dec = TimeUtils.ToDegrees(Math.Asin(z));
 
-        return (RA, Dec);
+        return new EquatorialCoordinates(RA, Dec);
     }
 
     /// <summary>
@@ -37,8 +39,8 @@ public static class CoordinateConverter
     /// <param name="RA">Right ascension in degrees [0, 360).</param>
     /// <param name="Dec">Declination in degrees [-90, 90].</param>
     /// <param name="T">Julian centuries since J2000.0.</param>
-    /// <returns>A tuple of (longitude, latitude) in degrees.</returns>
-    public static (double lon, double lat) EquatorialToEcliptic(double RA, double Dec, double T)
+    /// <returns>An <see cref="EclipticCoordinates"/> of (Longitude, Latitude) in degrees.</returns>
+    public static EclipticCoordinates EquatorialToEcliptic(double RA, double Dec, double T)
     {
         double eps = 23.439291 - (0.0130042 * T);
         double RA_rad = TimeUtils.ToRadians(RA);
@@ -56,7 +58,7 @@ public static class CoordinateConverter
         double lon = TimeUtils.NormalizeDegrees(TimeUtils.ToDegrees(Math.Atan2(ye, xe)));
         double lat = TimeUtils.ToDegrees(Math.Asin(ze));
 
-        return (lon, lat);
+        return new EclipticCoordinates(lon, lat);
     }
 
     /// <summary>

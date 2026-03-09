@@ -106,7 +106,9 @@ public class Se1EphemerisReaderTests
 
         using var reader = new Se1EphemerisReader(SeFile);
         var (x, y, z) = reader.GetGeocentricPosition(Se1EphemerisReader.SeiJupiter, JdJ2000);
-        var (ra, dec, dist) = Se1EphemerisReader.CartesianToRaDec(x, y, z);
+        var (coords, dist) = Se1EphemerisReader.CartesianToRaDec(x, y, z);
+        double ra = coords.RightAscension;
+        double dec = coords.Declination;
 
         await Assert.That(ra).IsGreaterThanOrEqualTo(0.0);
         await Assert.That(ra).IsLessThan(360.0);
@@ -126,7 +128,8 @@ public class Se1EphemerisReaderTests
 
         using var reader = new Se1EphemerisReader(SeFile);
         var (x, y, z) = reader.GetGeocentricPosition(Se1EphemerisReader.SeiJupiter, JdJ2000);
-        var (ra, _, _) = Se1EphemerisReader.CartesianToRaDec(x, y, z);
+        var (coords2, _) = Se1EphemerisReader.CartesianToRaDec(x, y, z);
+        double ra = coords2.RightAscension;
 
         // Verified reference value: RA ≈ 23.9° at JD 2451545.0
         await Assert.That(ra).IsGreaterThan(21.0);
@@ -157,26 +160,26 @@ public class Se1EphemerisReaderTests
     [Test]
     public async Task CartesianToRaDec_XAxisPoint_GivesRa0Dec0()
     {
-        var (ra, dec, dist) = Se1EphemerisReader.CartesianToRaDec(1.0, 0.0, 0.0);
-        await Assert.That(ra).IsEqualTo(0.0).Within(1e-10);
-        await Assert.That(dec).IsEqualTo(0.0).Within(1e-10);
+        var (coords, dist) = Se1EphemerisReader.CartesianToRaDec(1.0, 0.0, 0.0);
+        await Assert.That(coords.RightAscension).IsEqualTo(0.0).Within(1e-10);
+        await Assert.That(coords.Declination).IsEqualTo(0.0).Within(1e-10);
         await Assert.That(dist).IsEqualTo(1.0).Within(1e-10);
     }
 
     [Test]
     public async Task CartesianToRaDec_YAxisPoint_GivesRa90Dec0()
     {
-        var (ra, dec, dist) = Se1EphemerisReader.CartesianToRaDec(0.0, 1.0, 0.0);
-        await Assert.That(ra).IsEqualTo(90.0).Within(1e-10);
-        await Assert.That(dec).IsEqualTo(0.0).Within(1e-10);
+        var (coords, dist) = Se1EphemerisReader.CartesianToRaDec(0.0, 1.0, 0.0);
+        await Assert.That(coords.RightAscension).IsEqualTo(90.0).Within(1e-10);
+        await Assert.That(coords.Declination).IsEqualTo(0.0).Within(1e-10);
         await Assert.That(dist).IsEqualTo(1.0).Within(1e-10);
     }
 
     [Test]
     public async Task CartesianToRaDec_ZAxisPoint_GivesRa0Dec90()
     {
-        var (ra, dec, dist) = Se1EphemerisReader.CartesianToRaDec(0.0, 0.0, 1.0);
-        await Assert.That(dec).IsEqualTo(90.0).Within(1e-6);
+        var (coords, dist) = Se1EphemerisReader.CartesianToRaDec(0.0, 0.0, 1.0);
+        await Assert.That(coords.Declination).IsEqualTo(90.0).Within(1e-6);
         await Assert.That(dist).IsEqualTo(1.0).Within(1e-10);
     }
 }

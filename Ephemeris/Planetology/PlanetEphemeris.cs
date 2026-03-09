@@ -1,4 +1,6 @@
-﻿using Ephemeris.Chronology;
+﻿// Updated: 2026-05-29
+using Ephemeris.Chronology;
+using Ephemeris.Geometry;
 
 namespace Ephemeris.Planetology;
 
@@ -11,15 +13,16 @@ public static class PlanetEphemeris
     /// Calculates a planet's equatorial coordinates using simplified Kepler orbital elements.
     /// </summary>
     /// <param name="T">Julian centuries since J2000.0.</param>
-    /// <param name="N">Longitude of ascending node in degrees.</param>
-    /// <param name="i">Inclination in degrees.</param>
-    /// <param name="w">Argument of perihelion in degrees.</param>
-    /// <param name="a">Semi-major axis in AU.</param>
-    /// <param name="e">Eccentricity.</param>
-    /// <param name="M">Mean anomaly in degrees.</param>
-    /// <returns>A tuple of (RA, Dec) in degrees.</returns>
-    public static (double RA, double Dec) SimplifiedPlanetPosition(double T, double N, double i, double w, double a, double e, double M)
+    /// <param name="elements">Keplerian orbital elements for the planet at epoch T.</param>
+    /// <returns>Equatorial coordinates (RA, Dec) in degrees.</returns>
+    public static EquatorialCoordinates SimplifiedPlanetPosition(double T, OrbitalElements elements)
     {
+        double N = elements.LongitudeAscendingNode;
+        double i = elements.Inclination;
+        double w = elements.ArgumentOfPerihelion;
+        double a = elements.SemiMajorAxisAu;
+        double e = elements.Eccentricity;
+        double M = elements.MeanAnomaly;
         M = TimeUtils.NormalizeDegrees(M);
         double E = SolveKepler(TimeUtils.ToRadians(M), e);
 
@@ -47,7 +50,7 @@ public static class PlanetEphemeris
         double RA = TimeUtils.NormalizeDegrees(TimeUtils.ToDegrees(Math.Atan2(y, x)));
         double Dec = TimeUtils.ToDegrees(Math.Asin(z));
 
-        return (RA, Dec);
+        return new EquatorialCoordinates(RA, Dec);
     }
 
     /// <summary>

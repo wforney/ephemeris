@@ -1,5 +1,7 @@
+// Updated: 2026-05-29
 using Ephemeris;
 using Ephemeris.Chronology;
+using Ephemeris.Geometry;
 using Ephemeris.Planetology;
 using TUnit;
 
@@ -12,27 +14,27 @@ namespace Ephemeris.Tests;
 /// </summary>
 public class PlanetEphemerisTests
 {
-    private static (double RA, double Dec) GetPlanet(string planet, DateTime utc)
+    private static EquatorialCoordinates GetPlanet(string planet, DateTime utc)
     {
         double jd = TimeZoneUtils.ToJulianDay(utc);
         double T  = TimeUtils.JulianCentury(jd);
         return planet.ToLowerInvariant() switch
         {
-            "mercury" => PlanetEphemeris.SimplifiedPlanetPosition(T,
+            "mercury" => PlanetEphemeris.SimplifiedPlanetPosition(T, new OrbitalElements(
                 48.3313 + (3.24587E-5 * T), 7.0047 + (5.00E-8 * T), 29.1241 + (1.01444E-5 * T),
-                0.387098, 0.205635 + (5.59E-10 * T), 168.6562 + (4.0923344368 * T * 36525)),
-            "venus"   => PlanetEphemeris.SimplifiedPlanetPosition(T,
+                0.387098, 0.205635 + (5.59E-10 * T), 168.6562 + (4.0923344368 * T * 36525))),
+            "venus"   => PlanetEphemeris.SimplifiedPlanetPosition(T, new OrbitalElements(
                 76.6799 + (2.46590E-5 * T), 3.3946 + (2.75E-8 * T), 54.8910 + (1.38374E-5 * T),
-                0.723330, 0.006773 - (1.302E-9 * T), 48.0052 + (1.6021302244 * T * 36525)),
-            "mars"    => PlanetEphemeris.SimplifiedPlanetPosition(T,
+                0.723330, 0.006773 - (1.302E-9 * T), 48.0052 + (1.6021302244 * T * 36525))),
+            "mars"    => PlanetEphemeris.SimplifiedPlanetPosition(T, new OrbitalElements(
                 49.5574 + (2.11081E-5 * T), 1.8497 - (1.78E-8 * T), 286.5016 + (2.92961E-5 * T),
-                1.523688, 0.093405 + (2.516E-9 * T), 18.6021 + (0.5240207766 * T * 36525)),
-            "jupiter" => PlanetEphemeris.SimplifiedPlanetPosition(T,
+                1.523688, 0.093405 + (2.516E-9 * T), 18.6021 + (0.5240207766 * T * 36525))),
+            "jupiter" => PlanetEphemeris.SimplifiedPlanetPosition(T, new OrbitalElements(
                 100.4542 + (2.76854E-5 * T), 1.3030 - (1.557E-7 * T), 273.8777 + (1.64505E-5 * T),
-                5.20256, 0.048498 + (4.469E-9 * T), 19.8950 + (0.0830853001 * T * 36525)),
-            "saturn"  => PlanetEphemeris.SimplifiedPlanetPosition(T,
+                5.20256, 0.048498 + (4.469E-9 * T), 19.8950 + (0.0830853001 * T * 36525))),
+            "saturn"  => PlanetEphemeris.SimplifiedPlanetPosition(T, new OrbitalElements(
                 113.6634 + (2.38980E-5 * T), 2.4886 - (1.081E-7 * T), 339.3939 + (2.97661E-5 * T),
-                9.55475, 0.055546 - (9.499E-9 * T), 316.9670 + (0.0334442282 * T * 36525)),
+                9.55475, 0.055546 - (9.499E-9 * T), 316.9670 + (0.0334442282 * T * 36525))),
             _ => throw new ArgumentException($"Unknown: {planet}")
         };
     }

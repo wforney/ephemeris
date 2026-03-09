@@ -1,4 +1,6 @@
-// Updated: 2026-03-09
+// Updated: 2026-05-29
+using Ephemeris.Geometry;
+
 namespace Ephemeris.Stellarography;
 
 /// <summary>
@@ -39,11 +41,10 @@ public record FixedStar(
 
     /// <summary>
     /// Applies proper-motion correction to this star's position for the given Julian Day.
-    /// The returned tuple is (RA_degrees, Dec_degrees) at the requested epoch.
     /// </summary>
     /// <param name="julianDay">Target Julian Day (ET/TT).</param>
-    /// <returns>Corrected (RA, Dec) in decimal degrees.</returns>
-    public (double Ra, double Dec) ApplyProperMotion(double julianDay)
+    /// <returns>Corrected <see cref="EquatorialCoordinates"/> in decimal degrees.</returns>
+    public EquatorialCoordinates ApplyProperMotion(double julianDay)
     {
         // Elapsed years since J2000.0 (JD 2451545.0).
         double dtYears = (julianDay - 2451545.0) / 365.25;
@@ -64,6 +65,6 @@ public record FixedStar(
         double ra  = (RightAscensionJ2000 + raShift + 360.0) % 360.0;
         double dec = Math.Clamp(DeclinationJ2000 + decShift, -90.0, 90.0);
 
-        return (ra, dec);
+        return new EquatorialCoordinates(ra, dec);
     }
 }
