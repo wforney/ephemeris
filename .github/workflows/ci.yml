@@ -36,7 +36,7 @@ jobs:
 
       - name: Test with coverage
         run: >
-          dotnet test Ephemeris.Tests/Ephemeris.Tests/Ephemeris.Tests.csproj
+          dotnet test --project Ephemeris.Tests/Ephemeris.Tests/Ephemeris.Tests.csproj
           --no-build --configuration Release --log-level Information
           --coverage --coverage-output coverage.cobertura.xml --coverage-output-format cobertura
 
