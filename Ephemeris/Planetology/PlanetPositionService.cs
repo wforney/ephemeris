@@ -1,4 +1,4 @@
-﻿// Updated: 2026-05-29
+﻿// Updated: 2026-07-14
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 
@@ -47,8 +47,8 @@ public static class PlanetPositionService
             _ => throw new ArgumentException("Unknown planet name", nameof(planet))
         };
 
-        var eq = PlanetEphemeris.SimplifiedPlanetPosition(T, elements);
-        var hz = ObserverGeometry.EquatorialToHorizontal(eq.RightAscension, eq.Declination, jd, longitude, latitude);
-        return new CelestialObservation(eq.RightAscension, eq.Declination, hz.Azimuth, hz.Altitude);
+        var equatorialPos = PlanetEphemeris.SimplifiedPlanetPosition(T, elements);
+        var horizontalPos = ObserverGeometry.EquatorialToHorizontal(equatorialPos.RightAscension, equatorialPos.Declination, jd, longitude, latitude);
+        return new CelestialObservation(equatorialPos.RightAscension, equatorialPos.Declination, horizontalPos.Azimuth, horizontalPos.Altitude);
     }
 }

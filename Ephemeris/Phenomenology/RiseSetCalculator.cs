@@ -1,4 +1,4 @@
-// Updated: 2026-05-29
+// Updated: 2026-03-09
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 using Ephemeris.Planetology;
@@ -192,13 +192,13 @@ public static class RiseSetCalculator
             double n = m + (jd0 - jd0);   // n = 0 offset; Meeus uses (JD0−2451545)/... here
             double ra  = InterpolateDelta(ra1, ra2, ra3, m);
             double dec = InterpolateDelta(dec1, dec2, dec3, m);
-            double H   = TimeUtils.NormalizeDegrees(theta - longitude - ra);
+            double H   = TimeUtils.NormalizeDegrees(theta - longitude - ra); // local hour angle (deg)
             if (H > 180) H -= 360;
             double latRad = TimeUtils.ToRadians(latitude);
             double decRad = TimeUtils.ToRadians(dec);
             double hRad   = TimeUtils.ToRadians(H);
             double altitude = TimeUtils.ToDegrees(Math.Asin((Math.Sin(latRad) * Math.Sin(decRad)) + (Math.Cos(latRad) * Math.Cos(decRad) * Math.Cos(hRad))));
-            double dm = (altitude - h0) / (360.0 * Math.Cos(decRad) * Math.Cos(latRad) * Math.Sin(hRad));
+            double dm = (altitude - h0) / (360.0 * Math.Cos(decRad) * Math.Cos(latRad) * Math.Sin(hRad)); // altitude correction (fraction of day)
             m = NormalizeFraction(m + dm);
         }
         return m;
@@ -216,7 +216,7 @@ public static class RiseSetCalculator
         {
             double theta = TimeUtils.NormalizeDegrees(theta0 + (360.985647 * m));
             double ra  = InterpolateDelta(ra1, ra2, ra3, m);
-            double H   = TimeUtils.NormalizeDegrees(theta - longitude - ra);
+            double H   = TimeUtils.NormalizeDegrees(theta - longitude - ra); // local hour angle (deg)
             if (H > 180) H -= 360;
             m = NormalizeFraction(m - (H / 360.0));
         }
@@ -225,12 +225,12 @@ public static class RiseSetCalculator
 
     private static double InterpolateDelta(double y1, double y2, double y3, double n)
     {
-        double a = y2 - y1;
-        double b = y3 - y2;
+        double a = y2 - y1; // first finite difference
+        double b = y3 - y2; // second finite difference
         // Handle RA wrap-around
         if (Math.Abs(a) > 180) a = a > 0 ? a - 360 : a + 360;
         if (Math.Abs(b) > 180) b = b > 0 ? b - 360 : b + 360;
-        double c = b - a;
+        double c = b - a; // second-order difference
         return y2 + ((n * (a + b + (n * c))) / 2.0);
     }
 

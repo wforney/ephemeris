@@ -1,4 +1,5 @@
-﻿using Ephemeris.Chronology;
+// Updated: 2026-03-09
+using Ephemeris.Chronology;
 using Ephemeris.Geodesy;
 
 namespace Ephemeris.Heliology;
@@ -35,13 +36,13 @@ public static class SunEphemeris
         double sunLon = TimeUtils.NormalizeDegrees(L0 + C);
 
         // Earth–Sun distance (radius vector, AU)
-        double e = 0.016708634 - (0.000042037 * T) - (0.0000001267 * T * T);
+        double e = 0.016708634 - (0.000042037 * T) - (0.0000001267 * T * T); // orbital eccentricity
         double v = sunLon - (282.93768 + (1.7195 * T));   // approx true anomaly
         double vRad = TimeUtils.ToRadians(v);
         double R = 1.000001018 * (1.0 - (e * e)) / (1.0 + (e * Math.Cos(vRad)));
 
         // Apparent longitude: correct for nutation and aberration
-        double Om = TimeUtils.NormalizeDegrees(125.04 - (1934.136 * T));
+        double Om = TimeUtils.NormalizeDegrees(125.04 - (1934.136 * T)); // Ω: ascending node of Moon's orbit (deg)
         double omRad = TimeUtils.ToRadians(Om);
         (double deltaPsi, _) = NutationCalculator.Calculate(T);
         double appLon = sunLon + deltaPsi - 0.00569 - (0.00478 * Math.Sin(omRad));

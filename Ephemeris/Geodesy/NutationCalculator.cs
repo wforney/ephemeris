@@ -1,3 +1,4 @@
+// Updated: 2026-03-09
 namespace Ephemeris.Geodesy;
 
 /// <summary>
@@ -77,11 +78,11 @@ public static class NutationCalculator
     public static (double DeltaPsi, double DeltaEpsilon) Calculate(double T)
     {
         // Fundamental arguments (degrees)
-        double l  = 134.96298  + (477198.867398 * T) + (0.0086972 * T * T);
-        double lp = 357.52772  + ( 35999.050340 * T) - (0.0001603 * T * T);
-        double F  =  93.27191  + (483202.017538 * T) - (0.0036825 * T * T);
-        double D  = 297.85036  + (445267.111480 * T) - (0.0019142 * T * T);
-        double Om = 125.04452  - (   1934.136261 * T) + (0.0020708 * T * T);
+        double l  = 134.96298  + (477198.867398 * T) + (0.0086972 * T * T); // l: Moon's mean anomaly (deg)
+        double lp = 357.52772  + ( 35999.050340 * T) - (0.0001603 * T * T); // l': Sun's mean anomaly (deg)
+        double F  =  93.27191  + (483202.017538 * T) - (0.0036825 * T * T); // F: Moon's argument of latitude (deg)
+        double D  = 297.85036  + (445267.111480 * T) - (0.0019142 * T * T); // D: Moon's mean elongation (deg)
+        double Om = 125.04452  - (   1934.136261 * T) + (0.0020708 * T * T); // Ω: longitude of Moon's ascending node (deg)
 
         double lRad  = Ephemeris.Chronology.TimeUtils.ToRadians(l);
         double lpRad = Ephemeris.Chronology.TimeUtils.ToRadians(lp);

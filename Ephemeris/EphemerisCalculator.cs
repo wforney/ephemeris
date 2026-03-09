@@ -1,4 +1,4 @@
-﻿// Updated: 2026-03-09
+﻿// Updated: 2026-07-14
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 using Ephemeris.Heliology;
@@ -27,10 +27,10 @@ public static class EphemerisCalculator
         double jd = TimeUtils.JulianDay(year, month, day, hour);
         double T = TimeUtils.JulianCentury(jd);
         (double RA, double Dec, double _) = MoonEphemeris.GeocentricEquatorialCoordinates(T);
-        var hz = ObserverGeometry.EquatorialToHorizontal(RA, Dec, jd, longitude, latitude);
+        var horizontalPos = ObserverGeometry.EquatorialToHorizontal(RA, Dec, jd, longitude, latitude);
         double phaseAngle = MoonEphemeris.PhaseAngle(T);
         double illumination = MoonEphemeris.Illumination(phaseAngle);
-        return new CelestialObservation(RA, Dec, hz.Azimuth, hz.Altitude, illumination);
+        return new CelestialObservation(RA, Dec, horizontalPos.Azimuth, horizontalPos.Altitude, illumination);
     }
 
     /// <summary>
@@ -48,8 +48,8 @@ public static class EphemerisCalculator
         double jd = TimeUtils.JulianDay(year, month, day, hour);
         double T = TimeUtils.JulianCentury(jd);
         (double RA, double Dec, double _) = SunEphemeris.ApparentEquatorialCoordinates(T);
-        var hz = ObserverGeometry.EquatorialToHorizontal(RA, Dec, jd, longitude, latitude);
-        return new CelestialObservation(RA, Dec, hz.Azimuth, hz.Altitude);
+        var horizontalPos = ObserverGeometry.EquatorialToHorizontal(RA, Dec, jd, longitude, latitude);
+        return new CelestialObservation(RA, Dec, horizontalPos.Azimuth, horizontalPos.Altitude);
     }
 
     /// <summary>
@@ -68,9 +68,9 @@ public static class EphemerisCalculator
         double T = TimeUtils.JulianCentury(jd);
 
         var (RA, Dec, _) = SunEphemeris.ApparentEquatorialCoordinates(T);
-        var hz = ObserverGeometry.EquatorialToHorizontal(RA, Dec, jd, longitude, latitude);
+        var horizontalPos = ObserverGeometry.EquatorialToHorizontal(RA, Dec, jd, longitude, latitude);
 
-        return new CelestialObservation(RA, Dec, hz.Azimuth, hz.Altitude);
+        return new CelestialObservation(RA, Dec, horizontalPos.Azimuth, horizontalPos.Altitude);
     }
 
     /// <summary>
@@ -89,11 +89,11 @@ public static class EphemerisCalculator
         double T = TimeUtils.JulianCentury(jd);
 
         var (RA, Dec, _) = MoonEphemeris.GeocentricEquatorialCoordinates(T);
-        var hz = ObserverGeometry.EquatorialToHorizontal(RA, Dec, jd, longitude, latitude);
+        var horizontalPos = ObserverGeometry.EquatorialToHorizontal(RA, Dec, jd, longitude, latitude);
         double phaseAngle = MoonEphemeris.PhaseAngle(T);
         double illumination = MoonEphemeris.Illumination(phaseAngle);
 
-        return new CelestialObservation(RA, Dec, hz.Azimuth, hz.Altitude, illumination);
+        return new CelestialObservation(RA, Dec, horizontalPos.Azimuth, horizontalPos.Altitude, illumination);
     }
 
     /// <summary>
@@ -132,9 +132,9 @@ public static class EphemerisCalculator
             _ => throw new ArgumentException("Unknown planet name", nameof(planet))
         };
 
-        var eq = PlanetEphemeris.SimplifiedPlanetPosition(T, elements);
-        var hz = ObserverGeometry.EquatorialToHorizontal(eq.RightAscension, eq.Declination, jd, longitude, latitude);
-        return new CelestialObservation(eq.RightAscension, eq.Declination, hz.Azimuth, hz.Altitude);
+        var equatorialPos = PlanetEphemeris.SimplifiedPlanetPosition(T, elements);
+        var horizontalPos = ObserverGeometry.EquatorialToHorizontal(equatorialPos.RightAscension, equatorialPos.Declination, jd, longitude, latitude);
+        return new CelestialObservation(equatorialPos.RightAscension, equatorialPos.Declination, horizontalPos.Azimuth, horizontalPos.Altitude);
     }
 
     /// <summary>

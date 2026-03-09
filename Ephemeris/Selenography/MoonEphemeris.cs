@@ -1,4 +1,5 @@
-﻿using Ephemeris.Chronology;
+// Updated: 2026-03-09
+using Ephemeris.Chronology;
 using Ephemeris.Geodesy;
 
 namespace Ephemeris.Selenography;
@@ -120,18 +121,18 @@ public static class MoonEphemeris
     public static (double RA, double Dec, double distanceKm) GeocentricEquatorialCoordinates(double T)
     {
         // Fundamental arguments (Meeus Ch. 47)
-        double Lp = TimeUtils.NormalizeDegrees(218.3164477 + (481267.88123421 * T) - (0.0015786 * T * T) + (T * T * T / 538841.0) - (T * T * T * T / 65194000.0));
-        double D  = TimeUtils.NormalizeDegrees(297.8501921 + (445267.1114034 * T) - (0.0018819 * T * T) + (T * T * T / 545868.0) - (T * T * T * T / 113065000.0));
-        double M  = TimeUtils.NormalizeDegrees(357.5291092 + ( 35999.0502909 * T) - (0.0001536 * T * T) + (T * T * T / 24490000.0));
-        double Mp = TimeUtils.NormalizeDegrees(134.9633964 + (477198.8675055 * T) + (0.0087414 * T * T) + (T * T * T / 69699.0)   - (T * T * T * T / 14712000.0));
-        double F  = TimeUtils.NormalizeDegrees( 93.2720950 + (483202.0175233 * T) - (0.0036539 * T * T) - (T * T * T / 3526000.0) + (T * T * T * T / 863310000.0));
+        double Lp = TimeUtils.NormalizeDegrees(218.3164477 + (481267.88123421 * T) - (0.0015786 * T * T) + (T * T * T / 538841.0) - (T * T * T * T / 65194000.0)); // L': Moon's mean longitude (deg)
+        double D  = TimeUtils.NormalizeDegrees(297.8501921 + (445267.1114034 * T) - (0.0018819 * T * T) + (T * T * T / 545868.0) - (T * T * T * T / 113065000.0)); // D: Moon's mean elongation (deg)
+        double M  = TimeUtils.NormalizeDegrees(357.5291092 + ( 35999.0502909 * T) - (0.0001536 * T * T) + (T * T * T / 24490000.0)); // M: Sun's mean anomaly (deg)
+        double Mp = TimeUtils.NormalizeDegrees(134.9633964 + (477198.8675055 * T) + (0.0087414 * T * T) + (T * T * T / 69699.0)   - (T * T * T * T / 14712000.0)); // M': Moon's mean anomaly (deg)
+        double F  = TimeUtils.NormalizeDegrees( 93.2720950 + (483202.0175233 * T) - (0.0036539 * T * T) - (T * T * T / 3526000.0) + (T * T * T * T / 863310000.0)); // F: Moon's argument of latitude (deg)
 
-        double A1 = TimeUtils.NormalizeDegrees(119.75 + (131.849 * T));
-        double A2 = TimeUtils.NormalizeDegrees( 53.09 + (479264.290 * T));
-        double A3 = TimeUtils.NormalizeDegrees(313.45 + (481266.484 * T));
+        double A1 = TimeUtils.NormalizeDegrees(119.75 + (131.849 * T)); // Venus correction term
+        double A2 = TimeUtils.NormalizeDegrees( 53.09 + (479264.290 * T)); // Jupiter correction term
+        double A3 = TimeUtils.NormalizeDegrees(313.45 + (481266.484 * T)); // flattening correction term
 
-        double e  = 1.0 - (0.002516 * T) - (0.0000074 * T * T);
-        double e2 = e * e;
+        double e  = 1.0 - (0.002516 * T) - (0.0000074 * T * T); // Earth orbital eccentricity correction
+        double e2 = e * e; // e² for second-order M terms
 
         double DRad  = TimeUtils.ToRadians(D);
         double MRad  = TimeUtils.ToRadians(M);
@@ -175,7 +176,7 @@ public static class MoonEphemeris
         double latRad = TimeUtils.ToRadians(moonLat);
         double epsRad = TimeUtils.ToRadians(epsilon);
 
-        double x = Math.Cos(lonRad) * Math.Cos(latRad);
+        double x = Math.Cos(lonRad) * Math.Cos(latRad); // direction cosines
         double y = (Math.Sin(lonRad) * Math.Cos(latRad) * Math.Cos(epsRad)) - (Math.Sin(latRad) * Math.Sin(epsRad));
         double z = (Math.Sin(lonRad) * Math.Cos(latRad) * Math.Sin(epsRad)) + (Math.Sin(latRad) * Math.Cos(epsRad));
 
@@ -192,8 +193,8 @@ public static class MoonEphemeris
     /// <returns>Illumination fraction in [0, 1], where 0 is new moon and 1 is full moon.</returns>
     public static double Illumination(double phaseAngle)
     {
-        double i = TimeUtils.ToRadians(phaseAngle);
-        return (1 + Math.Cos(i)) / 2;
+        double phaseAngleRad = TimeUtils.ToRadians(phaseAngle);
+        return (1 + Math.Cos(phaseAngleRad)) / 2;
     }
 
     /// <summary>
@@ -203,9 +204,9 @@ public static class MoonEphemeris
     /// <returns>The phase angle in degrees.</returns>
     public static double PhaseAngle(double T)
     {
-        double D  = TimeUtils.NormalizeDegrees(297.8501921 + (445267.1114034 * T));
-        double M  = TimeUtils.NormalizeDegrees(357.5291092 + ( 35999.0502909 * T));
-        double Mp = TimeUtils.NormalizeDegrees(134.9633964 + (477198.8675055 * T));
+        double D  = TimeUtils.NormalizeDegrees(297.8501921 + (445267.1114034 * T)); // Moon's mean elongation (deg)
+        double M  = TimeUtils.NormalizeDegrees(357.5291092 + ( 35999.0502909 * T)); // Sun's mean anomaly (deg)
+        double Mp = TimeUtils.NormalizeDegrees(134.9633964 + (477198.8675055 * T)); // Moon's mean anomaly (deg)
         return 180 - D - (6.289 * Math.Sin(TimeUtils.ToRadians(Mp)))
                        + (2.100 * Math.Sin(TimeUtils.ToRadians(M)))
                        - (1.274 * Math.Sin(TimeUtils.ToRadians((2 * D) - Mp)));

@@ -1,4 +1,5 @@
-﻿namespace Ephemeris.Chronology;
+// Updated: 2026-03-09
+namespace Ephemeris.Chronology;
 
 /// <summary>
 /// Provides utilities for converting between Julian Day numbers and DateTime, and for timezone conversions.
@@ -12,21 +13,21 @@ public static class TimeZoneUtils
     /// <returns>The corresponding UTC DateTime.</returns>
     public static DateTime FromJulianDay(double jd)
     {
-        double J = jd + 0.5;
-        int Z = (int)Math.Floor(J);
-        double F = J - Z;
+        double J = jd + 0.5; // shift so integer part = calendar day
+        int Z = (int)Math.Floor(J); // integer day
+        double F = J - Z; // fractional day (time of day)
 
-        int A = Z;
+        int A = Z; // Gregorian calendar adjustment
         if (Z >= 2299161)
         {
             int alpha = (int)((Z - 1867216.25) / 36524.25);
             A = Z + 1 + alpha - (alpha / 4);
         }
 
-        int B = A + 1524;
-        int C = (int)((B - 122.1) / 365.25);
-        int D = (int)(365.25 * C);
-        int E = (int)((B - D) / 30.6001);
+        int B = A + 1524; // Meeus algorithm step
+        int C = (int)((B - 122.1) / 365.25); // approximate year
+        int D = (int)(365.25 * C); // days in years
+        int E = (int)((B - D) / 30.6001); // approximate month
 
         int day = B - D - (int)(30.6001 * E);
         int month = (E < 14) ? E - 1 : E - 13;

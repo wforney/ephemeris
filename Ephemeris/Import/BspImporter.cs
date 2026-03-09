@@ -1,4 +1,4 @@
-﻿// Updated: 2026-05-29
+﻿// Updated: 2026-03-09
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 
@@ -41,21 +41,21 @@ public static class BspImporter
         for (int i = 0; i < count; i++)
         {
             var dt = startUtc.AddMinutes(i * intervalMinutes);
-            double et = kernelDb.ConvertUtcToEphemerisTime(dt);
+            double et = kernelDb.ConvertUtcToEphemerisTime(dt); // SPICE ephemeris time (seconds since J2000.0)
 
             var state = kernelDb.GetPosition(target, et, "J2000", observer);
             var (coords, _) = CartesianToRaDec(state);
 
             double jd = TimeZoneUtils.ToJulianDay(dt);
-            var hz = ObserverGeometry.EquatorialToHorizontal(coords.RightAscension, coords.Declination, jd, longitude, latitude);
+            var horizontalPos = ObserverGeometry.EquatorialToHorizontal(coords.RightAscension, coords.Declination, jd, longitude, latitude);
 
             records.Add(new EphemerisRecord(
                 TimeUtc: dt,
                 Body: target,
                 RightAscension: coords.RightAscension,
                 Declination: coords.Declination,
-                Azimuth: hz.Azimuth,
-                Altitude: hz.Altitude,
+                Azimuth: horizontalPos.Azimuth,
+                Altitude: horizontalPos.Altitude,
                 Illumination: null));
         }
 
@@ -64,8 +64,8 @@ public static class BspImporter
 
     private static (EquatorialCoordinates Coordinates, double DistanceAu) CartesianToRaDec(double[] vec)
     {
-        double x = vec[0], y = vec[1], z = vec[2];
-        double r = Math.Sqrt(x * x + y * y + z * z);
+        double x = vec[0], y = vec[1], z = vec[2]; // ICRF Cartesian position (km)
+        double r = Math.Sqrt(x * x + y * y + z * z); // distance (km)
         double ra = double.RadiansToDegrees(Math.Atan2(y, x));
         if (ra < 0) ra += 360;
         double dec = double.RadiansToDegrees(Math.Asin(z / r));

@@ -1,3 +1,4 @@
+// Updated: 2026-03-09
 using Ephemeris.Chronology;
 using Ephemeris.Heliology;
 using Ephemeris.Selenography;
@@ -113,7 +114,7 @@ public static class EclipseCalculator
     private static EclipseEvent? CheckEclipse(double k, bool lunar)
     {
         // Meeus Ch. 49 — time of new/full moon
-        double T = k / 1236.85;
+        double T = k / 1236.85; // Julian centuries from k (Meeus Ch. 49)
         double T2 = T * T;
         double T3 = T2 * T;
         double T4 = T2 * T2;
@@ -124,17 +125,17 @@ public static class EclipseCalculator
                    - (0.000000150 * T3)
                    + (0.00000000073 * T4);
 
-        double M   = TimeUtils.NormalizeDegrees(2.5534  + (29.10535669 * k) - (0.0000218 * T2) - (0.00000011 * T3));
-        double Mp  = TimeUtils.NormalizeDegrees(201.5643 + (385.81693528 * k) + (0.0107438 * T2) + (0.00001239 * T3) - (0.000000058 * T4));
-        double F   = TimeUtils.NormalizeDegrees(160.7108 + (390.67050274 * k) - (0.0016341 * T2) - (0.00000227 * T3) + (0.000000011 * T4));
-        double Om  = TimeUtils.NormalizeDegrees(124.7746 - (1.5637558 * k) + (0.0020691 * T2) + (0.00000215 * T3));
+        double M   = TimeUtils.NormalizeDegrees(2.5534  + (29.10535669 * k) - (0.0000218 * T2) - (0.00000011 * T3)); // Sun's mean anomaly (deg)
+        double Mp  = TimeUtils.NormalizeDegrees(201.5643 + (385.81693528 * k) + (0.0107438 * T2) + (0.00001239 * T3) - (0.000000058 * T4)); // Moon's mean anomaly (deg)
+        double F   = TimeUtils.NormalizeDegrees(160.7108 + (390.67050274 * k) - (0.0016341 * T2) - (0.00000227 * T3) + (0.000000011 * T4)); // Moon's argument of latitude (deg)
+        double Om  = TimeUtils.NormalizeDegrees(124.7746 - (1.5637558 * k) + (0.0020691 * T2) + (0.00000215 * T3)); // Ω: Moon's ascending node (deg)
 
         // Quick check: if |sin(F)| > 0.36, no eclipse is possible (Moon too far from node)
         double sinF = Math.Sin(TimeUtils.ToRadians(F));
         if (Math.Abs(sinF) > 0.36)
             return null;
 
-        double e = 1.0 - (0.002516 * T) - (0.0000074 * T2);
+        double e = 1.0 - (0.002516 * T) - (0.0000074 * T2); // Earth orbital eccentricity
 
         double MRad  = TimeUtils.ToRadians(M);
         double MpRad = TimeUtils.ToRadians(Mp);

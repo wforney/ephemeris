@@ -1,4 +1,4 @@
-// Updated: 2026-05-29
+// Updated: 2026-03-09
 using Ephemeris.Geometry;
 
 namespace Ephemeris.Geodesy;
@@ -61,7 +61,7 @@ public static class PrecessionCalculator
         double raRad    = Ephemeris.Chronology.TimeUtils.ToRadians(ra2000);
         double decRad   = Ephemeris.Chronology.TimeUtils.ToRadians(dec2000);
 
-        double A = Math.Cos(decRad) * Math.Sin(raRad + zetaRad);
+        double A = Math.Cos(decRad) * Math.Sin(raRad + zetaRad); // precession rotation matrix element
         double B = (Math.Cos(thetaRad) * Math.Cos(decRad) * Math.Cos(raRad + zetaRad))
                  - (Math.Sin(thetaRad) * Math.Sin(decRad));
         double C = (Math.Sin(thetaRad) * Math.Cos(decRad) * Math.Cos(raRad + zetaRad))

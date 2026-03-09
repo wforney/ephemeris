@@ -1,4 +1,4 @@
-﻿// Updated: 2026-05-29
+﻿// Updated: 2026-07-14
 using Ephemeris.Chronology;
 
 namespace Ephemeris.Geometry;
@@ -20,9 +20,9 @@ public static class ObserverGeometry
             return geometricAltitudeDeg;
 
         // Bennett's formula: R in arcminutes, h in degrees
-        double h = geometricAltitudeDeg;
-        double R = 1.0 / Math.Tan(TimeUtils.ToRadians(h + (7.31 / (h + 4.4))));
-        return geometricAltitudeDeg + (R / 60.0);
+        double altitudeDeg = geometricAltitudeDeg;
+        double refractionArcmin = 1.0 / Math.Tan(TimeUtils.ToRadians(altitudeDeg + (7.31 / (altitudeDeg + 4.4))));
+        return geometricAltitudeDeg + (refractionArcmin / 60.0);
     }
 
     /// <summary>
@@ -40,24 +40,24 @@ public static class ObserverGeometry
         double LST = TimeUtils.GMST(jd) + longitude;
         LST = TimeUtils.NormalizeDegrees(LST);
 
-        double H = TimeUtils.NormalizeDegrees(LST - RA);
+        double hourAngle = TimeUtils.NormalizeDegrees(LST - RA);
 
-        double Hrad = TimeUtils.ToRadians(H);
-        double Decrad = TimeUtils.ToRadians(Dec);
-        double Latrad = TimeUtils.ToRadians(latitude);
+        double hourAngleRad = TimeUtils.ToRadians(hourAngle);
+        double declinationRad = TimeUtils.ToRadians(Dec);
+        double latitudeRad = TimeUtils.ToRadians(latitude);
 
-        double Alt = Math.Asin((Math.Sin(Decrad) * Math.Sin(Latrad)) + (Math.Cos(Decrad) * Math.Cos(Latrad) * Math.Cos(Hrad)));
-        double Az = Math.Acos((Math.Sin(Decrad) - (Math.Sin(Alt) * Math.Sin(Latrad))) / (Math.Cos(Alt) * Math.Cos(Latrad)));
+        double altitudeRad = Math.Asin((Math.Sin(declinationRad) * Math.Sin(latitudeRad)) + (Math.Cos(declinationRad) * Math.Cos(latitudeRad) * Math.Cos(hourAngleRad)));
+        double azimuthRad = Math.Acos((Math.Sin(declinationRad) - (Math.Sin(altitudeRad) * Math.Sin(latitudeRad))) / (Math.Cos(altitudeRad) * Math.Cos(latitudeRad)));
 
-        if (Math.Sin(Hrad) > 0)
+        if (Math.Sin(hourAngleRad) > 0)
         {
-            Az = (2 * Math.PI) - Az;
+            azimuthRad = (2 * Math.PI) - azimuthRad;
         }
 
-        double altDeg = TimeUtils.ToDegrees(Alt);
+        double altDeg = TimeUtils.ToDegrees(altitudeRad);
         if (applyRefraction)
             altDeg = ApplyRefraction(altDeg);
 
-        return new HorizontalCoordinates(TimeUtils.NormalizeDegrees(TimeUtils.ToDegrees(Az)), altDeg);
+        return new HorizontalCoordinates(TimeUtils.NormalizeDegrees(TimeUtils.ToDegrees(azimuthRad)), altDeg);
     }
 }

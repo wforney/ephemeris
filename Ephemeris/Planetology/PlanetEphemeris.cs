@@ -1,4 +1,4 @@
-﻿// Updated: 2026-05-29
+﻿// Updated: 2026-03-09
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 
@@ -17,35 +17,35 @@ public static class PlanetEphemeris
     /// <returns>Equatorial coordinates (RA, Dec) in degrees.</returns>
     public static EquatorialCoordinates SimplifiedPlanetPosition(double T, OrbitalElements elements)
     {
-        double N = elements.LongitudeAscendingNode;
-        double i = elements.Inclination;
-        double w = elements.ArgumentOfPerihelion;
-        double a = elements.SemiMajorAxisAu;
-        double e = elements.Eccentricity;
-        double M = elements.MeanAnomaly;
+        double N = elements.LongitudeAscendingNode; // Ω: longitude of ascending node (deg)
+        double i = elements.Inclination; // orbital inclination (deg)
+        double w = elements.ArgumentOfPerihelion; // ω: argument of perihelion (deg)
+        double a = elements.SemiMajorAxisAu; // semi-major axis (AU)
+        double e = elements.Eccentricity; // orbital eccentricity
+        double M = elements.MeanAnomaly; // mean anomaly (deg)
         M = TimeUtils.NormalizeDegrees(M);
-        double E = SolveKepler(TimeUtils.ToRadians(M), e);
+        double E = SolveKepler(TimeUtils.ToRadians(M), e); // eccentric anomaly (rad)
 
-        double xv = Math.Cos(E) - e;
+        double xv = Math.Cos(E) - e; // orbital-plane Cartesian coords
         double yv = Math.Sqrt(1.0 - (e * e)) * Math.Sin(E);
-        double v = TimeUtils.ToDegrees(Math.Atan2(yv, xv));
-        double r = Math.Sqrt((xv * xv) + (yv * yv));
+        double v = TimeUtils.ToDegrees(Math.Atan2(yv, xv)); // true anomaly (deg)
+        double r = Math.Sqrt((xv * xv) + (yv * yv)); // heliocentric distance (AU)
 
-        double xh = r * ((Math.Cos(TimeUtils.ToRadians(N)) * Math.Cos(TimeUtils.ToRadians(v + w))) - (Math.Sin(TimeUtils.ToRadians(N)) * Math.Sin(TimeUtils.ToRadians(v + w)) * Math.Cos(TimeUtils.ToRadians(i))));
+        double xh = r * ((Math.Cos(TimeUtils.ToRadians(N)) * Math.Cos(TimeUtils.ToRadians(v + w))) - (Math.Sin(TimeUtils.ToRadians(N)) * Math.Sin(TimeUtils.ToRadians(v + w)) * Math.Cos(TimeUtils.ToRadians(i)))); // heliocentric ecliptic coords
         double yh = r * ((Math.Sin(TimeUtils.ToRadians(N)) * Math.Cos(TimeUtils.ToRadians(v + w))) + (Math.Cos(TimeUtils.ToRadians(N)) * Math.Sin(TimeUtils.ToRadians(v + w)) * Math.Cos(TimeUtils.ToRadians(i))));
         double zh = r * (Math.Sin(TimeUtils.ToRadians(v + w)) * Math.Sin(TimeUtils.ToRadians(i)));
 
         double lon = TimeUtils.ToDegrees(Math.Atan2(yh, xh));
         double lat = TimeUtils.ToDegrees(Math.Atan2(zh, Math.Sqrt((xh * xh) + (yh * yh))));
 
-        double eps = 23.439291 - (0.0130042 * T);
+        double eclipticObliquity = 23.439291 - (0.0130042 * T);
         double lonRad = TimeUtils.ToRadians(lon);
         double latRad = TimeUtils.ToRadians(lat);
-        double epsRad = TimeUtils.ToRadians(eps);
+        double eclipticObliquityRad = TimeUtils.ToRadians(eclipticObliquity);
 
-        double x = Math.Cos(lonRad) * Math.Cos(latRad);
-        double y = (Math.Sin(lonRad) * Math.Cos(latRad) * Math.Cos(epsRad)) - (Math.Sin(latRad) * Math.Sin(epsRad));
-        double z = (Math.Sin(lonRad) * Math.Cos(latRad) * Math.Sin(epsRad)) + (Math.Sin(latRad) * Math.Cos(epsRad));
+        double x = Math.Cos(lonRad) * Math.Cos(latRad); // direction cosines
+        double y = (Math.Sin(lonRad) * Math.Cos(latRad) * Math.Cos(eclipticObliquityRad)) - (Math.Sin(latRad) * Math.Sin(eclipticObliquityRad));
+        double z = (Math.Sin(lonRad) * Math.Cos(latRad) * Math.Sin(eclipticObliquityRad)) + (Math.Sin(latRad) * Math.Cos(eclipticObliquityRad));
 
         double RA = TimeUtils.NormalizeDegrees(TimeUtils.ToDegrees(Math.Atan2(y, x)));
         double Dec = TimeUtils.ToDegrees(Math.Asin(z));
@@ -61,10 +61,10 @@ public static class PlanetEphemeris
     /// <returns>Eccentric anomaly in radians, converged to within 1×10⁻⁶ radians.</returns>
     public static double SolveKepler(double Mrad, double e)
     {
-        double E = Mrad;
+        double E = Mrad; // eccentric anomaly, initialized to M
         for (int iter = 0; iter < 50; iter++)
         {
-            double dE = (E - (e * Math.Sin(E)) - Mrad) / (1.0 - (e * Math.Cos(E)));
+            double dE = (E - (e * Math.Sin(E)) - Mrad) / (1.0 - (e * Math.Cos(E))); // Newton-Raphson correction
             E -= dE;
             if (Math.Abs(dE) < 1e-6)
                 break;

@@ -1,3 +1,4 @@
+// Updated: 2026-03-09
 using Ephemeris.Chronology;
 
 namespace Ephemeris.Phenomenology;
@@ -71,17 +72,17 @@ public static class SeasonCalculator
     /// <returns>The UTC DateTime of the event, accurate to approximately 1 minute.</returns>
     public static DateTime Calculate(int year, Season season)
     {
-        double Y = (year - 2000.0) / 1000.0;
+        double Y = (year - 2000.0) / 1000.0; // millennia since J2000.0
         var (A, B, C, D, E) = s_meanJde[(int)season];
         double jde0 = A + (B * Y) + (C * Y * Y) + (D * Y * Y * Y) + (E * Y * Y * Y * Y);
 
         double T = (jde0 - 2451545.0) / 36525.0;
-        double W = 35999.373 * T - 2.47;
+        double W = 35999.373 * T - 2.47; // Sun's mean anomaly term (deg)
         double deltaLambda = 1.0 + (0.0334 * Math.Cos(TimeUtils.ToRadians(W)))
-                                  + (0.0007 * Math.Cos(TimeUtils.ToRadians(2 * W)));
+                                  + (0.0007 * Math.Cos(TimeUtils.ToRadians(2 * W))); // correction factor for mean JDE
 
         double S = s_corrections.Sum(c =>
-            c.A * Math.Cos(TimeUtils.ToRadians(c.B + (c.W * T))));
+            c.A * Math.Cos(TimeUtils.ToRadians(c.B + (c.W * T)))); // sum of periodic correction terms
 
         double jde = jde0 + (0.00001 * S / deltaLambda);
 

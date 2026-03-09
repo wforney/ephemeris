@@ -1,4 +1,4 @@
-// Updated: 2026-05-29
+// Updated: 2026-03-09
 using Ephemeris.Geometry;
 
 namespace Ephemeris.Import;
@@ -202,7 +202,7 @@ public sealed class Se1EphemerisReader : IDisposable
     /// <returns>A tuple of (<see cref="EquatorialCoordinates"/> with RA in [0,360) and Dec in [−90,90]) and distance in AU.</returns>
     public static (EquatorialCoordinates Coordinates, double DistanceAu) CartesianToRaDec(double x, double y, double z)
     {
-        double r   = Math.Sqrt(x * x + y * y + z * z);
+        double r   = Math.Sqrt(x * x + y * y + z * z); // distance (AU)
         double ra  = (double.RadiansToDegrees(Math.Atan2(y, x)) + 360.0) % 360.0;
         double dec = (r > 0) ? double.RadiansToDegrees(Math.Asin(z / r)) : 0.0;
         return (new EquatorialCoordinates(ra, dec), r);
@@ -239,7 +239,7 @@ public sealed class Se1EphemerisReader : IDisposable
         // ── Body ID list ──────────────────────────────────────────────────────
         // [144..145] int16: number of bodies; [146..] int16[npl]: SEI IDs
         int npl = ReadInt16(pos);               pos += 2;
-        int[] iplList = new int[npl];
+        var iplList = new int[npl];
         for (int k = 0; k < npl; k++)
         {
             iplList[k] = ReadInt16(pos);
@@ -659,9 +659,9 @@ public sealed class Se1EphemerisReader : IDisposable
         // Each coefficient triple (cx[i], cy[i], cz[i]) is a 3-D vector in the
         // orbital frame.  Multiplying by the rotation matrix gives the same
         // coefficient but in J2000 equatorial coordinates.
-        double[] rx2 = new double[ncoe];
-        double[] ry2 = new double[ncoe];
-        double[] rz2 = new double[ncoe];
+        var rx2 = new double[ncoe];
+        var ry2 = new double[ncoe];
+        var rz2 = new double[ncoe];
 
         for (int i = 0; i < ncoe; i++)
         {
@@ -694,24 +694,24 @@ public sealed class Se1EphemerisReader : IDisposable
     {
         // Clenshaw downward recursion for Chebyshev polynomials.
         // Working variables:
-        //   br   = current accumulator
-        //   brpp = br from two iterations ago
-        //   brp2 = br from one iteration ago (kept for the final subtraction)
-        double x2   = x * 2.0;
-        double br   = 0.0;
-        double brpp = 0.0;
-        double brp2 = 0.0;
+        //   b        = current accumulator
+        //   bPrev    = accumulator from previous iteration, b[j+1]
+        //   bPrevPrev = accumulator from two iterations ago, b[j+2]
+        double x2        = x * 2.0;
+        double b         = 0.0;
+        double bPrev     = 0.0;
+        double bPrevPrev = 0.0;
 
         for (int j = ncf - 1; j >= 0; j--)
         {
-            brp2 = brpp;
-            brpp = br;
-            br   = x2 * brpp - brp2 + coef[j];
+            bPrevPrev = bPrev;
+            bPrev     = b;
+            b         = x2 * bPrev - bPrevPrev + coef[j];
         }
 
-        // Returns (br − brp2) × 0.5, implementing the c[0]/2 normalization
+        // Returns (b − bPrevPrev) × 0.5, implementing the c[0]/2 normalization
         // of the zeroth Chebyshev coefficient.
-        return (br - brp2) * 0.5;
+        return (b - bPrevPrev) * 0.5;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
