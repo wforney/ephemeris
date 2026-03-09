@@ -146,4 +146,160 @@ public static class EphemerisCalculator
     /// <returns>Angular separation in degrees [0, 180].</returns>
     public static double AngularSeparation(double ra1, double dec1, double ra2, double dec2)
         => CoordinateConverter.AngularSeparation(ra1, dec1, ra2, dec2);
+
+    /// <summary>
+    /// Returns the next full moon after the given UTC time.
+    /// Searches forward in 1-hour steps until the phase angle crosses 180°.
+    /// </summary>
+    /// <param name="after">Starting UTC time.</param>
+    /// <returns>Approximate UTC DateTime of the next full moon (within ~30 minutes).</returns>
+    public static DateTime NextFullMoon(DateTime after)
+    {
+        var dt = after;
+        double prevPhase = GetPhase(dt);
+        while (true)
+        {
+            dt = dt.AddHours(1);
+            double phase = GetPhase(dt);
+            // Crossed through 180° (full moon)
+            if (prevPhase < 180 && phase >= 180)
+                return dt.AddMinutes(-30);  // approximate mid-crossing
+            // Handle wrap-around: 360→0 without passing through 180
+            prevPhase = phase;
+        }
+    }
+
+    /// <summary>
+    /// Returns the next new moon after the given UTC time.
+    /// </summary>
+    /// <param name="after">Starting UTC time.</param>
+    /// <returns>Approximate UTC DateTime of the next new moon (within ~30 minutes).</returns>
+    public static DateTime NextNewMoon(DateTime after)
+    {
+        var dt = after.AddHours(1); // skip current instant
+        double prevPhase = GetPhase(dt);
+        while (true)
+        {
+            dt = dt.AddHours(1);
+            double phase = GetPhase(dt);
+            // Crossed through 0° (new moon): detect wrap 350→10 or crossing 0
+            if (prevPhase > 300 && phase < 60)
+                return dt.AddMinutes(-30);
+            prevPhase = phase;
+        }
+    }
+
+    /// <summary>
+    /// Returns the next occurrence of the specified season/equinox/solstice after the given date.
+    /// </summary>
+    /// <param name="season">The astronomical season to find.</param>
+    /// <param name="after">Starting UTC date.</param>
+    /// <returns>UTC DateTime of the next occurrence.</returns>
+    public static DateTime NextSeason(Phenomenology.SeasonCalculator.Season season, DateTime after)
+        => Phenomenology.SeasonCalculator.Next(season, after);
+
+    /// <summary>
+    /// Returns the next vernal equinox after the given date.
+    /// </summary>
+    /// <param name="after">Starting UTC date.</param>
+    /// <returns>UTC DateTime of the next vernal equinox.</returns>
+    public static DateTime NextVernalEquinox(DateTime after)
+        => Phenomenology.SeasonCalculator.NextSpringEquinox(after);
+
+    /// <summary>
+    /// Returns the next summer solstice after the given date.
+    /// </summary>
+    /// <param name="after">Starting UTC date.</param>
+    /// <returns>UTC DateTime of the next summer solstice.</returns>
+    public static DateTime NextSummerSolstice(DateTime after)
+        => Phenomenology.SeasonCalculator.NextSummerSolstice(after);
+
+    /// <summary>
+    /// Returns the next sunrise for the specified location after the given UTC date.
+    /// </summary>
+    /// <param name="after">Starting UTC date.</param>
+    /// <param name="longitude">Observer longitude in degrees (East positive).</param>
+    /// <param name="latitude">Observer latitude in degrees (North positive).</param>
+    /// <returns>UTC DateTime of the next sunrise, or <c>null</c> if circumpolar.</returns>
+    public static DateTime? NextSunrise(DateTime after, double longitude, double latitude)
+    {
+        var dt = after.Date;
+        for (int i = 0; i < 400; i++)
+        {
+            var rts = Phenomenology.RiseSetCalculator.Sun(dt, longitude, latitude);
+            if (rts.Rise.HasValue && rts.Rise.Value > after)
+                return rts.Rise.Value;
+            dt = dt.AddDays(1);
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Returns the next sunset for the specified location after the given UTC date.
+    /// </summary>
+    /// <param name="after">Starting UTC date.</param>
+    /// <param name="longitude">Observer longitude in degrees (East positive).</param>
+    /// <param name="latitude">Observer latitude in degrees (North positive).</param>
+    /// <returns>UTC DateTime of the next sunset, or <c>null</c> if circumpolar.</returns>
+    public static DateTime? NextSunset(DateTime after, double longitude, double latitude)
+    {
+        var dt = after.Date;
+        for (int i = 0; i < 400; i++)
+        {
+            var rts = Phenomenology.RiseSetCalculator.Sun(dt, longitude, latitude);
+            if (rts.Set.HasValue && rts.Set.Value > after)
+                return rts.Set.Value;
+            dt = dt.AddDays(1);
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Returns the next moonrise for the specified location after the given UTC date.
+    /// </summary>
+    /// <param name="after">Starting UTC date.</param>
+    /// <param name="longitude">Observer longitude in degrees (East positive).</param>
+    /// <param name="latitude">Observer latitude in degrees (North positive).</param>
+    /// <returns>UTC DateTime of the next moonrise, or <c>null</c> if the Moon is circumpolar.</returns>
+    public static DateTime? NextMoonrise(DateTime after, double longitude, double latitude)
+    {
+        var dt = after.Date;
+        for (int i = 0; i < 400; i++)
+        {
+            var rts = Phenomenology.RiseSetCalculator.Moon(dt, longitude, latitude);
+            if (rts.Rise.HasValue && rts.Rise.Value > after)
+                return rts.Rise.Value;
+            dt = dt.AddDays(1);
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Returns the next moonset for the specified location after the given UTC date.
+    /// </summary>
+    /// <param name="after">Starting UTC date.</param>
+    /// <param name="longitude">Observer longitude in degrees (East positive).</param>
+    /// <param name="latitude">Observer latitude in degrees (North positive).</param>
+    /// <returns>UTC DateTime of the next moonset, or <c>null</c> if the Moon is circumpolar.</returns>
+    public static DateTime? NextMoonset(DateTime after, double longitude, double latitude)
+    {
+        var dt = after.Date;
+        for (int i = 0; i < 400; i++)
+        {
+            var rts = Phenomenology.RiseSetCalculator.Moon(dt, longitude, latitude);
+            if (rts.Set.HasValue && rts.Set.Value > after)
+                return rts.Set.Value;
+            dt = dt.AddDays(1);
+        }
+        return null;
+    }
+
+    // Returns the Moon's phase angle (0°=new, 180°=full) for a given UTC DateTime.
+    private static double GetPhase(DateTime utc)
+    {
+        double jd = TimeZoneUtils.ToJulianDay(utc);
+        double T  = TimeUtils.JulianCentury(jd);
+        double phase = MoonEphemeris.PhaseAngle(T);
+        return ((phase % 360) + 360) % 360;
+    }
 }
