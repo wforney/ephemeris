@@ -48,14 +48,14 @@ jobs:
           reporttypes: MarkdownSummaryGitHub;HtmlInline
 
       - name: Write coverage summary to job output
-        run: cat coverage-report/SummaryGitHub.md >> "$GITHUB_STEP_SUMMARY"
+        run: cat coverage-report/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Comment coverage on PR
         if: github.event_name == 'pull_request'
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: code-coverage
-          path: coverage-report/SummaryGitHub.md
+          path: coverage-report/SummaryGithub.md
 
       - name: Upload coverage report artifact
         uses: actions/upload-artifact@v4
