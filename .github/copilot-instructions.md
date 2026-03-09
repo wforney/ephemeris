@@ -1,13 +1,33 @@
-<!-- Updated: 2026-03-09 03:57 UTC -->
+<!-- Updated: 2026-03-09 03:59 UTC -->
 # Copilot Instructions
+
+## Model Selection
+
+Choose the model based on the nature of the task. When in doubt, prefer the reasoning tier for anything involving mathematics or multi-file architectural decisions.
+
+| Task | Recommended model |
+|------|-------------------|
+| Implement or debug orbital mechanics, coordinate transforms, Kepler solvers, VSOP87 coefficients | `claude-opus-4.5` or `o4-mini` (reasoning) |
+| Complete SPICE / DE430 provider stubs (`IStateVectorProvider`, `ITimeConverter`) | `claude-opus-4.5` or `o4-mini` |
+| Design new public API surface or refactor across multiple namespaces | `claude-sonnet-4.5` or `gpt-4.1` |
+| Write or fix TUnit tests | `claude-sonnet-4.5` or `gpt-4.1` |
+| Add XML doc comments | `claude-haiku-4.5` or `gpt-4.1` |
+| Quick single-file edits, typo/style fixes | `claude-haiku-4.5` or `gpt-5-mini` |
+| Review a PR diff for correctness of astronomical results | `claude-opus-4.5` |
+| Generate or update scripts, workflows, or this instructions file | `claude-sonnet-4.5` |
+
+**Rules:**
+- Astronomical math is **not** LLM general knowledge — always use a stronger reasoning model and verify results against known reference values (e.g., JPL Horizons).
+- For multi-step refactors touching more than two namespaces, use at least the Sonnet tier.
+- For trivial prose or boilerplate, Haiku / mini models are sufficient and faster.
 
 ## Project Overview
 
-**Ephemeris** is a .NET 9.0 astronomical calculations library that computes positions of celestial bodies (Sun, Moon, planets) as seen from any observer location on Earth. The solution has three projects:
+**Ephemeris** is a .NET 10.0 astronomical calculations library that computes positions of celestial bodies (Sun, Moon, planets) as seen from any observer location on Earth. The solution has three projects:
 
 - **Ephemeris** — Core class library (the calculation engine)
 - **Ephemeris.Tests** — Test suite using TUnit
-- **Ephemeris.UI** — WinForms visualization app (Windows only, `net9.0-windows`)
+- **Ephemeris.UI** — WinForms visualization app (Windows only, `net10.0-windows`)
 
 ## Build & Test Commands
 
