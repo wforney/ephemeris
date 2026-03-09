@@ -38,12 +38,12 @@ jobs:
         run: >
           dotnet test --project Ephemeris.Tests/Ephemeris.Tests/Ephemeris.Tests.csproj
           --no-build --configuration Release --log-level Information
-          --coverage --coverage-output coverage.cobertura.xml --coverage-output-format cobertura
+          --coverage --coverage-output "${{ github.workspace }}/coverage.cobertura.xml" --coverage-output-format cobertura
 
       - name: Generate coverage report
         uses: danielpalme/ReportGenerator-GitHub-Action@5
         with:
-          reports: coverage.cobertura.xml
+          reports: ${{ github.workspace }}/coverage.cobertura.xml
           targetdir: coverage-report
           reporttypes: MarkdownSummaryGitHub;HtmlInline
 
