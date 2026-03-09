@@ -33,15 +33,14 @@ public static class EphemerisBatch
             var (ra, dec) = SunEphemeris.ApparentEquatorialCoordinates(T);
             var (az, alt) = ObserverGeometry.EquatorialToHorizontal(ra, dec, jd, longitude, latitude);
 
-            records.Add(new EphemerisRecord
-            {
-                TimeUtc = dt,
-                Body = "Sun",
-                RightAscension = ra,
-                Declination = dec,
-                Azimuth = az,
-                Altitude = alt
-            });
+            records.Add(new EphemerisRecord(
+                TimeUtc: dt,
+                Body: "Sun",
+                RightAscension: ra,
+                Declination: dec,
+                Azimuth: az,
+                Altitude: alt,
+                Illumination: null));
         }
         return records;
     }
@@ -65,20 +64,19 @@ public static class EphemerisBatch
             var dt = startUtc.AddMinutes(i * intervalMinutes);
             double jd = TimeZoneUtils.ToJulianDay(dt);
             double T = TimeUtils.JulianCentury(jd);
-            var (ra, dec, _) = MoonEphemeris.GeocentricEquatorialCoordinates(T);
+            var (ra, dec, distKm) = MoonEphemeris.GeocentricEquatorialCoordinates(T);
             var (az, alt) = ObserverGeometry.EquatorialToHorizontal(ra, dec, jd, longitude, latitude);
             double illum = MoonEphemeris.Illumination(MoonEphemeris.PhaseAngle(T));
 
-            records.Add(new EphemerisRecord
-            {
-                TimeUtc = dt,
-                Body = "Moon",
-                RightAscension = ra,
-                Declination = dec,
-                Azimuth = az,
-                Altitude = alt,
-                Illumination = illum
-            });
+            records.Add(new EphemerisRecord(
+                TimeUtc: dt,
+                Body: "Moon",
+                RightAscension: ra,
+                Declination: dec,
+                Azimuth: az,
+                Altitude: alt,
+                Illumination: illum,
+                Distance: distKm));
         }
         return records;
     }
@@ -128,15 +126,14 @@ public static class EphemerisBatch
             var (ra, dec) = PlanetEphemeris.SimplifiedPlanetPosition(T, N, iDeg, w, a, e, M);
             var (az, alt) = ObserverGeometry.EquatorialToHorizontal(ra, dec, jd, longitude, latitude);
 
-            records.Add(new EphemerisRecord
-            {
-                TimeUtc = dt,
-                Body = planetName,
-                RightAscension = ra,
-                Declination = dec,
-                Azimuth = az,
-                Altitude = alt
-            });
+            records.Add(new EphemerisRecord(
+                TimeUtc: dt,
+                Body: planetName,
+                RightAscension: ra,
+                Declination: dec,
+                Azimuth: az,
+                Altitude: alt,
+                Illumination: null));
         }
         return records;
     }
