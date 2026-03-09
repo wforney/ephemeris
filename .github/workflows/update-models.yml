@@ -1,0 +1,167 @@
+# Updated: 2026-03-09 04:00 UTC
+name: Update model table
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # Every Monday at 06:00 UTC
+  workflow_dispatch:        # Allow manual trigger
+
+permissions:
+  contents: write
+  pull-requests: write
+  models: read
+
+jobs:
+  update-models:
+    name: Refresh model selection table
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch available models
+        id: fetch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -sL \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://models.github.ai/catalog/models \
+            -o models.json
+          echo "count=$(jq length models.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Generate updated model table
+        id: generate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 - <<'EOF'
+          import json, re, datetime, pathlib
+
+          with open("models.json") as f:
+              models = json.load(f)
+
+          # Tiers based on rate_limit_tier field
+          TIER_ORDER = {"high": 0, "low": 1, "free": 2}
+
+          def tier_label(m):
+              tier = (m.get("rate_limit_tier") or "").lower()
+              return {"high": "premium", "low": "standard", "free": "fast/cheap"}.get(tier, tier)
+
+          # Sort: publisher then by tier
+          models.sort(key=lambda m: (
+              m.get("publisher", ""),
+              TIER_ORDER.get((m.get("rate_limit_tier") or "").lower(), 99)
+          ))
+
+          # Task-to-capability mapping (kept stable; only model IDs change)
+          TASK_MAP = [
+              ("Orbital mechanics, coordinate transforms, Kepler solvers, VSOP87",
+               ["claude-opus", "o4", "o3"], "Reasoning tier required — verify against JPL Horizons"),
+              ("Complete SPICE / DE430 provider stubs",
+               ["claude-opus", "o4", "o3"], ""),
+              ("Design new public API or multi-namespace refactor",
+               ["claude-sonnet", "gpt-4", "gpt-5.1", "gemini"], ""),
+              ("Write or fix TUnit tests",
+               ["claude-sonnet", "gpt-4", "gpt-5.1"], ""),
+              ("PR diff review for astronomical correctness",
+               ["claude-opus", "o4", "o3"], ""),
+              ("Add XML doc comments or update this instructions file",
+               ["claude-sonnet", "claude-haiku", "gpt-4.1"], ""),
+              ("Quick single-file edits, typo/style fixes",
+               ["claude-haiku", "gpt-5-mini", "gpt-5.1-codex-mini"], ""),
+          ]
+
+          def best_models(keywords):
+              matched = []
+              for m in models:
+                  mid = m.get("id", "").lower()
+                  name = m.get("name", "").lower()
+                  if any(k in mid or k in name for k in keywords):
+                      matched.append(f"`{m['id']}`")
+              return ", ".join(matched[:3]) if matched else "_see catalog_"
+
+          rows = []
+          for task, kw, note in TASK_MAP:
+              models_str = best_models(kw)
+              note_str = f" _{note}_" if note else ""
+              rows.append(f"| {task} | {models_str} |{note_str}")
+
+          table = "\n".join([
+              "| Task | Recommended model(s) |",
+              "|------|----------------------|",
+          ] + rows)
+
+          # Model catalog summary
+          catalog_lines = ["| Model ID | Publisher | Tier |", "|----------|-----------|------|"]
+          for m in models:
+              mid = m.get("id", "")
+              pub = m.get("publisher", "")
+              tier = tier_label(m)
+              catalog_lines.append(f"| `{mid}` | {pub} | {tier} |")
+          catalog = "\n".join(catalog_lines)
+
+          today = datetime.date.today().isoformat()
+
+          instructions = pathlib.Path(".github/copilot-instructions.md").read_text()
+
+          # Replace task table
+          instructions = re.sub(
+              r"(## Model Selection.*?### Available models catalog\n)(.*?)(\n## )",
+              lambda m: m.group(1) + "\n" + table + "\n\n" + m.group(3),
+              instructions,
+              flags=re.DOTALL
+          )
+
+          # Replace catalog table
+          instructions = re.sub(
+              r"(### Available models catalog\n)(.*?)(\n\*\*Rules)",
+              lambda m: m.group(1) + "\n" + catalog + "\n\n" + m.group(3),
+              instructions,
+              flags=re.DOTALL
+          )
+
+          # Bump timestamp
+          instructions = re.sub(
+              r"<!-- Updated: [\d\-: UTC]+ -->",
+              f"<!-- Updated: {today} (model sync) -->",
+              instructions,
+              count=1
+          )
+
+          pathlib.Path(".github/copilot-instructions.md").write_text(instructions)
+          print(f"Updated model table with {len(models)} models")
+          EOF
+
+      - name: Check for changes
+        id: diff
+        run: |
+          git diff --quiet .github/copilot-instructions.md \
+            && echo "changed=false" >> "$GITHUB_OUTPUT" \
+            || echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Open PR if table changed
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TODAY=$(date -u +%Y-%m-%d)
+          BRANCH="chore/model-table-${TODAY}"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add .github/copilot-instructions.md
+          git commit -m "chore(ci): sync model selection table ${TODAY}
+
+          Automated update from GitHub Models catalog API.
+
+          Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "chore(ci): sync model selection table ${TODAY}" \
+            --body "Automated weekly sync of the model selection table from the GitHub Models catalog API (\`https://models.github.ai/catalog/models\`)." \
+            --base main \
+            --head "$BRANCH"

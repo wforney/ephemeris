@@ -1,20 +1,36 @@
-<!-- Updated: 2026-03-09 03:59 UTC -->
+<!-- Updated: 2026-03-09 04:00 UTC -->
 # Copilot Instructions
 
 ## Model Selection
 
-Choose the model based on the nature of the task. When in doubt, prefer the reasoning tier for anything involving mathematics or multi-file architectural decisions.
+**This table is automatically synced weekly** by `.github/workflows/update-models.yml`, which queries the GitHub Models catalog API (`https://models.github.ai/catalog/models`) and opens a PR when the table changes. To trigger a manual sync, run the `Update model table` workflow from the Actions tab.
 
-| Task | Recommended model |
-|------|-------------------|
-| Implement or debug orbital mechanics, coordinate transforms, Kepler solvers, VSOP87 coefficients | `claude-opus-4.5` or `o4-mini` (reasoning) |
-| Complete SPICE / DE430 provider stubs (`IStateVectorProvider`, `ITimeConverter`) | `claude-opus-4.5` or `o4-mini` |
-| Design new public API surface or refactor across multiple namespaces | `claude-sonnet-4.5` or `gpt-4.1` |
-| Write or fix TUnit tests | `claude-sonnet-4.5` or `gpt-4.1` |
-| Add XML doc comments | `claude-haiku-4.5` or `gpt-4.1` |
-| Quick single-file edits, typo/style fixes | `claude-haiku-4.5` or `gpt-5-mini` |
-| Review a PR diff for correctness of astronomical results | `claude-opus-4.5` |
-| Generate or update scripts, workflows, or this instructions file | `claude-sonnet-4.5` |
+**Self-update rule:** At the start of any session, if you know of models newer or better-suited than those listed below, update this table, refresh the date stamp, and commit before proceeding with the task (use `chore(ci): sync model selection table <date>`).
+
+### Task → model mapping
+
+| Task | Recommended model(s) |
+|------|----------------------|
+| Orbital mechanics, coordinate transforms, Kepler solvers, VSOP87 | `anthropic/claude-opus-4-5`, `openai/o4-mini` | _Reasoning tier required — verify against JPL Horizons_ |
+| Complete SPICE / DE430 provider stubs | `anthropic/claude-opus-4-5`, `openai/o4-mini` | |
+| Design new public API or multi-namespace refactor | `anthropic/claude-sonnet-4-5`, `openai/gpt-4.1` | |
+| Write or fix TUnit tests | `anthropic/claude-sonnet-4-5`, `openai/gpt-4.1` | |
+| PR diff review for astronomical correctness | `anthropic/claude-opus-4-5`, `openai/o4-mini` | |
+| Add XML doc comments or update this instructions file | `anthropic/claude-sonnet-4-5`, `openai/gpt-4.1` | |
+| Quick single-file edits, typo/style fixes | `anthropic/claude-haiku-4-5`, `openai/gpt-5-mini` | |
+
+### Available models catalog
+
+| Model ID | Publisher | Tier |
+|----------|-----------|------|
+| `anthropic/claude-opus-4-5` | Anthropic | premium |
+| `anthropic/claude-sonnet-4-5` | Anthropic | standard |
+| `anthropic/claude-haiku-4-5` | Anthropic | fast/cheap |
+| `openai/gpt-4.1` | OpenAI | fast/cheap |
+| `openai/gpt-5-mini` | OpenAI | fast/cheap |
+| `openai/o4-mini` | OpenAI | standard |
+| `openai/o3` | OpenAI | premium |
+| `google/gemini-3-pro` | Google | standard |
 
 **Rules:**
 - Astronomical math is **not** LLM general knowledge — always use a stronger reasoning model and verify results against known reference values (e.g., JPL Horizons).
