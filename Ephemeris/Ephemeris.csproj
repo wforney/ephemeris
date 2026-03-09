@@ -9,6 +9,17 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- NuGet package metadata -->
+    <PackageId>Wforney.Ephemeris</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>William Forney</Authors>
+    <Description>Astronomical ephemeris library for .NET — compute positions of the Sun, Moon, and planets from any observer location on Earth.</Description>
+    <PackageTags>astronomy;ephemeris;solar;lunar;planetary;coordinates</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/wforney/ephemeris</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
