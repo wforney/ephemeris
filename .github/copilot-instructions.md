@@ -1,4 +1,4 @@
-<!-- Updated: 2026-03-09 04:10 UTC -->
+<!-- Updated: 2026-03-09 -->
 # Copilot Instructions
 
 ## Session Checkpoints and Evolution
