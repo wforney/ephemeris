@@ -1,0 +1,27 @@
+{
+  "servers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "gallery": true
+    },
+    "dotnet": {
+      "type": "stdio",
+      "command": "dnx",
+      "args": ["Community.Mcp.DotNet@1.*", "--yes"],
+      "gallery": true
+    },
+    "filesystem": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "${workspaceFolder}"],
+      "gallery": true
+    },
+    "fetch": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-fetch"],
+      "gallery": true
+    }
+  }
+}
