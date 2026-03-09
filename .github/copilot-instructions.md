@@ -1,5 +1,52 @@
-<!-- Updated: 2026-03-09 04:00 UTC -->
+<!-- Updated: 2026-03-09 04:03 UTC -->
 # Copilot Instructions
+
+## Session Checkpoints and Evolution
+
+### Checkpoints — commit as you go
+Commit after every logical unit of work; never let more than one cohesive change accumulate uncommitted. Checkpoint triggers:
+
+- Completing a todo item or sub-task
+- Any change to `.github/copilot-instructions.md`, `.vscode/mcp.json`, or a workflow file
+- After a passing build or test run that validates a change
+- Before switching context (e.g. moving from a `fix` to a `feat`)
+
+Checkpoint commits follow the same Conventional Commits format. Use the body to note what remains if the work is mid-flight:
+```
+feat(selenography): add libration latitude calculation
+
+Checkpoint: longitude term complete, latitude term in progress.
+Remaining: node correction + test cases.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+```
+
+### Evolution — keep this file current
+This instructions file is a living document. Update it whenever:
+
+| Trigger | What to update |
+|---------|----------------|
+| New Copilot feature ships (agents, slash commands, extensions) | Add usage guidance in the relevant section |
+| New MCP server becomes useful for this project | Add to `.vscode/mcp.json` and the MCP Servers section |
+| New .NET major version becomes active LTS | Update version references throughout |
+| New NuGet package added to the solution | Add to Key Dependencies if non-obvious |
+| Domain namespace added or renamed | Update Architecture table |
+| Commit or PR convention changes | Update Git Repository Management section |
+| Model table drifts (weekly workflow) | Handled automatically by `update-models.yml` |
+
+**Automated audits** run on schedule and open GitHub issues with suggestions:
+- `update-models.yml` — Mondays: syncs model catalog, opens PR if table changed
+- `dependency-drift.yml` — Tuesdays: checks for newer .NET SDK and outdated NuGet packages, opens issue
+- `evolve-instructions.yml` — Wednesdays: checks instruction file age, .NET channel drift, and unconfigured useful MCP servers, opens issue
+
+When acting on an evolution issue: resolve it, update the relevant section, refresh the date stamp, and close the issue in the commit footer:
+```
+docs(ci): update instructions for .NET 11 and new MCP servers
+
+Closes #42
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+```
 
 ## Model Selection
 

@@ -1,0 +1,129 @@
+# Updated: 2026-03-09 04:03 UTC
+name: Evolve instructions
+
+on:
+  schedule:
+    - cron: '0 8 * * 3'   # Every Wednesday at 08:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  models: read
+
+jobs:
+  audit:
+    name: Audit copilot-instructions.md for staleness
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check instruction file age
+        id: age
+        run: |
+          STAMP=$(grep -oP '(?<=Updated: )[\d\-]+' .github/copilot-instructions.md | head -1)
+          if [ -z "$STAMP" ]; then STAMP="1970-01-01"; fi
+          DAYS=$(( ( $(date -u +%s) - $(date -u -d "$STAMP" +%s) ) / 86400 ))
+          echo "days=$DAYS" >> "$GITHUB_OUTPUT"
+          echo "stamp=$STAMP" >> "$GITHUB_OUTPUT"
+
+      - name: Check for new MCP servers in gallery
+        id: mcp
+        run: |
+          # Fetch the official MCP server registry
+          curl -sL https://raw.githubusercontent.com/modelcontextprotocol/servers/main/README.md \
+            -o mcp-registry.md 2>/dev/null || echo "" > mcp-registry.md
+          # Extract server names currently configured
+          CONFIGURED=$(python3 -c "
+          import json
+          with open('.vscode/mcp.json') as f:
+              data = json.load(f)
+          print(' '.join(data.get('servers', {}).keys()))
+          ")
+          echo "configured=$CONFIGURED" >> "$GITHUB_OUTPUT"
+
+      - name: Check .NET release channel
+        id: dotnet
+        run: |
+          INSTRUCTIONS_VER=$(grep -oP '\.NET \K\d+\.\d+' .github/copilot-instructions.md | head -1)
+          LATEST_CHANNEL=$(curl -sL https://raw.githubusercontent.com/dotnet/core/main/release-notes/releases-index.json \
+            | python3 -c "
+          import json,sys
+          data=json.load(sys.stdin)
+          active=[r for r in data['releases-index'] if r['support-phase']=='active']
+          active.sort(key=lambda r: float(r['channel-version']), reverse=True)
+          print(active[0]['channel-version'])
+          ")
+          echo "instructions_ver=$INSTRUCTIONS_VER" >> "$GITHUB_OUTPUT"
+          echo "latest_channel=$LATEST_CHANNEL" >> "$GITHUB_OUTPUT"
+          if [ "$INSTRUCTIONS_VER" != "$LATEST_CHANNEL" ]; then
+            echo "outdated=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "outdated=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build evolution notes
+        id: notes
+        env:
+          DAYS: ${{ steps.age.outputs.days }}
+          STAMP: ${{ steps.age.outputs.stamp }}
+          DOTNET_OUTDATED: ${{ steps.dotnet.outputs.outdated }}
+          DOTNET_LATEST: ${{ steps.dotnet.outputs.latest_channel }}
+          DOTNET_INSTRUCTIONS: ${{ steps.dotnet.outputs.instructions_ver }}
+          MCP_CONFIGURED: ${{ steps.mcp.outputs.configured }}
+        run: |
+          python3 - <<'EOF'
+          import os, pathlib, datetime
+
+          notes = []
+          days = int(os.environ.get("DAYS", 0))
+          stamp = os.environ.get("STAMP", "unknown")
+          dotnet_outdated = os.environ.get("DOTNET_OUTDATED") == "true"
+          dotnet_latest = os.environ.get("DOTNET_LATEST", "")
+          dotnet_instructions = os.environ.get("DOTNET_INSTRUCTIONS", "")
+          mcp_configured = os.environ.get("MCP_CONFIGURED", "").split()
+
+          if days > 30:
+              notes.append(f"- Instructions last updated {days} days ago ({stamp}) — consider a general review.")
+          if dotnet_outdated:
+              notes.append(f"- .NET channel in instructions ({dotnet_instructions}) may be behind latest active channel ({dotnet_latest}).")
+
+          # Check for common useful MCP servers not yet configured
+          USEFUL = {
+              "sequential-thinking": "Structured multi-step reasoning (useful for complex algorithm design)",
+              "memory":              "Persistent cross-session knowledge graph",
+              "brave-search":        "Web search (alternative to fetch for structured queries)",
+          }
+          for srv, desc in USEFUL.items():
+              if srv not in mcp_configured:
+                  notes.append(f"- MCP server `{srv}` not configured: {desc}")
+
+          if notes:
+              summary = "## Suggested evolutions\n\n" + "\n".join(notes)
+              pathlib.Path("evolution-notes.md").write_text(summary)
+              print("has_notes=true")
+          else:
+              print("has_notes=false")
+          EOF
+
+      - name: Open evolution issue
+        if: ${{ hashFiles('evolution-notes.md') != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f evolution-notes.md ]; then
+            TODAY=$(date -u +%Y-%m-%d)
+            EXISTING=$(gh issue list --label "copilot-instructions" --state open --json number --jq '.[0].number' 2>/dev/null)
+            BODY=$(cat evolution-notes.md)
+            BODY="${BODY}\n\nOpened automatically by the evolve-instructions workflow on ${TODAY}.\nReview and update \`.github/copilot-instructions.md\` accordingly."
+            if [ -n "$EXISTING" ]; then
+              printf '%b' "$BODY" | gh issue comment "$EXISTING" --body-file -
+            else
+              printf '%b' "$BODY" | gh issue create \
+                --title "docs(ci): instructions evolution suggestions ${TODAY}" \
+                --label "copilot-instructions" \
+                --body-file -
+            fi
+            rm evolution-notes.md
+          fi

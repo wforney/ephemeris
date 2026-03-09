@@ -1,0 +1,112 @@
+# Updated: 2026-03-09 04:03 UTC
+name: Dependency drift
+
+on:
+  schedule:
+    - cron: '0 7 * * 2'   # Every Tuesday at 07:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  dotnet-sdk:
+    name: Check for newer .NET SDK
+    runs-on: ubuntu-latest
+    outputs:
+      sdk_changed: ${{ steps.sdk.outputs.changed }}
+      sdk_version: ${{ steps.sdk.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect latest .NET release
+        id: sdk
+        run: |
+          LATEST=$(curl -sL https://raw.githubusercontent.com/dotnet/core/main/release-notes/releases-index.json \
+            | python3 -c "
+          import json,sys
+          data=json.load(sys.stdin)
+          supported=[r for r in data['releases-index'] if r['support-phase'] in ('active','maintenance')]
+          supported.sort(key=lambda r: r['channel-version'], reverse=True)
+          print(supported[0]['latest-sdk'])
+          ")
+          CURRENT=$(dotnet --version 2>/dev/null || echo 'unknown')
+          echo "latest=$LATEST" >> "$GITHUB_OUTPUT"
+          echo "version=$LATEST" >> "$GITHUB_OUTPUT"
+          if [ "$LATEST" != "$CURRENT" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  nuget-outdated:
+    name: Check for outdated NuGet packages
+    runs-on: ubuntu-latest
+    outputs:
+      outdated: ${{ steps.check.outputs.outdated }}
+      report: ${{ steps.check.outputs.report }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: List outdated packages
+        id: check
+        run: |
+          dotnet list package --outdated --format json 2>/dev/null \
+            | python3 -c "
+          import json,sys
+          data=json.load(sys.stdin)
+          rows=[]
+          for proj in data.get('projects',[]):
+            for fw in proj.get('frameworks',[]):
+              for pkg in fw.get('topLevelPackages',[]):
+                if pkg.get('latestVersion') and pkg['latestVersion'] != pkg['resolvedVersion']:
+                  rows.append(f\"{proj['path'].split('/')[-1]}: {pkg['id']} {pkg['resolvedVersion']} → {pkg['latestVersion']}\")
+          if rows:
+            print('outdated=true')
+            print('report=' + ' | '.join(rows))
+          else:
+            print('outdated=false')
+            print('report=All packages up to date')
+          " >> "$GITHUB_OUTPUT"
+
+  open-issue:
+    name: Open drift issue
+    runs-on: ubuntu-latest
+    needs: [dotnet-sdk, nuget-outdated]
+    if: needs.dotnet-sdk.outputs.sdk_changed == 'true' || needs.nuget-outdated.outputs.outdated == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create or update drift issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SDK_CHANGED: ${{ needs.dotnet-sdk.outputs.sdk_changed }}
+          SDK_VERSION: ${{ needs.dotnet-sdk.outputs.sdk_version }}
+          PKG_OUTDATED: ${{ needs.nuget-outdated.outputs.outdated }}
+          PKG_REPORT: ${{ needs.nuget-outdated.outputs.report }}
+        run: |
+          BODY="## Dependency drift detected $(date -u +%Y-%m-%d)\n\n"
+          if [ "$SDK_CHANGED" = "true" ]; then
+            BODY="${BODY}### .NET SDK\nLatest SDK: \`${SDK_VERSION}\`\n\n"
+          fi
+          if [ "$PKG_OUTDATED" = "true" ]; then
+            BODY="${BODY}### Outdated NuGet packages\n\`\`\`\n${PKG_REPORT}\n\`\`\`\n"
+          fi
+          BODY="${BODY}\nOpened automatically by the dependency-drift workflow."
+          EXISTING=$(gh issue list --label "dependencies" --state open --json number --jq '.[0].number' 2>/dev/null)
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            printf '%b' "$BODY" | gh issue create \
+              --title "chore(deps): dependency drift detected $(date -u +%Y-%m-%d)" \
+              --label "dependencies" \
+              --body-file -
+          fi
