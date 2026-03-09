@@ -137,10 +137,12 @@ The core library (`Ephemeris/`) is organized into domain namespaces that mirror 
 | Namespace | Domain |
 |-----------|--------|
 | `Ephemeris.Chronology` | Julian Day, ΔT, GMST, sidereal time |
-| `Ephemeris.Heliology` | Solar ephemeris (RA/Dec, ecliptic coords) |
-| `Ephemeris.Selenography` | Lunar ephemeris (RA/Dec, phase, illumination) |
-| `Ephemeris.Planetology` | Planetary positions via Kepler's equations |
+| `Ephemeris.Heliology` | Solar ephemeris (Meeus Ch. 25: RA/Dec, aberration, nutation, R) |
+| `Ephemeris.Selenography` | Lunar ephemeris (Meeus Ch. 47: 60-term series, phase, illumination) |
+| `Ephemeris.Planetology` | Planetary positions via iterative Kepler + orbital elements |
 | `Ephemeris.Geometry` | Equatorial↔Horizontal coordinate transforms |
+| `Ephemeris.Geodesy` | Nutation (IAU 1980 50-term) and precession (IAU 2006) |
+| `Ephemeris.Phenomenology` | Rise/set/transit, equinox/solstice, visibility windows |
 | `Ephemeris.Export` | CSV/JSON serialization of `EphemerisRecord` |
 | `Ephemeris.Import` | SPICE kernel and DE430 ephemeris data import |
 
