@@ -1,0 +1,10 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:scottplot="clr-namespace:ScottPlot.Avalonia;assembly=ScottPlot.Avalonia"
+        x:Class="Ephemeris.UI.Avalonia.Views.EphemerisPlotWindow"
+        Title="Altitude Plot"
+        Width="800" Height="600">
+
+    <scottplot:AvaPlot x:Name="AvaPlot" />
+
+</Window>

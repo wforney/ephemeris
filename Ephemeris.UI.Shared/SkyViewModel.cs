@@ -7,7 +7,7 @@ using Ephemeris.UI.Messages;
 namespace Ephemeris.UI;
 
 /// <summary>
-/// Observable view-model backing <see cref="SkyViewForm"/>.
+/// Observable view-model backing the sky view on all platforms.
 /// Holds all user-configurable state: observer position, simulated time,
 /// camera orientation, and animation play state.
 /// </summary>
@@ -15,8 +15,7 @@ namespace Ephemeris.UI;
 /// Extends <see cref="ObservableRecipient"/> to participate in the
 /// <see cref="CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger"/> bus.
 /// Sends <see cref="SimTimeChangedMessage"/> and <see cref="ObserverChangedMessage"/>
-/// so decoupled recipients (e.g., <see cref="LauncherForm"/>) can track state
-/// across sessions without holding a direct reference.
+/// so decoupled recipients can track state across sessions without holding a direct reference.
 /// </remarks>
 public sealed partial class SkyViewModel : ObservableRecipient
 {

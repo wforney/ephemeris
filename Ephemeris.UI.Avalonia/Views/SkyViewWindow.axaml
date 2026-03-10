@@ -1,0 +1,48 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Ephemeris.UI.Avalonia.Views.SkyViewWindow"
+        Title="Ephemeris — Sky View"
+        Width="1024" Height="768"
+        MinWidth="640" MinHeight="480">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- Toolbar -->
+        <StackPanel Grid.Row="0"
+                    Orientation="Horizontal"
+                    Spacing="8"
+                    Margin="8,4"
+                    VerticalAlignment="Center">
+
+            <TextBlock Text="Date/Time UTC:" VerticalAlignment="Center" />
+            <TextBox x:Name="DatePicker"
+                     Watermark="yyyy-MM-dd HH:mm"
+                     Width="150" />
+
+            <Separator Width="1" Background="Gray" Margin="4,0" />
+
+            <TextBlock Text="Lon:" VerticalAlignment="Center" />
+            <NumericUpDown x:Name="LonPicker"
+                           Minimum="-180" Maximum="180"
+                           Increment="1" FormatString="F2"
+                           Width="100" />
+
+            <TextBlock Text="Lat:" VerticalAlignment="Center" />
+            <NumericUpDown x:Name="LatPicker"
+                           Minimum="-90" Maximum="90"
+                           Increment="1" FormatString="F2"
+                           Width="80" />
+
+            <Separator Width="1" Background="Gray" Margin="4,0" />
+
+            <Button x:Name="PlayBtn"  Content="▶ Play"   Width="90" />
+            <Button x:Name="NowBtn"   Content="Now"       Width="60" />
+
+        </StackPanel>
+
+        <!-- Sky GL control fills the remaining space -->
+        <ContentControl Grid.Row="1" x:Name="GlHost" />
+
+    </Grid>
+
+</Window>

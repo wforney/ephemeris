@@ -30,6 +30,7 @@ A .NET 10 library for computing positions of celestial bodies (Sun, Moon, planet
 | **NuGet package** — `WilliamForney.Ephemeris` 0.1.0 with CI release workflow | ✅ |
 | **Benchmarks** — BenchmarkDotNet project for Sun/Moon/planet series | ✅ |
 | **WinForms visualizer** — altitude-vs-time ScottPlot chart | ✅ |
+| **Avalonia cross-platform UI** — sky view + chart on Windows, Linux, macOS | ✅ |
 
 ## Projects
 
@@ -39,6 +40,8 @@ A .NET 10 library for computing positions of celestial bodies (Sun, Moon, planet
 | [`Ephemeris.Tests`](Ephemeris.Tests/README.md) | TUnit test suite (252 tests) |
 | [`Ephemeris.Benchmarks`](Ephemeris.Benchmarks/README.md) | BenchmarkDotNet performance suite |
 | [`Ephemeris.UI`](Ephemeris.UI/README.md) | WinForms visualization app (Windows only) |
+| [`Ephemeris.UI.Shared`](Ephemeris.UI.Shared/README.md) | Shared view-model and messaging (cross-platform) |
+| [`Ephemeris.UI.Avalonia`](Ephemeris.UI.Avalonia/README.md) | **Avalonia UI — cross-platform** (Windows / Linux / macOS) |
 
 ## Architecture
 

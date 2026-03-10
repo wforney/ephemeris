@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Ephemeris\Ephemeris.csproj" />
+    <ProjectReference Include="..\Ephemeris.UI.Shared\Ephemeris.UI.Shared.csproj" />
   </ItemGroup>
 
 </Project>
