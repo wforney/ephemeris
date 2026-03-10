@@ -137,9 +137,9 @@ The core library (`Ephemeris/`) is organized into domain namespaces that mirror 
 | `Ephemeris.Planetology` | Planetary positions via iterative Kepler + orbital elements |
 | `Ephemeris.Geometry` | Equatorial↔Horizontal coordinate transforms |
 | `Ephemeris.Geodesy` | Nutation (IAU 1980 50-term) and precession (IAU 2006) |
-| `Ephemeris.Phenomenology` | Rise/set/transit, equinox/solstice, visibility windows |
+| `Ephemeris.Phenomenology` | Rise/set/transit, equinox/solstice, eclipses, visibility windows, planetary events |
 | `Ephemeris.Export` | CSV/JSON serialization of `EphemerisRecord` |
-| `Ephemeris.Import` | SPICE kernel and DE430 ephemeris data import |
+| `Ephemeris.Import` | Native DAF/SPK BSP reader, SE1 ephemeris reader, DE430 binary importer |
 
 **Public entry points** are in the root `Ephemeris` namespace:
 - `EphemerisCalculator` — high-level API for single-instant position queries
@@ -218,7 +218,7 @@ SPICE .bsp kernel
 ```
 
 ### Status
-All three internal provider interfaces (`ISpaceKernelProvider`, `ITimeConverter`, `IStateVectorProvider`) throw `NotImplementedException` — they are stubs awaiting full SpiceSharp-Parser integration. The public API surface and data flow are complete; only the provider bodies need implementing.
+The native DAF/SPK BSP reader (`SpkReader`), leap-second-aware UTC→ET conversion (`SpkLeapSeconds`), and `BspImporter` pipeline are fully implemented. `SpiceKernelDatabase` provides the high-level API for loading kernels and querying positions. The SE1 binary reader (`Se1EphemerisReader`) and DE430 binary importer are also complete.
 
 ### DE430 binary format
 Each record is exactly 24 bytes: `int64` ticks → `double` RA (°) → `double` Dec (°). `DE430Importer.LoadFromBinary()` reads sequentially with `BinaryReader`.
@@ -407,7 +407,6 @@ Configured in `.vscode/mcp.json`. Four servers are available:
 - **DotNext / DotNext.Threading** — advanced .NET utilities and async threading
 - **CommunityToolkit.Mvvm** — MVVM helpers
 - **OpenTK + SkiaSharp** — OpenGL and Skia rendering in the WinForms UI (`SkyViewForm`)
-- **SpiceSharp-Parser** — SPICE kernel parsing (provider stubs not yet implemented)
 - **TUnit** — test framework (not xUnit/NUnit)
 - **Imposter** — compile-time source-generated mocks (Roslyn); declare with `[assembly: GenerateImposter(typeof(IMyInterface))]`, use `IMyInterface.Imposter()` in tests
 - **Verify.TUnit** — snapshot assertions for complex outputs (`EphemerisRecord` series, CSV/JSON export); `*.received.*` files are git-ignored, commit only `*.verified.*`

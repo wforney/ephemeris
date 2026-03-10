@@ -22,11 +22,12 @@ A .NET 10 library for computing positions of celestial bodies (Sun, Moon, planet
 | **Next-event queries** — `NextFullMoon`, `NextSunrise`, `NextVernalEquinox`, etc. | ✅ |
 | **Visibility windows** — `EphemerisBatch.VisibilityWindows(body, altThreshold)` | ✅ |
 | **Planet physical ephemeris** — apparent magnitude, angular diameter, elongation | ✅ |
+| **Planetary events** — opposition, conjunction, quadrature (outer); greatest elongation (inner) | ✅ |
 | **Batch generation** — time-series `EphemerisRecord` collections | ✅ |
 | **Data export** — CSV and JSON serialization | ✅ |
 | **Stellar catalog** — 25-star embedded catalog + Yale BSC5 reader, proper-motion & precession | ✅ |
 | **Native BSP/SPK reader** — DAF binary parser, Type 2/3 Chebyshev, BFS segment graph traversal | ✅ |
-| **NuGet package** — `Wforney.Ephemeris` 0.1.0 with CI release workflow | ✅ |
+| **NuGet package** — `WilliamForney.Ephemeris` 0.1.0 with CI release workflow | ✅ |
 | **Benchmarks** — BenchmarkDotNet project for Sun/Moon/planet series | ✅ |
 | **WinForms visualizer** — altitude-vs-time ScottPlot chart | ✅ |
 
@@ -35,7 +36,7 @@ A .NET 10 library for computing positions of celestial bodies (Sun, Moon, planet
 | Project | Description |
 |---|---|
 | `Ephemeris` | Core class library — calculation engine |
-| `Ephemeris.Tests` | TUnit test suite (122 tests) |
+| `Ephemeris.Tests` | TUnit test suite (252 tests) |
 | `Ephemeris.Benchmarks` | BenchmarkDotNet performance suite |
 | `Ephemeris.UI` | WinForms visualization app (Windows only) |
 
@@ -51,7 +52,7 @@ Domain namespaces mirror astronomical subdisciplines:
 | `Ephemeris.Planetology` | Planetary positions via iterative Kepler + orbital elements |
 | `Ephemeris.Geometry` | Equatorial↔horizontal coordinate transforms, refraction, coordinate record structs |
 | `Ephemeris.Geodesy` | Nutation (IAU 1980 50-term) and precession (IAU 2006) |
-| `Ephemeris.Phenomenology` | Rise/set/transit, eclipses, seasons, visibility windows |
+| `Ephemeris.Phenomenology` | Rise/set/transit, eclipses, seasons, visibility windows, planetary events (opposition/conjunction/elongation) |
 | `Ephemeris.Export` | CSV/JSON serialization of `EphemerisRecord` |
 | `Ephemeris.Import` | Native DAF/SPK BSP reader, DE430 binary importer |
 | `Ephemeris.Stellarography` | Fixed star catalog, proper-motion corrections, Yale BSC5 reader |
@@ -184,7 +185,8 @@ Reference documents in `docs/`:
 - ✅ Stellar catalog — embedded 25-star subset + Yale BSC5 reader, proper-motion & IAU 2006 precession
 - ✅ Native DAF/SPK BSP reader — Type 2/3 Chebyshev, leap-second-aware UTC→ET, BFS segment graph for arbitrary multi-hop chaining
 - ✅ OpenGL/Skia 3D sky view — `SkyViewForm` renders stars, Sun, Moon, planets with OpenTK 4 GLControl + SkiaSharp label overlay; launcher (`LauncherForm`) added to `Ephemeris.UI`
-- ✅ 122 unit tests verified against JPL Horizons and synthetic reference values
+- ✅ Planetary event calculators — opposition, conjunction, quadrature for outer planets; greatest elongation for inner planets
+- ✅ 252 unit tests verified against JPL Horizons and synthetic reference values
 - ✅ BenchmarkDotNet project, NuGet packaging, CI coverage reporting
 
 ### Future
@@ -198,9 +200,14 @@ No planned items at this time — contributions welcome!
 - [ScottPlot 5](https://scottplot.net) — charting (core library and WinForms UI)
 - [Scrutor](https://github.com/khellang/Scrutor) — DI assembly scanning
 - [DotNext](https://github.com/dotnet/dotNext) — advanced .NET utilities and async threading
-- [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) — MVVM helpers
+- [Generator.Equals](https://github.com/diegofrata/Generator.Equals) — source-generated equality for record types
+- [Microsoft.Extensions.Hosting](https://learn.microsoft.com/dotnet/core/extensions/generic-host) — dependency injection and service hosting
+- [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) — MVVM helpers (UI)
 - [OpenTK + SkiaSharp](https://opentk.net) — OpenGL and Skia rendering (used in `SkyViewForm`)
+- [BenchmarkDotNet](https://benchmarkdotnet.org) — performance benchmarking
 - [TUnit](https://github.com/thomhurst/TUnit) — test framework
+- [Verify.TUnit](https://github.com/VerifyTests/Verify) — snapshot testing
+- [Imposter](https://github.com/pdevito3/Imposter) — compile-time source-generated mocks
 
 ## License
 
