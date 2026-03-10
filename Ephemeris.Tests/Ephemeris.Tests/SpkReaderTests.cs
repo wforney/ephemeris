@@ -240,8 +240,7 @@ public class SpkReaderTests
 
         if (!File.Exists(bspPath))
         {
-            await Assert.That(true).IsTrue(); // skip silently
-            return;
+            return; // skip silently — file not available
         }
 
         using var reader = new SpkReader(bspPath);

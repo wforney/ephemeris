@@ -39,7 +39,6 @@ public class Se1EphemerisReaderTests
         if (!FileAvailable)
         {
             // Skip gracefully — file is not in the repository.
-            await Assert.That(true).IsTrue();
             return;
         }
 
@@ -63,7 +62,7 @@ public class Se1EphemerisReaderTests
     [Test]
     public async Task EMB_DistanceAtJ2000_IsApproximately0983AU()
     {
-        if (!FileAvailable) { await Assert.That(true).IsTrue(); return; }
+        if (!FileAvailable) { return; } // skip — file not available
 
         using var reader = new Se1EphemerisReader(SeFile);
         var (x, y, z) = reader.GetBarycentricPosition(Se1EphemerisReader.SeiEmb, JdJ2000);
@@ -83,7 +82,7 @@ public class Se1EphemerisReaderTests
     [Test]
     public async Task Jupiter_BarycentricDistanceAtJ2000_IsNearSemiMajorAxis()
     {
-        if (!FileAvailable) { await Assert.That(true).IsTrue(); return; }
+        if (!FileAvailable) { return; } // skip — file not available
 
         using var reader = new Se1EphemerisReader(SeFile);
         var (x, y, z) = reader.GetBarycentricPosition(Se1EphemerisReader.SeiJupiter, JdJ2000);
@@ -102,7 +101,7 @@ public class Se1EphemerisReaderTests
     [Test]
     public async Task Jupiter_GeocentricRaDecAtJ2000_AreInValidRange()
     {
-        if (!FileAvailable) { await Assert.That(true).IsTrue(); return; }
+        if (!FileAvailable) { return; } // skip — file not available
 
         using var reader = new Se1EphemerisReader(SeFile);
         var (x, y, z) = reader.GetGeocentricPosition(Se1EphemerisReader.SeiJupiter, JdJ2000);
@@ -124,7 +123,7 @@ public class Se1EphemerisReaderTests
     [Test]
     public async Task Jupiter_GeocentricRA_AtJ2000_IsApproximately24Degrees()
     {
-        if (!FileAvailable) { await Assert.That(true).IsTrue(); return; }
+        if (!FileAvailable) { return; } // skip — file not available
 
         using var reader = new Se1EphemerisReader(SeFile);
         var (x, y, z) = reader.GetGeocentricPosition(Se1EphemerisReader.SeiJupiter, JdJ2000);
@@ -145,7 +144,7 @@ public class Se1EphemerisReaderTests
     [Test]
     public async Task BarycentricSun_DistanceAtJ2000_IsLessThan002AU()
     {
-        if (!FileAvailable) { await Assert.That(true).IsTrue(); return; }
+        if (!FileAvailable) { return; } // skip — file not available
 
         using var reader = new Se1EphemerisReader(SeFile);
         var (x, y, z) = reader.GetBarycentricPosition(Se1EphemerisReader.SeiSunBary, JdJ2000);

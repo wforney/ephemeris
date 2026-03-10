@@ -1,4 +1,4 @@
-# Updated: 2026-03-09
+# Updated: 2026-03-10
 name: CI
 
 on:
@@ -38,6 +38,8 @@ jobs:
         run: >
           dotnet test --project Ephemeris.Tests/Ephemeris.Tests/Ephemeris.Tests.csproj
           --no-build --configuration Release --log-level Information
+          --logger "trx;LogFileName=results.trx"
+          --results-directory "Ephemeris.Tests/Ephemeris.Tests/TestResults/"
           --coverage --coverage-output "${{ github.workspace }}/coverage.cobertura.xml" --coverage-output-format cobertura
 
       - name: Generate coverage report
@@ -69,4 +71,4 @@ jobs:
         with:
           name: test-report
           path: Ephemeris.Tests/Ephemeris.Tests/TestResults/
-          if-no-files-found: warn
+          if-no-files-found: error

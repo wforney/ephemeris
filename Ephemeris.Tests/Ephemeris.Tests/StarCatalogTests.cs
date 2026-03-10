@@ -24,7 +24,7 @@ public class StarCatalogTests
     [Test]
     public async Task Load_ReturnsNonEmptyList_WhenFileExists()
     {
-        if (!FileAvailable) { await Assert.That(true).IsTrue(); return; }
+        if (!FileAvailable) { return; } // skip — file not available
 
         var stars = StarCatalog.Load(SefstarsFile);
         await Assert.That(stars.Count).IsGreaterThan(100);
@@ -33,7 +33,7 @@ public class StarCatalogTests
     [Test]
     public async Task Load_ParsesSiriusCorrectly()
     {
-        if (!FileAvailable) { await Assert.That(true).IsTrue(); return; }
+        if (!FileAvailable) { return; } // skip — file not available
 
         var stars = StarCatalog.Load(SefstarsFile);
         var sirius = stars.FirstOrDefault(s =>
@@ -52,7 +52,7 @@ public class StarCatalogTests
     [Test]
     public async Task Load_ParsesPolarisCorrectly()
     {
-        if (!FileAvailable) { await Assert.That(true).IsTrue(); return; }
+        if (!FileAvailable) { return; } // skip — file not available
 
         var stars = StarCatalog.Load(SefstarsFile);
         var polaris = stars.FirstOrDefault(s =>
@@ -77,7 +77,7 @@ public class StarCatalogTests
     [Test]
     public async Task Load_RightAscensionValues_AreInValidRange()
     {
-        if (!FileAvailable) { await Assert.That(true).IsTrue(); return; }
+        if (!FileAvailable) { return; } // skip — file not available
 
         var stars = StarCatalog.Load(SefstarsFile);
         foreach (var star in stars)
@@ -90,7 +90,7 @@ public class StarCatalogTests
     [Test]
     public async Task Load_DeclinationValues_AreInValidRange()
     {
-        if (!FileAvailable) { await Assert.That(true).IsTrue(); return; }
+        if (!FileAvailable) { return; } // skip — file not available
 
         var stars = StarCatalog.Load(SefstarsFile);
         foreach (var star in stars)
