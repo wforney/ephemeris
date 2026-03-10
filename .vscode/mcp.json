@@ -19,8 +19,8 @@
     },
     "fetch": {
       "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-fetch"],
+      "command": "python3",
+      "args": ["-m", "mcp_server_fetch"],
       "gallery": true
     }
   }
