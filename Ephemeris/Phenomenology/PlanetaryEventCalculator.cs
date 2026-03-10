@@ -61,6 +61,25 @@ public static class PlanetaryEventCalculator
 
     private enum EventType { Opposition, Conjunction, EastQuadrature, WestQuadrature }
 
+    /// <summary>
+    /// Scans forward from <paramref name="after"/> in half-day steps, looking for a sign
+    /// change in the signed elongation that corresponds to the requested <paramref name="crossingType"/>.
+    /// </summary>
+    /// <param name="planet">Planet name (case-insensitive).</param>
+    /// <param name="after">Search start (UTC).</param>
+    /// <param name="crossingType">The event geometry to detect.</param>
+    /// <returns>Interpolated UTC of the event, or <see langword="null"/> if not found within the scan window.</returns>
+    /// <remarks>
+    /// Signed elongation ε ∈ (−180, +180] is the angular distance from the Sun, positive east:
+    /// <list type="bullet">
+    ///   <item><b>Opposition</b>: ε wraps from ≈ −180 to ≈ +180 (continuous crossing through ±180).</item>
+    ///   <item><b>Conjunction</b>: ε crosses through 0 going from positive to negative (or vice versa near 0).</item>
+    ///   <item><b>East quadrature</b>: ε decreases through +90°.</item>
+    ///   <item><b>West quadrature</b>: ε decreases through −90°.</item>
+    /// </list>
+    /// Sub-step precision is obtained by linear interpolation between the bracketing half-day samples:
+    /// <c>fraction = (target − prev) / (curr − prev)</c>.
+    /// </remarks>
     private static DateTime? FindElongationCrossing(string planet, DateTime after, EventType crossingType)
     {
         double jd0 = TimeUtils.JulianDay(after.Year, after.Month, after.Day, 12.0);

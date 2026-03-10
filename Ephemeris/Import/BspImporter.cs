@@ -60,6 +60,24 @@ public static class BspImporter
         return records;
     }
 
+    /// <summary>
+    /// Converts an ICRF Cartesian position vector (km) to geocentric equatorial coordinates
+    /// and distance.
+    /// </summary>
+    /// <param name="vec">Three-element array [x, y, z] in km, in the ICRF/J2000 frame.</param>
+    /// <returns>
+    /// <see cref="EquatorialCoordinates"/> (RA and Dec in degrees, J2000) and distance in km.
+    /// </returns>
+    /// <remarks>
+    /// Spherical conversion from ICRF Cartesian:
+    /// <code>
+    ///   r   = √(x² + y² + z²)
+    ///   RA  = atan2(y, x)          [normalised to [0°, 360°)]
+    ///   Dec = arcsin(z / r)        [clamped to [−1, 1] for numerical safety]
+    /// </code>
+    /// The result is in the J2000.0 ICRS equatorial frame. No precession or nutation
+    /// corrections are applied; the kernel already supplies ICRF coordinates.
+    /// </remarks>
     private static (EquatorialCoordinates Coordinates, double DistanceAu) CartesianToRaDec(double[] vec)
     {
         double x = vec[0], y = vec[1], z = vec[2]; // ICRF Cartesian position (km)

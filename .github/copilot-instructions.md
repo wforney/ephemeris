@@ -186,6 +186,35 @@ public readonly record struct EphemerisRecord(
 - Implicit usings enabled
 - XML documentation required (doc file is generated as part of build)
 
+### Inline Documentation Standard
+
+**All methods with non-trivial algorithms must have `<remarks>` explaining the algorithm**, whether public or private. This is a core project convention — astronomical code must be traceable to its source.
+
+Required for every algorithmic method:
+1. **`<summary>`** — one-line description of what it computes
+2. **`<remarks>`** — cite the primary reference (e.g. "Meeus Ch. 25, Eq. 25.4"), list key formula steps, note accuracy and edge cases
+
+```csharp
+/// <summary>Computes the equation of centre for the Sun.</summary>
+/// <param name="M">Sun's mean anomaly in degrees.</param>
+/// <param name="T">Julian centuries since J2000.0.</param>
+/// <returns>Equation of centre C in degrees.</returns>
+/// <remarks>
+/// Meeus Ch. 25, Eq. 25.4 — three-term sine series:
+/// <code>
+///   C = (1.914602 − 0.004817T − 0.000014T²) sin M
+///     + (0.019993 − 0.000101T) sin 2M
+///     + 0.000289 sin 3M
+/// </code>
+/// </remarks>
+```
+
+When adding or editing any calculation class:
+- Add or update `<remarks>` on every non-trivial private helper
+- Reference the specific equation number or section, not just the chapter
+- Update the **[[Algorithm Reference|Algorithm-Reference]]** wiki page with the new formula
+- Keep the wiki in sync: the wiki is the human-readable complement to the inline docs
+
 ## WinForms UI (Ephemeris.UI)
 
 `EphemerisPlotForm` is the sole form. It takes `IEnumerable<EphemerisRecord>` and a body name, then renders an altitude-vs-time scatter chart:

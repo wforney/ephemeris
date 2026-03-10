@@ -152,6 +152,13 @@ public static class RiseSetCalculator
         }, StarStandardAltitude);
     }
 
+    /// <summary>
+    /// Returns geocentric equatorial coordinates (RA/Dec, J2000) for a named planet
+    /// at the given Julian Century <paramref name="T"/>.
+    /// </summary>
+    /// <param name="planet">Planet name (case-insensitive), e.g. "Mars".</param>
+    /// <param name="T">Julian centuries since J2000.0.</param>
+    /// <returns><see cref="EquatorialCoordinates"/> in degrees (J2000 frame).</returns>
     private static EquatorialCoordinates PlanetRaDec(string planet, double T)
     {
         OrbitalElements elements = planet.ToLowerInvariant() switch
@@ -178,6 +185,36 @@ public static class RiseSetCalculator
 
     // --- Private helpers ---
 
+    /// <summary>
+    /// Iteratively refines the fractional day <paramref name="m"/> for a rise or set event
+    /// using the Meeus Ch. 15 correction formula.
+    /// </summary>
+    /// <param name="m">Initial fractional day estimate in [0, 1).</param>
+    /// <param name="theta0">GMST at 0h UT for <paramref name="jd0"/>, in degrees.</param>
+    /// <param name="longitude">Observer longitude, degrees (East positive).</param>
+    /// <param name="jd0">Julian Day of the date at 0h UT.</param>
+    /// <param name="ra1">Body RA at JD0 − 1 (degrees).</param>
+    /// <param name="ra2">Body RA at JD0 (degrees).</param>
+    /// <param name="ra3">Body RA at JD0 + 1 (degrees).</param>
+    /// <param name="latitude">Observer latitude, degrees (North positive).</param>
+    /// <param name="dec1">Body Dec at JD0 − 1 (degrees).</param>
+    /// <param name="dec2">Body Dec at JD0 (degrees).</param>
+    /// <param name="dec3">Body Dec at JD0 + 1 (degrees).</param>
+    /// <param name="h0">Standard altitude at rise/set, degrees.</param>
+    /// <returns>Refined fractional day in [0, 1).</returns>
+    /// <remarks>
+    /// Three iterations of the Meeus correction (Ch. 15, Eqs. 15.1–15.3):
+    /// <list type="number">
+    ///   <item>Compute local sidereal time: θ = θ₀ + 360.985647 × m</item>
+    ///   <item>Interpolate RA and Dec using three-point Lagrange interpolation with
+    ///         n = m + ΔT/86400 (interpolation argument corrected for ΔT, Meeus Eq. 15.1)</item>
+    ///   <item>Compute local hour angle H = θ − λ − RA (degrees); wrap to (−180, +180]</item>
+    ///   <item>Compute true altitude h from spherical trig:
+    ///         h = arcsin(sin φ sin δ + cos φ cos δ cos H)</item>
+    ///   <item>Altitude correction: Δm = (h − h₀) / (360 cos δ cos φ sin H)</item>
+    ///   <item>m ← m + Δm, normalised to [0, 1)</item>
+    /// </list>
+    /// </remarks>
     private static double CorrectEvent(
         double m, double theta0, double longitude,
         double jd0,
@@ -211,6 +248,35 @@ public static class RiseSetCalculator
         return m;
     }
 
+    /// <summary>
+    /// Iteratively refines the fractional day <paramref name="m"/> for the upper transit
+    /// using the Meeus Ch. 15 transit correction.
+    /// </summary>
+    /// <param name="m">Initial fractional day estimate in [0, 1).</param>
+    /// <param name="theta0">GMST at 0h UT for <paramref name="jd0"/>, in degrees.</param>
+    /// <param name="longitude">Observer longitude, degrees (East positive).</param>
+    /// <param name="jd0">Julian Day of the date at 0h UT (unused directly; kept for signature symmetry).</param>
+    /// <param name="ra1">Body RA at JD0 − 1 (degrees).</param>
+    /// <param name="ra2">Body RA at JD0 (degrees).</param>
+    /// <param name="ra3">Body RA at JD0 + 1 (degrees).</param>
+    /// <param name="latitude">Observer latitude (unused for transit; kept for symmetry).</param>
+    /// <param name="dec1">Body Dec at JD0 − 1 (unused for transit).</param>
+    /// <param name="dec2">Body Dec at JD0 (unused for transit).</param>
+    /// <param name="dec3">Body Dec at JD0 + 1 (unused for transit).</param>
+    /// <param name="h0">Standard altitude (unused for transit).</param>
+    /// <param name="isTransit">Always <see langword="true"/>; retained for overload clarity.</param>
+    /// <returns>Refined fractional day in [0, 1).</returns>
+    /// <remarks>
+    /// Transit occurs when H = 0 (body on the meridian). Three iterations of:
+    /// <list type="number">
+    ///   <item>θ = θ₀ + 360.985647 × m</item>
+    ///   <item>Interpolate RA at fractional argument n = m</item>
+    ///   <item>H = θ − λ − RA; wrap to (−180, +180]</item>
+    ///   <item>m ← m − H/360</item>
+    /// </list>
+    /// No ΔT correction is applied for transit (unlike rise/set) because the transit time
+    /// is insensitive to the small ΔT interpolation shift.
+    /// </remarks>
     private static double CorrectTransit(
         double m, double theta0, double longitude,
         double jd0,
@@ -230,6 +296,25 @@ public static class RiseSetCalculator
         return m;
     }
 
+    /// <summary>
+    /// Three-point Lagrange (second-order) interpolation, adapted for cyclic angular quantities.
+    /// </summary>
+    /// <param name="y1">Value at n = −1 (previous day).</param>
+    /// <param name="y2">Value at n =  0 (target day).</param>
+    /// <param name="y3">Value at n = +1 (next day).</param>
+    /// <param name="n">Interpolation argument; typically m or m + ΔT/86400 in (−1, +1).</param>
+    /// <returns>Interpolated value at fractional argument <paramref name="n"/>.</returns>
+    /// <remarks>
+    /// Meeus Eq. 3.3 (tabular interpolation):
+    /// <code>
+    ///   a = y2 − y1
+    ///   b = y3 − y2
+    ///   c = b − a
+    ///   y = y2 + n(a + b + nc) / 2
+    /// </code>
+    /// The first and second finite differences a and b are wrapped to (−180, +180] to
+    /// handle right-ascension wrap-around across the 0°/360° boundary.
+    /// </remarks>
     private static double InterpolateDelta(double y1, double y2, double y3, double n)
     {
         double a = y2 - y1; // first finite difference
@@ -241,6 +326,7 @@ public static class RiseSetCalculator
         return y2 + ((n * (a + b + (n * c))) / 2.0);
     }
 
+    /// <summary>Normalises a day-fraction to [0, 1) by adding or subtracting whole days.</summary>
     private static double NormalizeFraction(double m)
     {
         while (m < 0) m += 1;

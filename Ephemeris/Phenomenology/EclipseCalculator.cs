@@ -92,6 +92,19 @@ public static class EclipseCalculator
 
     // --- Core eclipse search ---
 
+    /// <summary>
+    /// Scans lunations from <paramref name="startYear"/> through <paramref name="endYear"/>
+    /// and collects predicted eclipse events.
+    /// </summary>
+    /// <param name="startYear">First calendar year to include.</param>
+    /// <param name="endYear">Last calendar year to include.</param>
+    /// <param name="lunar"><see langword="true"/> for lunar eclipses (full moons); <see langword="false"/> for solar (new moons).</param>
+    /// <returns>Ordered list of eclipse events within the requested year range.</returns>
+    /// <remarks>
+    /// Starting lunation index k is estimated from Meeus Eq. 49.2:
+    /// <c>k ≈ (year − 2000) × 12.3685</c>. Integer k = new moon, k + 0.5 = full moon.
+    /// Each candidate is checked via <see cref="CheckEclipse"/>.
+    /// </remarks>
     private static List<EclipseEvent> FindEclipses(int startYear, int endYear, bool lunar)
     {
         List<EclipseEvent> results = [];
@@ -111,6 +124,30 @@ public static class EclipseCalculator
         return [.. results.Where(e => e.DateTime.Year >= startYear && e.DateTime.Year <= endYear).OrderBy(e => e.DateTime)];
     }
 
+    /// <summary>
+    /// Evaluates whether lunation <paramref name="k"/> produces an eclipse and, if so,
+    /// returns its type, time, magnitude and gamma parameter.
+    /// </summary>
+    /// <param name="k">Lunation index: integer = new moon, half-integer = full moon.</param>
+    /// <param name="lunar"><see langword="true"/> for lunar eclipse check.</param>
+    /// <returns>An <see cref="EclipseEvent"/> when an eclipse occurs; <see langword="null"/> otherwise.</returns>
+    /// <remarks>
+    /// Algorithm from Meeus Chapters 49 and 54:
+    /// <list type="number">
+    ///   <item>Compute T = k/1236.85 (Julian centuries from lunation k, Meeus Eq. 49.1).</item>
+    ///   <item>Compute JDE of mean phase (Meeus Eq. 49.3).</item>
+    ///   <item>Compute Sun's mean anomaly M, Moon's mean anomaly M′, Moon's argument of
+    ///         latitude F, and Moon's ascending node Ω (Meeus Eqs. 49.4–49.7).</item>
+    ///   <item><b>Quick reject:</b> if |sin F| &gt; 0.36 no eclipse is geometrically possible
+    ///         (Moon too far from a node).</item>
+    ///   <item>Apply 26-term JDE correction series (Meeus Eqs. 49.5 solar / 49.6 lunar).</item>
+    ///   <item>Compute gamma (shadow axis distance in Earth radii) from Meeus Eq. 54.2 and
+    ///         u (penumbral radius parameter) from Meeus Eq. 54.3.</item>
+    ///   <item>Apply eclipse-condition thresholds from Meeus Table 54.a to classify
+    ///         event type and compute magnitude.</item>
+    ///   <item>Convert JDE (Terrestrial Time) to UTC by subtracting ΔT.</item>
+    /// </list>
+    /// </remarks>
     private static EclipseEvent? CheckEclipse(double k, bool lunar)
     {
         // Meeus Ch. 49 — time of new/full moon
@@ -261,6 +298,15 @@ public static class EclipseCalculator
         }
     }
 
+    /// <summary>
+    /// Converts a Julian Ephemeris Day (Terrestrial Time) to UTC by subtracting ΔT.
+    /// </summary>
+    /// <param name="jde">Julian Day in Terrestrial Time (TT).</param>
+    /// <returns>Approximate UTC <see cref="DateTime"/>.</returns>
+    /// <remarks>
+    /// TT = UTC + ΔT. Subtracting ΔT (in days) from JDE gives the UTC Julian Day.
+    /// ΔT is evaluated at the approximate Gregorian year of the JDE.
+    /// </remarks>
     private static DateTime JdeToUtc(double jde)
     {
         // JDE is in Terrestrial Time; subtract ΔT to convert to UTC
