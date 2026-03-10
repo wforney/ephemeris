@@ -121,6 +121,12 @@ public sealed class SkyGlControl : OpenGlControlBase
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private unsafe delegate void GetProgramivDelegate(int program, int pname, int* param);
 
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate void BlendFuncDelegate(int sfactor, int dfactor);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate void DetachShaderDelegate(int program, int shader);
+
     private GenVertexArraysDelegate?  _genVertexArrays;
     private BindVertexArrayDelegate?  _bindVertexArray;
     private DeleteVertexArraysDelegate? _deleteVertexArrays;
@@ -131,6 +137,8 @@ public sealed class SkyGlControl : OpenGlControlBase
     private GetBufferSubDataDelegate? _getBufferSubData;
     private GetShaderivDelegate?      _getShaderiv;
     private GetProgramivDelegate?     _getProgramiv;
+    private BlendFuncDelegate?        _blendFunc;
+    private DetachShaderDelegate?     _detachShader;
 
     // ── GL object handles ─────────────────────────────────────────────────
     private int _shaderProgram;
@@ -188,7 +196,7 @@ public sealed class SkyGlControl : OpenGlControlBase
         gl.Enable(GlDepthTest);
         gl.Enable(GlProgramPointSize);
         gl.Enable(GlBlend);
-        gl.BlendFunc(GlSrcAlpha, GlOneMinusSrcAlpha);
+        _blendFunc!(GlSrcAlpha, GlOneMinusSrcAlpha);
 
         CompileShaders(gl);
         InitBuffers(gl);
@@ -273,6 +281,8 @@ public sealed class SkyGlControl : OpenGlControlBase
         _getBufferSubData = Load<GetBufferSubDataDelegate>(gl, "glGetBufferSubData");
         _getShaderiv      = Load<GetShaderivDelegate>(gl, "glGetShaderiv");
         _getProgramiv     = Load<GetProgramivDelegate>(gl, "glGetProgramiv");
+        _blendFunc        = Load<BlendFuncDelegate>(gl, "glBlendFunc");
+        _detachShader     = Load<DetachShaderDelegate>(gl, "glDetachShader");
     }
 
     private static T Load<T>(GlInterface gl, string name) where T : Delegate
@@ -285,18 +295,80 @@ public sealed class SkyGlControl : OpenGlControlBase
     }
 
     // ─────────────────────────────────────────────────────────────────────
+    // GlInterface string helpers (Avalonia's raw API uses nint / void*)
+    // ─────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Calls <c>glGetUniformLocation</c>, marshalling <paramref name="name"/>
+    /// to a null-terminated UTF-8 native pointer as Avalonia's raw API requires.
+    /// </summary>
+    private static unsafe int GlGetUniformLocation(GlInterface gl, int program, string name)
+    {
+        byte[] bytes = System.Text.Encoding.UTF8.GetBytes(name + "\0");
+        fixed (byte* p = bytes)
+            return gl.GetUniformLocation(program, (nint)p);
+    }
+
+    /// <summary>
+    /// Calls <c>glShaderSource</c>, marshalling <paramref name="src"/> to the
+    /// raw <c>(int shader, int count, nint** strings, nint* lengths)</c> form
+    /// that Avalonia's <see cref="GlInterface"/> exposes.
+    /// </summary>
+    private static unsafe void GlShaderSource(GlInterface gl, int shader, string src)
+    {
+        byte[] bytes = System.Text.Encoding.UTF8.GetBytes(src);
+        int len = bytes.Length;
+        fixed (byte* p = bytes)
+        {
+            byte* ptr = p;
+            gl.ShaderSource(shader, 1, (nint)(&ptr), (nint)(&len));
+        }
+    }
+
+    /// <summary>
+    /// Reads the shader info log via the raw
+    /// <c>GetShaderInfoLog(int, int, out int, void*)</c> overload exposed by Avalonia.
+    /// </summary>
+    private static unsafe string GlGetShaderInfoLog(GlInterface gl, int shader)
+    {
+        const int bufSize = 4096;
+        var buf = new byte[bufSize];
+        fixed (byte* p = buf)
+        {
+            gl.GetShaderInfoLog(shader, bufSize, out int len, p);
+            return System.Text.Encoding.UTF8.GetString(buf, 0, Math.Max(0, len));
+        }
+    }
+
+    /// <summary>
+    /// Reads the program info log via the raw
+    /// <c>GetProgramInfoLog(int, int, out int, void*)</c> overload exposed by Avalonia.
+    /// </summary>
+    private static unsafe string GlGetProgramInfoLog(GlInterface gl, int program)
+    {
+        const int bufSize = 4096;
+        var buf = new byte[bufSize];
+        fixed (byte* p = buf)
+        {
+            gl.GetProgramInfoLog(program, bufSize, out int len, p);
+            return System.Text.Encoding.UTF8.GetString(buf, 0, Math.Max(0, len));
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
     // Shader compilation
     // ─────────────────────────────────────────────────────────────────────
 
     private void CompileShaders(GlInterface gl)
     {
-        _shaderProgram = CreateProgram(gl, _getShaderiv!, _getProgramiv!, VertexShaderSource, FragmentShaderSource);
-        _mvpLoc = gl.GetUniformLocation(_shaderProgram, "uMVP");
+        _shaderProgram = CreateProgram(gl, _getShaderiv!, _getProgramiv!, _detachShader!, VertexShaderSource, FragmentShaderSource);
+        _mvpLoc = GlGetUniformLocation(gl, _shaderProgram, "uMVP");
     }
 
     private static int CreateProgram(GlInterface gl,
         GetShaderivDelegate getShaderiv,
         GetProgramivDelegate getProgramiv,
+        DetachShaderDelegate detachShader,
         string vertSrc, string fragSrc)
     {
         int vert = CompileShader(gl, getShaderiv, GlVertexShader, vertSrc);
@@ -311,10 +383,10 @@ public sealed class SkyGlControl : OpenGlControlBase
         unsafe { getProgramiv(prog, GlLinkStatus, &linked); }
 
         if (linked == 0)
-            throw new InvalidOperationException("Shader link failed: " + gl.GetProgramInfoLog(prog));
+            throw new InvalidOperationException("Shader link failed: " + GlGetProgramInfoLog(gl, prog));
 
-        gl.DetachShader(prog, vert);
-        gl.DetachShader(prog, frag);
+        detachShader(prog, vert);
+        detachShader(prog, frag);
         gl.DeleteShader(vert);
         gl.DeleteShader(frag);
 
@@ -326,7 +398,7 @@ public sealed class SkyGlControl : OpenGlControlBase
         int type, string src)
     {
         int shader = gl.CreateShader(type);
-        gl.ShaderSource(shader, src);
+        GlShaderSource(gl, shader, src);
         gl.CompileShader(shader);
 
         int compiled;
@@ -334,7 +406,7 @@ public sealed class SkyGlControl : OpenGlControlBase
 
         if (compiled == 0)
             throw new InvalidOperationException(
-                $"Shader compile failed (type={type}): " + gl.GetShaderInfoLog(shader));
+                $"Shader compile failed (type={type}): " + GlGetShaderInfoLog(gl, shader));
 
         return shader;
     }
