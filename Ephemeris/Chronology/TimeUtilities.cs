@@ -126,6 +126,14 @@ public static class TimeUtils
     /// <param name="jd">Julian Day number (fractional, UTC).</param>
     /// <param name="longitudeDeg">Observer longitude in degrees (east positive).</param>
     /// <returns>LMST in degrees [0, 360).</returns>
+    /// <remarks>
+    /// Meeus, <em>Astronomical Algorithms</em> (2nd ed.) Ch. 12 — LMST is obtained by
+    /// adding the observer's geographic longitude (east positive) to GMST:
+    /// <code>
+    ///   LMST = GMST(JD) + λ   (normalized to [0, 360))
+    /// </code>
+    /// At J2000.0 (JD = 2451545.0) and the prime meridian (λ = 0°), LMST ≈ 280.46°.
+    /// </remarks>
     public static double LocalMeanSiderealTime(double jd, double longitudeDeg)
         => NormalizeDegrees(GMST(jd) + longitudeDeg);
 
@@ -137,6 +145,15 @@ public static class TimeUtils
     /// <param name="longitudeDeg">Observer longitude in degrees (east positive).</param>
     /// <param name="raDeg">Right ascension of the object in degrees [0, 360).</param>
     /// <returns>Hour angle in degrees [0, 360). Values above 180° represent negative (eastern) hour angles.</returns>
+    /// <remarks>
+    /// Meeus, <em>Astronomical Algorithms</em> (2nd ed.) Ch. 13 — the hour angle H is
+    /// defined as the difference between Local Sidereal Time and the object's right ascension:
+    /// <code>
+    ///   H = LMST − α   (normalized to [0, 360))
+    /// </code>
+    /// H = 0° when the object transits the meridian; H ∈ (0°, 180°) west of meridian;
+    /// H ∈ (180°, 360°) (equivalently negative) east of the meridian.
+    /// </remarks>
     public static double HourAngle(double jd, double longitudeDeg, double raDeg)
         => NormalizeDegrees(LocalMeanSiderealTime(jd, longitudeDeg) - raDeg);
 }

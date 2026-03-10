@@ -63,7 +63,7 @@ public class PlanetaryEventTests
         var result = PlanetaryEventCalculator.NextConjunction("jupiter", new DateTime(2024, 3, 1));
         await Assert.That(result).IsNotNull();
         // Must be before the next opposition (Nov 2024)
-        await Assert.That(result!.Value).IsLessThan(new DateTime(2024, 11, 1));
+        await Assert.That(result!.Value.Date).IsLessThan(new DateTime(2024, 11, 1));
     }
 
     [Test]
@@ -72,7 +72,68 @@ public class PlanetaryEventTests
         var after = new DateTime(2024, 6, 1);
         var result = PlanetaryEventCalculator.NextConjunction("saturn", after);
         await Assert.That(result).IsNotNull();
-        await Assert.That(result!.Value).IsGreaterThanOrEqualTo(after);
+        await Assert.That(result!.Value.Date).IsGreaterThanOrEqualTo(after);
+    }
+
+    [Test]
+    public async Task Conjunction_OuterPlanet_LabelIsSuperior()
+    {
+        // All outer planets can only have superior conjunctions (planet behind the Sun).
+        foreach (string planet in new[] { "mars", "jupiter", "saturn", "uranus", "neptune" })
+        {
+            var result = PlanetaryEventCalculator.NextConjunction(planet, new DateTime(2024, 1, 1));
+            await Assert.That(result).IsNotNull();
+            await Assert.That(result!.Value.ConjunctionType).IsEqualTo("Superior");
+        }
+    }
+
+    // ── PlanetaryEventCalculator — NextQuadrature ────────────────────────────
+
+    [Test]
+    public async Task NextQuadrature_Jupiter_ReturnsBothEastAndWest()
+    {
+        var (east, west) = PlanetaryEventCalculator.NextQuadrature("jupiter", new DateTime(2024, 1, 1));
+        await Assert.That(east).IsNotNull();
+        await Assert.That(west).IsNotNull();
+    }
+
+    [Test]
+    public async Task NextQuadrature_ResultsAreAfterStartDate()
+    {
+        var after = new DateTime(2024, 6, 1);
+        var (east, west) = PlanetaryEventCalculator.NextQuadrature("jupiter", after);
+        if (east is not null)
+            await Assert.That(east.Value).IsGreaterThanOrEqualTo(after);
+        if (west is not null)
+            await Assert.That(west.Value).IsGreaterThanOrEqualTo(after);
+    }
+
+    [Test]
+    public async Task NextQuadrature_Saturn_ReturnsBothQuadratures()
+    {
+        var (east, west) = PlanetaryEventCalculator.NextQuadrature("saturn", new DateTime(2024, 1, 1));
+        await Assert.That(east).IsNotNull();
+        await Assert.That(west).IsNotNull();
+    }
+
+    [Test]
+    public async Task NextQuadrature_EastMatchesNextEastQuadrature()
+    {
+        // NextQuadrature.East should match NextEastQuadrature independently
+        var after = new DateTime(2024, 3, 1);
+        var (east, _) = PlanetaryEventCalculator.NextQuadrature("jupiter", after);
+        var eastDirect = PlanetaryEventCalculator.NextEastQuadrature("jupiter", after);
+        await Assert.That(east).IsEqualTo(eastDirect);
+    }
+
+    [Test]
+    public async Task NextQuadrature_WestMatchesNextWestQuadrature()
+    {
+        // NextQuadrature.West should match NextWestQuadrature independently
+        var after = new DateTime(2024, 3, 1);
+        var (_, west) = PlanetaryEventCalculator.NextQuadrature("jupiter", after);
+        var westDirect = PlanetaryEventCalculator.NextWestQuadrature("jupiter", after);
+        await Assert.That(west).IsEqualTo(westDirect);
     }
 
     // ── PlanetaryEventCalculator — Quadratures ───────────────────────────────
@@ -82,10 +143,10 @@ public class PlanetaryEventTests
     {
         // After conjunction in May 2024, east quadrature should be ~Aug 2024
         var conj = PlanetaryEventCalculator.NextConjunction("jupiter", new DateTime(2024, 3, 1));
-        var eastQ = PlanetaryEventCalculator.NextEastQuadrature("jupiter", conj!.Value.AddDays(1));
+        var eastQ = PlanetaryEventCalculator.NextEastQuadrature("jupiter", conj!.Value.Date.AddDays(1));
         var opp = PlanetaryEventCalculator.NextOpposition("jupiter", eastQ!.Value.AddDays(1));
         await Assert.That(eastQ).IsNotNull();
-        await Assert.That(eastQ!.Value).IsGreaterThan(conj!.Value);
+        await Assert.That(eastQ!.Value).IsGreaterThan(conj!.Value.Date);
         await Assert.That(eastQ.Value).IsLessThan(opp!.Value);
     }
 
