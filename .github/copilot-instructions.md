@@ -1,4 +1,4 @@
-<!-- Updated: 2026-03-09 (model sync) -->
+<!-- Updated: 2026-03-10 -->
 # Copilot Instructions
 
 ## Session Checkpoints and Evolution
@@ -328,7 +328,7 @@ fix(geometry): correct azimuth quadrant flip for southern hemisphere
 perf(batch): replace List<T> allocation with ArrayPool in GenerateSunSeries
 Before: 120ms / 1440 records   After: 34ms / 1440 records
 
-chore(deps): bump ScottPlot from 5.0.55 to 5.0.60
+chore(deps): bump ScottPlot from 5.0.55 to 5.1.57
 
 docs(chronology): add XML doc to DeltaT polynomial branches
 ```
@@ -406,7 +406,7 @@ Configured in `.vscode/mcp.json`. Four servers are available:
 - **Scrutor** — assembly scanning for automatic DI registration
 - **DotNext / DotNext.Threading** — advanced .NET utilities and async threading
 - **CommunityToolkit.Mvvm** — MVVM helpers
-- **OpenTK + SkiaSharp** — OpenGL and Skia rendering in the WinForms UI (reserved for future use)
+- **OpenTK + SkiaSharp** — OpenGL and Skia rendering in the WinForms UI (`SkyViewForm`)
 - **SpiceSharp-Parser** — SPICE kernel parsing (provider stubs not yet implemented)
 - **TUnit** — test framework (not xUnit/NUnit)
 - **Imposter** — compile-time source-generated mocks (Roslyn); declare with `[assembly: GenerateImposter(typeof(IMyInterface))]`, use `IMyInterface.Imposter()` in tests
