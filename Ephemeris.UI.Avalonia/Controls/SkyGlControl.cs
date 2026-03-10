@@ -113,9 +113,6 @@ public sealed class SkyGlControl : OpenGlControlBase
     private unsafe delegate void BufferDataDelegate(int target, IntPtr size, float* data, int usage);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private unsafe delegate void GetBufferSubDataDelegate(int target, IntPtr offset, IntPtr size, float* data);
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private unsafe delegate void GetShaderivDelegate(int shader, int pname, int* param);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -134,7 +131,6 @@ public sealed class SkyGlControl : OpenGlControlBase
     private DeleteBuffersDelegate?    _deleteBuffers;
     private UniformMatrix4FvDelegate? _uniformMatrix4fv;
     private BufferDataDelegate?       _bufferData;
-    private GetBufferSubDataDelegate? _getBufferSubData;
     private GetShaderivDelegate?      _getShaderiv;
     private GetProgramivDelegate?     _getProgramiv;
     private BlendFuncDelegate?        _blendFunc;
@@ -153,6 +149,10 @@ public sealed class SkyGlControl : OpenGlControlBase
     // ── Scene data ────────────────────────────────────────────────────────
     private IReadOnlyList<FixedStar> _stars = [];
     private readonly List<(Vector2 Screen, string Label, uint ColorArgb)> _labels = [];
+    private readonly List<Vector3> _bodyWorldPos = [];
+
+    // ── Thread-safe label snapshot (written GL thread, read UI thread) ────
+    private volatile (Vector2 Screen, string Label, uint ColorArgb)[]? _labelSnapshot;
 
     // ── Animation ─────────────────────────────────────────────────────────
     private readonly DispatcherTimer _animTimer;
@@ -261,7 +261,7 @@ public sealed class SkyGlControl : OpenGlControlBase
 
         _bindVertexArray(0);
 
-        UpdateLabelPositions(gl, mvp, w, h);
+        UpdateLabelPositions(mvp, w, h);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -277,7 +277,6 @@ public sealed class SkyGlControl : OpenGlControlBase
         _deleteBuffers    = Load<DeleteBuffersDelegate>(gl, "glDeleteBuffers");
         _uniformMatrix4fv = Load<UniformMatrix4FvDelegate>(gl, "glUniformMatrix4fv");
         _bufferData       = Load<BufferDataDelegate>(gl, "glBufferData");
-        _getBufferSubData = Load<GetBufferSubDataDelegate>(gl, "glGetBufferSubData");
         _getShaderiv      = Load<GetShaderivDelegate>(gl, "glGetShaderiv");
         _getProgramiv     = Load<GetProgramivDelegate>(gl, "glGetProgramiv");
         _blendFunc        = Load<BlendFuncDelegate>(gl, "glBlendFunc");
@@ -517,6 +516,7 @@ public sealed class SkyGlControl : OpenGlControlBase
         const int floatsPerVertex = 8;
         var buffer = new List<float>(12 * floatsPerVertex);
         _labels.Clear();
+        _bodyWorldPos.Clear();
 
         int year  = _vm.SimTime.Year;
         int month = _vm.SimTime.Month;
@@ -570,6 +570,7 @@ public sealed class SkyGlControl : OpenGlControlBase
         buffer.Add(size);
 
         uint argb = (255u << 24) | ((uint)(r * 255) << 16) | ((uint)(g * 255) << 8) | (uint)(b * 255);
+        _bodyWorldPos.Add(new Vector3(x, y, z));
         _labels.Add((Vector2.Zero, label, argb));
     }
 
@@ -627,22 +628,9 @@ public sealed class SkyGlControl : OpenGlControlBase
         ];
     }
 
-    private void UpdateLabelPositions(GlInterface gl, float[] mvp, int width, int height)
+    private void UpdateLabelPositions(float[] mvp, int width, int height)
     {
         if (_bodyVertexCount == 0 || width == 0 || height == 0) return;
-
-        // Bind body VBO to read back vertex positions for screen-space label placement
-        gl.BindBuffer(GlArrayBuffer, _bodyVbo);
-        int floatCount = _bodyVertexCount * 8;
-        var data = new float[floatCount];
-
-        unsafe
-        {
-            fixed (float* p = data)
-                _getBufferSubData!(GlArrayBuffer, IntPtr.Zero, (IntPtr)(floatCount * sizeof(float)), p);
-        }
-
-        gl.BindBuffer(GlArrayBuffer, 0);
 
         var m = new Matrix4x4(
             mvp[0], mvp[1], mvp[2], mvp[3],
@@ -650,10 +638,9 @@ public sealed class SkyGlControl : OpenGlControlBase
             mvp[8], mvp[9], mvp[10], mvp[11],
             mvp[12], mvp[13], mvp[14], mvp[15]);
 
-        for (int i = 0; i < Math.Min(_bodyVertexCount, _labels.Count); i++)
+        for (int i = 0; i < Math.Min(_bodyWorldPos.Count, _labels.Count); i++)
         {
-            var worldPos = new Vector4(data[i * 8], data[i * 8 + 1], data[i * 8 + 2], 1f);
-            var clipPos  = Vector4.Transform(worldPos, m);
+            var clipPos = Vector4.Transform(new Vector4(_bodyWorldPos[i], 1f), m);
 
             if (clipPos.W <= 0)
             {
@@ -667,6 +654,9 @@ public sealed class SkyGlControl : OpenGlControlBase
             float screenY = (1f - ndcY) * 0.5f * height;
             _labels[i] = (new Vector2(screenX, screenY), _labels[i].Label, _labels[i].ColorArgb);
         }
+
+        // Atomic reference write — UI thread reads _labelSnapshot safely
+        _labelSnapshot = [.. _labels];
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -732,8 +722,9 @@ public sealed class SkyGlControl : OpenGlControlBase
     }
 
     /// <summary>
-    /// Public access for the label list so the enclosing <see cref="SkyViewWindow"/>
-    /// can composite text labels on top of the GL surface via Avalonia's Canvas.
+    /// Thread-safe snapshot of screen-space label positions, updated each render frame.
+    /// Read from the UI thread (e.g. a label-refresh timer); written atomically by the GL thread.
     /// </summary>
-    internal IReadOnlyList<(Vector2 Screen, string Label, uint ColorArgb)> Labels => _labels;
+    internal IReadOnlyList<(Vector2 Screen, string Label, uint ColorArgb)> Labels =>
+        (IReadOnlyList<(Vector2, string, uint)>?)_labelSnapshot ?? [];
 }

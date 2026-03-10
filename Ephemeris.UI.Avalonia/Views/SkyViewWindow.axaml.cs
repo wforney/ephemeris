@@ -5,6 +5,8 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.Threading;
 using Ephemeris.UI.Avalonia.Controls;
 
 namespace Ephemeris.UI.Avalonia.Views;
@@ -81,6 +83,34 @@ public partial class SkyViewWindow : Window
         _glControl.PointerWheelChanged += OnPointerWheel;
 
         KeyDown += OnKeyDown;
+
+        // Refresh body-name labels from the GL thread's snapshot at ~20 fps
+        var labelTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
+        labelTimer.Tick += (_, _) => RefreshLabels();
+        labelTimer.Start();
+        Closed += (_, _) => labelTimer.Stop();
+    }
+
+    private void RefreshLabels()
+    {
+        LabelCanvas.Children.Clear();
+        foreach (var (screen, label, colorArgb) in _glControl.Labels)
+        {
+            if (screen.X < 0 || screen.Y < 0) continue;
+            var tb = new TextBlock
+            {
+                Text       = label,
+                FontSize   = 11,
+                Foreground = new SolidColorBrush(Color.FromArgb(
+                    (byte)(colorArgb >> 24),
+                    (byte)(colorArgb >> 16),
+                    (byte)(colorArgb >>  8),
+                    (byte) colorArgb)),
+            };
+            Canvas.SetLeft(tb, screen.X + 6);
+            Canvas.SetTop(tb, screen.Y - 8);
+            LabelCanvas.Children.Add(tb);
+        }
     }
 
     private void ApplyDatePickerText()

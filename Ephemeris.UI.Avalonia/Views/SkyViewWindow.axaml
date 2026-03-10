@@ -40,8 +40,11 @@
 
         </StackPanel>
 
-        <!-- Sky GL control fills the remaining space -->
-        <ContentControl Grid.Row="1" x:Name="GlHost" />
+        <!-- Sky GL control with transparent Canvas overlay for body name labels -->
+        <Grid Grid.Row="1">
+            <ContentControl x:Name="GlHost" />
+            <Canvas x:Name="LabelCanvas" IsHitTestVisible="False" />
+        </Grid>
 
     </Grid>
 
