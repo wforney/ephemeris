@@ -30,14 +30,28 @@ public static class PlanetaryEventCalculator
         => FindElongationCrossing(planet, after, crossingType: EventType.Opposition);
 
     /// <summary>
-    /// Finds the next superior conjunction of an outer planet (planet behind the Sun as seen from Earth).
+    /// Finds the next superior conjunction of an outer planet (planet behind the Sun as seen from Earth),
+    /// returning both the date and the conjunction type label.
     /// Applicable planets: Mars, Jupiter, Saturn, Uranus, Neptune.
     /// </summary>
     /// <param name="planet">Planet name (case-insensitive). Mars through Neptune.</param>
     /// <param name="after">Search start date (UTC).</param>
-    /// <returns>Approximate UTC date-time of the next superior conjunction, or <see langword="null"/> if none found within 2 years.</returns>
-    public static DateTime? NextConjunction(string planet, DateTime after)
-        => FindElongationCrossing(planet, after, crossingType: EventType.Conjunction);
+    /// <returns>
+    /// A tuple of (Date, ConjunctionType) where ConjunctionType is always <c>"Superior"</c> for outer planets
+    /// (they can only pass behind the Sun, never between Earth and Sun),
+    /// or <see langword="null"/> if none found within 2 years.
+    /// </returns>
+    /// <remarks>
+    /// For outer planets the elongation crosses zero as the planet moves behind the Sun — this is always a superior
+    /// conjunction. The label "Superior" is returned to allow callers to distinguish from inferior conjunctions
+    /// (used by inner-planet calculators). Meeus Ch. 36 defines the event as ε = 0 with the planet on the far
+    /// side of the Sun from Earth.
+    /// </remarks>
+    public static (DateTime Date, string ConjunctionType)? NextConjunction(string planet, DateTime after)
+    {
+        var date = FindElongationCrossing(planet, after, crossingType: EventType.Conjunction);
+        return date is null ? null : (date.Value, "Superior");
+    }
 
     /// <summary>
     /// Finds the next eastern quadrature of an outer planet (planet 90° east of the Sun — highest in evening sky).
@@ -58,6 +72,33 @@ public static class PlanetaryEventCalculator
     /// <returns>Approximate UTC date-time of the next western quadrature, or <see langword="null"/> if none found within 2 years.</returns>
     public static DateTime? NextWestQuadrature(string planet, DateTime after)
         => FindElongationCrossing(planet, after, crossingType: EventType.WestQuadrature);
+
+    /// <summary>
+    /// Finds the next eastern and western quadratures of an outer planet, both searched independently
+    /// from <paramref name="after"/>.
+    /// </summary>
+    /// <param name="planet">Planet name (case-insensitive). Mars through Neptune.</param>
+    /// <param name="after">Search start date (UTC).</param>
+    /// <returns>
+    /// A tuple of (East, West) where each element is the next UTC date-time of that quadrature starting from
+    /// <paramref name="after"/>, or <see langword="null"/> for either element if not found within 2 years.
+    /// East and West are searched independently so either may precede the other depending on the planet's
+    /// current position in its synodic cycle.
+    /// </returns>
+    /// <remarks>
+    /// Eastern quadrature (ε = +90°): planet is 90° east of the Sun — highest in the evening sky,
+    /// typically the best pre-opposition observing window.
+    /// Western quadrature (ε = −90°): planet is 90° west of the Sun — highest in the morning sky,
+    /// the post-opposition observing window.
+    /// Meeus Ch. 36 defines both quadrature geometries. East and West are searched independently;
+    /// see <see cref="FindElongationCrossing"/> for the detection algorithm.
+    /// </remarks>
+    public static (DateTime? East, DateTime? West) NextQuadrature(string planet, DateTime after)
+    {
+        DateTime? east = FindElongationCrossing(planet, after, crossingType: EventType.EastQuadrature);
+        DateTime? west = FindElongationCrossing(planet, after, crossingType: EventType.WestQuadrature);
+        return (east, west);
+    }
 
     private enum EventType { Opposition, Conjunction, EastQuadrature, WestQuadrature }
 
