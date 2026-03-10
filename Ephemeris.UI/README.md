@@ -4,6 +4,9 @@ Windows Forms visualization application for the `Ephemeris` library.
 
 **Target:** `net10.0-windows` · **Windows only**
 
+> **Linux / macOS users:** See [`Ephemeris.UI.Avalonia`](../Ephemeris.UI.Avalonia/README.md) for
+> the cross-platform Avalonia version that runs on Windows, Linux, and macOS.
+
 ---
 
 ## Running the App
@@ -74,6 +77,10 @@ Chart details:
 | `OpenTK.GLControl` 4.0.2 | WinForms-hosted OpenGL control |
 | `SkiaSharp.Views.WindowsForms` 3.119.2 | 2D label overlay on sky view |
 | `ScottPlot.WinForms` 5.1.57 | Altitude-vs-time chart |
+
+> **Note:** `SkyViewModel` and the messaging types live in `Ephemeris.UI.Shared`
+> (a cross-platform class library) so they can be reused by `Ephemeris.UI.Avalonia`
+> without any WinForms dependency.
 
 ---
 
