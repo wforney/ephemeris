@@ -35,10 +35,10 @@ A .NET 10 library for computing positions of celestial bodies (Sun, Moon, planet
 
 | Project | Description |
 |---|---|
-| `Ephemeris` | Core class library — calculation engine |
-| `Ephemeris.Tests` | TUnit test suite (252 tests) |
-| `Ephemeris.Benchmarks` | BenchmarkDotNet performance suite |
-| `Ephemeris.UI` | WinForms visualization app (Windows only) |
+| [`Ephemeris`](Ephemeris/README.md) | Core class library — calculation engine |
+| [`Ephemeris.Tests`](Ephemeris.Tests/README.md) | TUnit test suite (252 tests) |
+| [`Ephemeris.Benchmarks`](Ephemeris.Benchmarks/README.md) | BenchmarkDotNet performance suite |
+| [`Ephemeris.UI`](Ephemeris.UI/README.md) | WinForms visualization app (Windows only) |
 
 ## Architecture
 
@@ -135,6 +135,8 @@ var bspRecords = BspImporter.LoadFromBspKernel(
 
 ## Accuracy
 
+For detailed algorithm documentation, formula derivations, and source references, see the **[Algorithm Reference](https://github.com/wforney/ephemeris/wiki/Algorithm-Reference)** wiki page.
+
 | Body / Topic | Algorithm | Accuracy |
 |---|---|---|
 | Sun | Meeus Ch. 25 (equation of center, aberration, nutation) | ~0.01° |
@@ -165,14 +167,20 @@ Coordinate record types (`readonly record struct`) in `Ephemeris.Geometry`:
 
 ## Format documentation
 
-Reference documents in `docs/`:
+Reference documents in `docs/` and on the **[GitHub Wiki](https://github.com/wforney/ephemeris/wiki)**:
 
 | File | Contents |
 |---|---|
-| [`docs/spk-format.md`](docs/spk-format.md) | DAF/SPK binary format — file record, summary records, segment descriptors, Type 2/3 Chebyshev layout |
-| [`docs/se1-format.md`](docs/se1-format.md) | SE1 binary ephemeris format |
-| [`docs/sefstars-format.md`](docs/sefstars-format.md) | Star catalog text format |
-| [`docs/yale-bsc5-format.md`](docs/yale-bsc5-format.md) | Yale Bright Star Catalog 5th edition fixed-width format |
+| [`docs/spk-format.md`](docs/spk-format.md) | DAF/SPK binary format — file record, summary records, segment descriptors, Type 2/3 Chebyshev layout — also at [wiki](https://github.com/wforney/ephemeris/wiki/SPK-BSP-Format) |
+| [`docs/se1-format.md`](docs/se1-format.md) | SE1 binary ephemeris format — also at [wiki](https://github.com/wforney/ephemeris/wiki/SE1-Ephemeris-Format) |
+| [`docs/sefstars-format.md`](docs/sefstars-format.md) | Star catalog text format — also at [wiki](https://github.com/wforney/ephemeris/wiki/SEFStars-Catalog-Format) |
+| [`docs/yale-bsc5-format.md`](docs/yale-bsc5-format.md) | Yale Bright Star Catalog 5th edition fixed-width format — also at [wiki](https://github.com/wforney/ephemeris/wiki/Yale-BSC5-Format) |
+
+## Documentation
+
+- **[GitHub Wiki](https://github.com/wforney/ephemeris/wiki)** — algorithm reference, format specifications, and development guides
+- **[Algorithm Reference](https://github.com/wforney/ephemeris/wiki/Algorithm-Reference)** — all algorithms with formulas and Meeus/IAU citations
+- Each project has its own `README.md` with project-specific details
 
 ## Roadmap
 

@@ -215,6 +215,23 @@ When adding or editing any calculation class:
 - Update the **[[Algorithm Reference|Algorithm-Reference]]** wiki page with the new formula
 - Keep the wiki in sync: the wiki is the human-readable complement to the inline docs
 
+### Per-Project README Standard
+
+**Every project must have a `README.md`** in its project root directory. Update it whenever the project's API, dependencies, or behaviour changes.
+
+Required sections per project type:
+
+| Project type | Required sections |
+|---|---|
+| Class library | What it is, public entry points, namespace map with wiki links, data types, coordinate conventions, DI setup, key dependencies, further reading |
+| Test project | Test count, how to run, test category table, how to add tests, snapshot/mock patterns, reference value sources |
+| Benchmark project | How to run (Release only), benchmark classes table, how to add benchmarks, result interpretation |
+| App (WinForms/console) | How to run, forms/components, MVVM pattern, key dependencies, architecture notes |
+
+**Wiki links are required** in any README section that covers algorithms, formulas, or file formats — link to the relevant anchor in the [Algorithm Reference](https://github.com/wforney/ephemeris/wiki/Algorithm-Reference) or format spec pages.
+
+The root `README.md` is the solution-level overview. It should always link to per-project READMEs and the wiki.
+
 ## WinForms UI (Ephemeris.UI)
 
 `EphemerisPlotForm` is the sole form. It takes `IEnumerable<EphemerisRecord>` and a body name, then renders an altitude-vs-time scatter chart:
