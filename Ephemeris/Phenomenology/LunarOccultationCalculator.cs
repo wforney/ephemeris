@@ -54,12 +54,10 @@ public static class LunarOccultationCalculator
         double jdStart  = TimeZoneUtils.ToJulianDay(after);
         double jdEnd    = jdStart + MaxScanDays;
 
-        double prevJd  = jdStart;
-        double prevSep = Separation(jdStart, target, observer);
-        double prevRad = MoonAngularRadius(jdStart);
+        double prevJd = jdStart;
 
         // If already occulted at the start of the search window, Disappearance will remain null.
-        bool inside = prevSep <= prevRad;
+        bool inside = Separation(jdStart, target, observer) <= MoonAngularRadius(jdStart);
         DateTime? disappearance = null;
 
         for (double jd = jdStart + ScanStepDays; jd <= jdEnd; jd += ScanStepDays)
@@ -80,9 +78,7 @@ public static class LunarOccultationCalculator
                 return new OccultationEvent(disappearance, reappearance, targetName);
             }
 
-            prevJd  = jd;
-            prevSep = sep;
-            prevRad = rad;
+            prevJd = jd;
         }
 
         // No complete occultation found in window
@@ -141,7 +137,7 @@ public static class LunarOccultationCalculator
         EquatorialCoordinates target, GeographicCoordinates observer,
         bool entering)
     {
-        // 50 bisection iterations → precision ≈ ScanStepDays / 2^50 ≈ 10^−14 days ≈ 10^−9 seconds
+        // 50 bisection iterations → precision ≈ ScanStepDays / 2^50 ≈ 0.001 ms (well below 1 second)
         for (int i = 0; i < 50; i++)
         {
             double jdMid = (jdLow + jdHigh) / 2.0;
@@ -150,7 +146,7 @@ public static class LunarOccultationCalculator
 
             // For ingress: we want the last moment when sep > rad (outside)
             // For egress:  we want the first moment when sep > rad (outside)
-            if (sep <= rad == entering)
+            if ((sep <= rad) == entering)
                 jdHigh = jdMid;
             else
                 jdLow  = jdMid;
