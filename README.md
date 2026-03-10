@@ -3,6 +3,11 @@
 A .NET 10 library for computing positions of celestial bodies (Sun, Moon, planets, and stars) as seen from any observer location on Earth.
 
 [![CI](https://github.com/wforney/ephemeris/actions/workflows/ci.yml/badge.svg)](https://github.com/wforney/ephemeris/actions/workflows/ci.yml)
+[![NuGet](https://img.shields.io/nuget/v/WilliamForney.Ephemeris.svg)](https://www.nuget.org/packages/WilliamForney.Ephemeris/)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/WilliamForney.Ephemeris.svg)](https://www.nuget.org/packages/WilliamForney.Ephemeris/)
+[![GitHub Release](https://img.shields.io/github/v/release/wforney/ephemeris)](https://github.com/wforney/ephemeris/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![.NET](https://img.shields.io/badge/.NET-10.0-blue)](https://dotnet.microsoft.com/download/dotnet/10.0)
 
 ## Features
 
@@ -75,6 +80,24 @@ dotnet test
 ```
 
 Integration tests that require local ephemeris kernel files (BSP, SE1) are skipped automatically when the files are not present.
+
+## Installation
+
+```bash
+dotnet add package WilliamForney.Ephemeris
+```
+
+Or add directly to your project file:
+
+```xml
+<PackageReference Include="WilliamForney.Ephemeris" Version="x.y.z" />
+```
+
+Or via the NuGet Package Manager console:
+
+```powershell
+Install-Package WilliamForney.Ephemeris
+```
 
 ## Usage
 
@@ -219,6 +242,18 @@ No planned items at this time — contributions welcome!
 - [TUnit](https://github.com/thomhurst/TUnit) — test framework
 - [Verify.TUnit](https://github.com/VerifyTests/Verify) — snapshot testing
 - [Imposter](https://github.com/pdevito3/Imposter) — compile-time source-generated mocks
+
+## Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository and create a feature branch: `feat/<scope>/<description>`
+2. Follow the existing code style (4-space indent, nullable reference types, XML docs on all public and non-trivial private members)
+3. Add or update tests in `Ephemeris.Tests` for any changed behaviour — all existing tests must continue to pass
+4. Ensure `dotnet build` and `dotnet test` pass with no warnings
+5. Open a pull request against `main` — the CI workflow will run build + tests automatically
+
+See [`.github/copilot-instructions.md`](.github/copilot-instructions.md) for architectural conventions, commit message format, and domain namespace guidance.
 
 ## License
 
