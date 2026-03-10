@@ -15,6 +15,11 @@ namespace Ephemeris.UI.Avalonia.Views;
 public partial class EphemerisPlotWindow : Window
 {
     /// <summary>
+    /// Parameterless constructor required by Avalonia's runtime XAML loader.
+    /// </summary>
+    public EphemerisPlotWindow() => InitializeComponent();
+
+    /// <summary>
     /// Initialises the window and renders the altitude series for <paramref name="body"/>.
     /// </summary>
     /// <param name="records">Pre-computed ephemeris records.</param>

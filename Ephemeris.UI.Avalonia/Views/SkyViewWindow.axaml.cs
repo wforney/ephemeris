@@ -34,6 +34,12 @@ public partial class SkyViewWindow : Window
     private Point _lastMouse;
 
     /// <summary>
+    /// Parameterless constructor required by Avalonia's runtime XAML loader.
+    /// Defaults to longitude 0° (Greenwich meridian) and latitude 51.5° N (London).
+    /// </summary>
+    public SkyViewWindow() : this(0.0, 51.5, default) { }
+
+    /// <summary>
     /// Initialises the sky view window.
     /// </summary>
     /// <param name="longitude">Observer longitude in degrees (east positive).</param>
