@@ -1,6 +1,8 @@
 // Updated: 2026-03-10
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
+using Ephemeris.UI.Messages;
 
 namespace Ephemeris.UI;
 
@@ -9,7 +11,14 @@ namespace Ephemeris.UI;
 /// Holds all user-configurable state: observer position, simulated time,
 /// camera orientation, and animation play state.
 /// </summary>
-public sealed partial class SkyViewModel : ObservableObject
+/// <remarks>
+/// Extends <see cref="ObservableRecipient"/> to participate in the
+/// <see cref="CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger"/> bus.
+/// Sends <see cref="SimTimeChangedMessage"/> and <see cref="ObserverChangedMessage"/>
+/// so decoupled recipients (e.g., <see cref="LauncherForm"/>) can track state
+/// across sessions without holding a direct reference.
+/// </remarks>
+public sealed partial class SkyViewModel : ObservableRecipient
 {
     /// <summary>Observer longitude in degrees (east positive).</summary>
     [ObservableProperty] private double _longitude;
@@ -42,7 +51,21 @@ public sealed partial class SkyViewModel : ObservableObject
         _simTime   = initialTime == default ? DateTime.UtcNow : initialTime;
         _pitch     = 20f;  // slightly above south horizon
         _yaw       = 180f; // facing south
+        IsActive   = true; // register with WeakReferenceMessenger
     }
+
+    // Partial hooks invoked by source-generated property setters.
+    // Camera-only properties (Yaw, Pitch, FovDeg, Playing) are not broadcast —
+    // they are purely local UI state of no interest to other components.
+
+    partial void OnSimTimeChanged(DateTime value) =>
+        Messenger.Send(new SimTimeChangedMessage(value));
+
+    partial void OnLongitudeChanged(double value) =>
+        Messenger.Send(new ObserverChangedMessage(new ObserverLocation(value, Latitude)));
+
+    partial void OnLatitudeChanged(double value) =>
+        Messenger.Send(new ObserverChangedMessage(new ObserverLocation(Longitude, value)));
 
     /// <summary>Toggles the animation play state.</summary>
     [RelayCommand]
