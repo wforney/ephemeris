@@ -1,4 +1,4 @@
-<!-- Updated: 2026-03-10 -->
+<!-- Updated: 2026-03-10 (copilot-setup-steps added) -->
 # Copilot Instructions
 
 ## Session Checkpoints and Evolution
@@ -97,11 +97,12 @@ When creating a new agent: add a row here, pick the lowest model tier sufficient
 
 ## Project Overview
 
-**Ephemeris** is a .NET 10.0 astronomical calculations library that computes positions of celestial bodies (Sun, Moon, planets) as seen from any observer location on Earth. The solution has three projects:
+**Ephemeris** is a .NET 10.0 astronomical calculations library that computes positions of celestial bodies (Sun, Moon, planets) as seen from any observer location on Earth. The solution has four projects:
 
 - **Ephemeris** — Core class library (the calculation engine)
 - **Ephemeris.Tests** — Test suite using TUnit
 - **Ephemeris.UI** — WinForms visualization app (Windows only, `net10.0-windows`)
+- **Ephemeris.Benchmarks** — BenchmarkDotNet performance benchmarks
 
 ## Build & Test Commands
 
