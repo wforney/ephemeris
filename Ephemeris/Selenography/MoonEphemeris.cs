@@ -233,4 +233,91 @@ public static class MoonEphemeris
             _       => "New Moon",
         };
     }
+
+    // Inclination of Moon's equator to the ecliptic (Meeus Ch. 53)
+    private const double MoonEquatorInclinationDeg = 1.5424;
+
+    /// <summary>
+    /// Calculates the optical libration of the Moon in longitude and latitude (Meeus Ch. 53).
+    /// Libration is the apparent rocking of the Moon that reveals up to 59% of its surface over time.
+    /// </summary>
+    /// <param name="T">Julian centuries since J2000.0.</param>
+    /// <returns>
+    /// A tuple of (LongitudeDeg, LatitudeDeg) optical libration angles, both in degrees.
+    /// Longitude is in [-8, +8]°; latitude is in [-7, +7]°.
+    /// </returns>
+    public static (double LongitudeDeg, double LatitudeDeg) Libration(double T)
+    {
+        // Recompute Ch. 47 fundamental arguments
+        double Lp = TimeUtils.NormalizeDegrees(218.3164477 + (481267.88123421 * T) - (0.0015786 * T * T) + (T * T * T / 538841.0) - (T * T * T * T / 65194000.0)); // L': mean longitude
+        double D  = TimeUtils.NormalizeDegrees(297.8501921 + (445267.1114034  * T) - (0.0018819 * T * T) + (T * T * T / 545868.0) - (T * T * T * T / 113065000.0)); // D: mean elongation
+        double M  = TimeUtils.NormalizeDegrees(357.5291092 + ( 35999.0502909  * T) - (0.0001536 * T * T) + (T * T * T / 24490000.0)); // M: Sun's mean anomaly
+        double Mp = TimeUtils.NormalizeDegrees(134.9633964 + (477198.8675055  * T) + (0.0087414 * T * T) + (T * T * T / 69699.0)   - (T * T * T * T / 14712000.0)); // M': Moon's mean anomaly
+        double F  = TimeUtils.NormalizeDegrees( 93.2720950 + (483202.0175233  * T) - (0.0036539 * T * T) - (T * T * T / 3526000.0) + (T * T * T * T / 863310000.0)); // F: argument of latitude
+        double Om = TimeUtils.NormalizeDegrees(125.0445479 - (1934.1362608    * T) + (0.0020691 * T * T) + (T * T * T / 450160.0)); // Ω: longitude of ascending node
+
+        double A1 = TimeUtils.NormalizeDegrees(119.75 + (131.849 * T));
+        double A3 = TimeUtils.NormalizeDegrees(313.45 + (481266.484 * T));
+        double e  = 1.0 - (0.002516 * T) - (0.0000074 * T * T);
+        double e2 = e * e;
+
+        double DRad  = TimeUtils.ToRadians(D);
+        double MRad  = TimeUtils.ToRadians(M);
+        double MpRad = TimeUtils.ToRadians(Mp);
+        double FRad  = TimeUtils.ToRadians(F);
+
+        // Compute longitude (ΣL) and latitude (ΣB) sums using the Ch.47 tables
+        double sumL = 0.0, sumB = 0.0;
+        foreach (var (termD, termM, termMp, termF, el, _) in s_lonDist)
+        {
+            double arg = (termD * DRad) + (termM * MRad) + (termMp * MpRad) + (termF * FRad);
+            double eFactor = Math.Abs(termM) == 1 ? e : (Math.Abs(termM) == 2 ? e2 : 1.0);
+            sumL += eFactor * el * Math.Sin(arg);
+        }
+
+        foreach (var (termD, termM, termMp, termF, eb) in s_lat)
+        {
+            double arg = (termD * DRad) + (termM * MRad) + (termMp * MpRad) + (termF * FRad);
+            double eFactor = Math.Abs(termM) == 1 ? e : (Math.Abs(termM) == 2 ? e2 : 1.0);
+            sumB += eFactor * eb * Math.Sin(arg);
+        }
+
+        sumL += (3958 * Math.Sin(TimeUtils.ToRadians(A1)))
+              + (1962 * Math.Sin(TimeUtils.ToRadians(Lp - F)))
+              +  (318 * Math.Sin(TimeUtils.ToRadians(TimeUtils.NormalizeDegrees(53.09 + (479264.290 * T)))));
+        sumB += (-2235 * Math.Sin(TimeUtils.ToRadians(Lp)))
+              +   (382 * Math.Sin(TimeUtils.ToRadians(A3)))
+              +   (175 * Math.Sin(TimeUtils.ToRadians(A1 - F)))
+              +   (175 * Math.Sin(TimeUtils.ToRadians(A1 + F)))
+              +   (127 * Math.Sin(TimeUtils.ToRadians(Lp - Mp)))
+              -   (115 * Math.Sin(TimeUtils.ToRadians(Lp + Mp)));
+
+        double moonLon = TimeUtils.NormalizeDegrees(Lp + (sumL / 1_000_000.0));
+        double moonLat = sumB / 1_000_000.0;
+
+        // Apply nutation to get apparent ecliptic longitude (Meeus Ch. 53)
+        double deltaPsiDeg = NutationCalculator.Calculate(T).DeltaPsi;
+        double lambdaApparent = moonLon + deltaPsiDeg;
+
+        // Optical libration in longitude (l') and latitude (b') — Meeus Eq. 53.1–53.2
+        double I   = MoonEquatorInclinationDeg;
+        double W   = lambdaApparent - Om;
+        double WRad   = TimeUtils.ToRadians(W);
+        double betaRad = TimeUtils.ToRadians(moonLat);
+        double IRad   = TimeUtils.ToRadians(I);
+
+        double A = Math.Atan2(
+            (Math.Sin(WRad) * Math.Cos(betaRad) * Math.Cos(IRad)) - (Math.Sin(betaRad) * Math.Sin(IRad)),
+            Math.Cos(WRad) * Math.Cos(betaRad));
+
+        double librationLon = TimeUtils.ToDegrees(A) - F; // l' in degrees
+
+        double sinB2 = -(Math.Sin(WRad) * Math.Cos(betaRad) * Math.Sin(IRad)) - (Math.Sin(betaRad) * Math.Cos(IRad));
+        double librationLat = TimeUtils.ToDegrees(Math.Asin(Math.Clamp(sinB2, -1.0, 1.0))); // b' in degrees
+
+        // Normalize longitude libration to (-180, 180] so callers see the expected ±8° range
+        librationLon = ((librationLon + 180.0) % 360.0 + 360.0) % 360.0 - 180.0;
+
+        return (librationLon, librationLat);
+    }
 }

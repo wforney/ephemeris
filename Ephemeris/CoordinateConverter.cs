@@ -6,6 +6,7 @@ namespace Ephemeris;
 
 /// <summary>
 /// Converts between ecliptic and equatorial coordinate systems using the obliquity of the ecliptic.
+/// Also converts between equatorial (RA/Dec) and galactic (l, b) coordinate systems.
 /// </summary>
 public static class CoordinateConverter
 {
@@ -80,5 +81,58 @@ public static class CoordinateConverter
                  + (Math.Cos(dec1Rad) * Math.Cos(dec2Rad) * Math.Sin(dRa / 2) * Math.Sin(dRa / 2));
         // Clamp to [-1,1]: haversineA can slightly exceed 1 for near-antipodal points due to floating-point rounding
         return TimeUtils.ToDegrees(2 * Math.Asin(Math.Clamp(Math.Sqrt(haversineA), 0.0, 1.0)));
+    }
+
+    // IAU 1958 galactic coordinate system constants (J2000.0 equivalents, from ESA/Hipparcos)
+    private const double RaNGPDeg  = 192.859481; // RA of North Galactic Pole (J2000), degrees
+    private const double DecNGPDeg =  27.128251; // Dec of North Galactic Pole (J2000), degrees
+    private const double LNcpDeg   = 122.932;    // Galactic longitude of North Celestial Pole, degrees
+
+    /// <summary>
+    /// Converts equatorial (RA/Dec, J2000) coordinates to IAU 1958 galactic coordinates (l, b).
+    /// </summary>
+    /// <param name="coordinates">Equatorial coordinates (RA in degrees [0,360), Dec in degrees [-90,90]).</param>
+    /// <returns>A tuple of (L, B) where L is galactic longitude [0,360) and B is galactic latitude [-90,90], both in degrees.</returns>
+    public static (double L, double B) EquatorialToGalactic(EquatorialCoordinates coordinates)
+    {
+        double raRad    = TimeUtils.ToRadians(coordinates.RightAscension);
+        double decRad   = TimeUtils.ToRadians(coordinates.Declination);
+        double raNGPRad = TimeUtils.ToRadians(RaNGPDeg);
+        double sinNGP   = Math.Sin(TimeUtils.ToRadians(DecNGPDeg));
+        double cosNGP   = Math.Cos(TimeUtils.ToRadians(DecNGPDeg));
+
+        double sinB = (Math.Sin(decRad) * sinNGP) + (Math.Cos(decRad) * cosNGP * Math.Cos(raRad - raNGPRad));
+        double b    = TimeUtils.ToDegrees(Math.Asin(Math.Clamp(sinB, -1.0, 1.0)));
+
+        double xL = Math.Cos(decRad) * Math.Sin(raRad - raNGPRad);
+        double yL = (Math.Sin(decRad) * cosNGP) - (Math.Cos(decRad) * sinNGP * Math.Cos(raRad - raNGPRad));
+        double l  = TimeUtils.NormalizeDegrees(LNcpDeg - TimeUtils.ToDegrees(Math.Atan2(xL, yL)));
+
+        return (l, b);
+    }
+
+    /// <summary>
+    /// Converts IAU 1958 galactic coordinates (l, b) to equatorial (RA/Dec, J2000) coordinates.
+    /// </summary>
+    /// <param name="l">Galactic longitude in degrees [0, 360).</param>
+    /// <param name="b">Galactic latitude in degrees [-90, 90].</param>
+    /// <returns>Equatorial coordinates (RA in degrees [0,360), Dec in degrees [-90,90]).</returns>
+    public static EquatorialCoordinates GalacticToEquatorial(double l, double b)
+    {
+        double lRad     = TimeUtils.ToRadians(l);
+        double bRad     = TimeUtils.ToRadians(b);
+        double lNcpRad  = TimeUtils.ToRadians(LNcpDeg);
+        double raNGPRad = TimeUtils.ToRadians(RaNGPDeg);
+        double sinNGP   = Math.Sin(TimeUtils.ToRadians(DecNGPDeg));
+        double cosNGP   = Math.Cos(TimeUtils.ToRadians(DecNGPDeg));
+
+        double sinDec = (Math.Sin(bRad) * sinNGP) + (Math.Cos(bRad) * cosNGP * Math.Cos(lNcpRad - lRad));
+        double dec    = TimeUtils.ToDegrees(Math.Asin(Math.Clamp(sinDec, -1.0, 1.0)));
+
+        double xRA = Math.Cos(bRad) * Math.Sin(lNcpRad - lRad);
+        double yRA = (Math.Sin(bRad) * cosNGP) - (Math.Cos(bRad) * sinNGP * Math.Cos(lNcpRad - lRad));
+        double ra  = TimeUtils.NormalizeDegrees(RaNGPDeg + TimeUtils.ToDegrees(Math.Atan2(xRA, yRA)));
+
+        return new EquatorialCoordinates(ra, dec);
     }
 }

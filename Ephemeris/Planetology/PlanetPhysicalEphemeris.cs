@@ -1,3 +1,5 @@
+using Ephemeris.Chronology;
+
 namespace Ephemeris.Planetology;
 
 /// <summary>
@@ -80,4 +82,36 @@ public static class PlanetPhysicalEphemeris
     /// <returns>Elongation angle in degrees [0, 180].</returns>
     public static double Elongation(double planetRA, double planetDec, double sunRA, double sunDec)
         => CoordinateConverter.AngularSeparation(planetRA, planetDec, sunRA, sunDec);
+
+    /// <summary>
+    /// Calculates the phase angle (Sun–planet–observer angle) given the three distances.
+    /// </summary>
+    /// <param name="heliocentricDistanceAu">Planet heliocentric distance in AU (r).</param>
+    /// <param name="geocentricDistanceAu">Planet geocentric distance in AU (Δ).</param>
+    /// <param name="earthSunDistanceAu">Earth–Sun distance in AU (R).</param>
+    /// <returns>Phase angle in degrees [0, 180]. 0° = full (behind Sun), 180° = new (in front of Sun).</returns>
+    public static double PhaseAngle(double heliocentricDistanceAu, double geocentricDistanceAu, double earthSunDistanceAu)
+    {
+        double r     = heliocentricDistanceAu;
+        double delta = geocentricDistanceAu;
+        double R     = earthSunDistanceAu;
+        double cosI  = ((r * r) + (delta * delta) - (R * R)) / (2.0 * r * delta);
+        return TimeUtils.ToDegrees(Math.Acos(Math.Clamp(cosI, -1.0, 1.0)));
+    }
+
+    /// <summary>
+    /// Calculates the illuminated fraction of a planet's disk (Meeus Ch. 41).
+    /// </summary>
+    /// <param name="heliocentricDistanceAu">Planet heliocentric distance in AU (r).</param>
+    /// <param name="geocentricDistanceAu">Planet geocentric distance in AU (Δ).</param>
+    /// <param name="earthSunDistanceAu">Earth–Sun distance in AU (R).</param>
+    /// <returns>
+    /// Illumination fraction in [0, 1]. 1 = fully illuminated (opposition), 0 = dark (inferior conjunction).
+    /// Outer planets always return values near 1; inner planets can drop below 0.5.
+    /// </returns>
+    public static double Illumination(double heliocentricDistanceAu, double geocentricDistanceAu, double earthSunDistanceAu)
+    {
+        double phaseAngleRad = TimeUtils.ToRadians(PhaseAngle(heliocentricDistanceAu, geocentricDistanceAu, earthSunDistanceAu));
+        return (1.0 + Math.Cos(phaseAngleRad)) / 2.0;
+    }
 }

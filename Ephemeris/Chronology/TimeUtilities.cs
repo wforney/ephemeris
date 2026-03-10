@@ -119,4 +119,24 @@ public static class TimeUtils
     /// <param name="deg">The angle in degrees to convert.</param>
     /// <returns>The angle in radians.</returns>
     public static double ToRadians(double deg) => double.DegreesToRadians(deg); // deg * Math.PI / 180.0;
+
+    /// <summary>
+    /// Calculates the Local Mean Sidereal Time (LMST) for a given Julian Day and observer longitude.
+    /// </summary>
+    /// <param name="jd">Julian Day number (fractional, UTC).</param>
+    /// <param name="longitudeDeg">Observer longitude in degrees (east positive).</param>
+    /// <returns>LMST in degrees [0, 360).</returns>
+    public static double LocalMeanSiderealTime(double jd, double longitudeDeg)
+        => NormalizeDegrees(GMST(jd) + longitudeDeg);
+
+    /// <summary>
+    /// Calculates the Hour Angle of a celestial object for a given observer location and time.
+    /// The hour angle is positive west of the meridian and negative east.
+    /// </summary>
+    /// <param name="jd">Julian Day number (fractional, UTC).</param>
+    /// <param name="longitudeDeg">Observer longitude in degrees (east positive).</param>
+    /// <param name="raDeg">Right ascension of the object in degrees [0, 360).</param>
+    /// <returns>Hour angle in degrees [0, 360). Values above 180° represent negative (eastern) hour angles.</returns>
+    public static double HourAngle(double jd, double longitudeDeg, double raDeg)
+        => NormalizeDegrees(LocalMeanSiderealTime(jd, longitudeDeg) - raDeg);
 }

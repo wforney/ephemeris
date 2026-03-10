@@ -62,4 +62,28 @@ public static class ObserverGeometry
 
         return new HorizontalCoordinates(TimeUtils.NormalizeDegrees(TimeUtils.ToDegrees(azimuthRad)), altDeg);
     }
+
+    /// <summary>
+    /// Calculates the parallactic angle — the angle between the great circle through the object and the zenith,
+    /// and the great circle through the object and the north celestial pole.
+    /// Used for instrument position angle corrections and camera orientation.
+    /// </summary>
+    /// <param name="hourAngleDeg">Hour angle of the object in degrees (positive = west of meridian).</param>
+    /// <param name="decDeg">Declination of the object in degrees [-90, 90].</param>
+    /// <param name="latDeg">Observer latitude in degrees (north positive).</param>
+    /// <returns>
+    /// Parallactic angle in degrees. Zero at transit; positive when object is east of meridian.
+    /// Returns 0° when sin(hourAngle) = 0 (at transit or anti-transit).
+    /// </returns>
+    public static double ParallacticAngle(double hourAngleDeg, double decDeg, double latDeg)
+    {
+        double H   = TimeUtils.ToRadians(hourAngleDeg);
+        double dec = TimeUtils.ToRadians(decDeg);
+        double lat = TimeUtils.ToRadians(latDeg);
+        double sinH = Math.Sin(H);
+        double denominator = (Math.Tan(lat) * Math.Cos(dec)) - (Math.Sin(dec) * Math.Cos(H));
+        if (Math.Abs(sinH) < 1e-10 && Math.Abs(denominator) < 1e-10)
+            return 0.0;
+        return TimeUtils.ToDegrees(Math.Atan2(sinH, denominator));
+    }
 }
