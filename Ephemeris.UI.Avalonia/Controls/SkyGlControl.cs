@@ -9,7 +9,6 @@ using Avalonia.Threading;
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 using Ephemeris.Stellarography;
-using static Avalonia.OpenGL.OpenGlConsts;
 
 namespace Ephemeris.UI.Avalonia.Controls;
 
@@ -38,7 +37,9 @@ namespace Ephemeris.UI.Avalonia.Controls;
 /// </remarks>
 public sealed class SkyGlControl : OpenGlControlBase
 {
-    // ── GL constants not in Avalonia's OpenGlConsts ───────────────────────
+    // ── GL constants not in Avalonia's GlInterface ────────────────────────
+    private const int GL_COLOR_BUFFER_BIT  = 0x4000;
+    private const int GL_DEPTH_BUFFER_BIT  = 0x0100;
     private const int GlProgramPointSize  = 0x8642;
     private const int GlLineLoop          = 0x0002;
     private const int GlPoints            = 0x0000;

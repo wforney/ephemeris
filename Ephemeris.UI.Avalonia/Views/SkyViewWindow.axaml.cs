@@ -1,6 +1,8 @@
 // Updated: 2026-03-10
 using System.ComponentModel;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Ephemeris.UI.Avalonia.Controls;
@@ -29,7 +31,7 @@ public partial class SkyViewWindow : Window
 
     // Mouse drag state
     private bool _dragging;
-    private Avalonia.Point _lastMouse;
+    private Point _lastMouse;
 
     /// <summary>
     /// Initialises the sky view window.
@@ -58,7 +60,7 @@ public partial class SkyViewWindow : Window
         DatePicker.LostFocus += (_, _) => ApplyDatePickerText();
         DatePicker.KeyDown   += (_, e) =>
         {
-            if (e.Key == Avalonia.Input.Key.Enter) ApplyDatePickerText();
+            if (e.Key == Key.Enter) ApplyDatePickerText();
         };
 
         LonPicker.ValueChanged += (_, _) => { if (LonPicker.Value is { } lon) _vm.Longitude = (double)lon; };
@@ -122,7 +124,7 @@ public partial class SkyViewWindow : Window
     // Input handling
     // ─────────────────────────────────────────────────────────────────────
 
-    private void OnPointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (e.GetCurrentPoint(_glControl).Properties.IsLeftButtonPressed)
         {
@@ -131,10 +133,10 @@ public partial class SkyViewWindow : Window
         }
     }
 
-    private void OnPointerReleased(object? sender, Avalonia.Input.PointerReleasedEventArgs e) =>
+    private void OnPointerReleased(object? sender, PointerReleasedEventArgs e) =>
         _dragging = false;
 
-    private void OnPointerMoved(object? sender, Avalonia.Input.PointerEventArgs e)
+    private void OnPointerMoved(object? sender, PointerEventArgs e)
     {
         if (!_dragging) return;
         var pos = e.GetPosition(_glControl);
@@ -145,23 +147,23 @@ public partial class SkyViewWindow : Window
         _lastMouse = pos;
     }
 
-    private void OnPointerWheel(object? sender, Avalonia.Input.PointerWheelEventArgs e)
+    private void OnPointerWheel(object? sender, PointerWheelEventArgs e)
     {
         _vm.FovDeg = Math.Clamp(_vm.FovDeg - (float)e.Delta.Y * 2f, 10f, 170f);
     }
 
-    private void OnKeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
+    private void OnKeyDown(object? sender, KeyEventArgs e)
     {
         switch (e.Key)
         {
-            case Avalonia.Input.Key.Space: _vm.PlayPauseCommand.Execute(null);    break;
-            case Avalonia.Input.Key.Left:  _vm.StepBackCommand.Execute(null);     break;
-            case Avalonia.Input.Key.Right: _vm.StepForwardCommand.Execute(null);  break;
-            case Avalonia.Input.Key.F:     _vm.ResetToNowCommand.Execute(null);   break;
-            case Avalonia.Input.Key.Up:
+            case Key.Space: _vm.PlayPauseCommand.Execute(null);    break;
+            case Key.Left:  _vm.StepBackCommand.Execute(null);     break;
+            case Key.Right: _vm.StepForwardCommand.Execute(null);  break;
+            case Key.F:     _vm.ResetToNowCommand.Execute(null);   break;
+            case Key.Up:
                 _vm.FovDeg = Math.Clamp(_vm.FovDeg - 5f, 10f, 170f);
                 break;
-            case Avalonia.Input.Key.Down:
+            case Key.Down:
                 _vm.FovDeg = Math.Clamp(_vm.FovDeg + 5f, 10f, 170f);
                 break;
         }

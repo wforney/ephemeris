@@ -83,5 +83,5 @@ public sealed partial class SkyViewModel : ObservableRecipient
     private void StepBack() => SimTime = SimTime.AddDays(-1);
 
     /// <summary>Advances the simulation time by one animation tick (10 minutes).</summary>
-    internal void AdvanceTick() => SimTime = SimTime.AddMinutes(10);
+    public void AdvanceTick() => SimTime = SimTime.AddMinutes(10);
 }
