@@ -1,4 +1,4 @@
-// Updated: 2026-03-09
+// Updated: 2026-03-10
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 using Ephemeris.Planetology;
@@ -173,7 +173,7 @@ public static class RiseSetCalculator
             "pluto"   => new OrbitalElements(110.30347, 17.14175, 113.76329, 39.482, 0.2488, 14.53 + (0.00396 * T * 36525)),
             _ => throw new ArgumentException($"Unknown planet: {planet}", nameof(planet))
         };
-        return Planetology.PlanetEphemeris.SimplifiedPlanetPosition(T, elements);
+        return Planetology.PlanetEphemeris.SimplifiedPlanetPosition(T, elements).Coordinates;
     }
 
     // --- Private helpers ---

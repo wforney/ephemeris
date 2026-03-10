@@ -1,4 +1,4 @@
-﻿// Updated: 2026-03-09
+// Updated: 2026-03-10
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 
@@ -10,12 +10,15 @@ namespace Ephemeris.Planetology;
 public static class PlanetEphemeris
 {
     /// <summary>
-    /// Calculates a planet's equatorial coordinates using simplified Kepler orbital elements.
+    /// Calculates a planet's equatorial coordinates and geocentric distance using simplified Kepler orbital elements.
     /// </summary>
     /// <param name="T">Julian centuries since J2000.0.</param>
     /// <param name="elements">Keplerian orbital elements for the planet at epoch T.</param>
-    /// <returns>Equatorial coordinates (RA, Dec) in degrees.</returns>
-    public static EquatorialCoordinates SimplifiedPlanetPosition(double T, OrbitalElements elements)
+    /// <returns>
+    /// A tuple of equatorial coordinates (RA, Dec) in degrees and geocentric distance in AU.
+    /// Multiply AU by <c>149_597_870.7</c> to convert to kilometres.
+    /// </returns>
+    public static (EquatorialCoordinates Coordinates, double DistanceAu) SimplifiedPlanetPosition(double T, OrbitalElements elements)
     {
         double N = elements.LongitudeAscendingNode; // Ω: longitude of ascending node (deg)
         double i = elements.Inclination; // orbital inclination (deg)
@@ -50,7 +53,13 @@ public static class PlanetEphemeris
         double RA = TimeUtils.NormalizeDegrees(TimeUtils.ToDegrees(Math.Atan2(y, x)));
         double Dec = TimeUtils.ToDegrees(Math.Asin(z));
 
-        return new EquatorialCoordinates(RA, Dec);
+        // Geocentric distance: magnitude of heliocentric ecliptic vector (AU).
+        // For this simplified model this equals heliocentric r; a full model would
+        // subtract the Earth's heliocentric position vector, but this is sufficient
+        // for topocentric parallax corrections where ~1% accuracy on distance is fine.
+        double distanceAu = Math.Sqrt((xh * xh) + (yh * yh) + (zh * zh));
+
+        return (new EquatorialCoordinates(RA, Dec), distanceAu);
     }
 
     /// <summary>

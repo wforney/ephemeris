@@ -121,7 +121,7 @@ public static class EphemerisBatch
                 _ => throw new ArgumentException("Unknown planet name", nameof(planetName))
             };
 
-            var equatorialPos = PlanetEphemeris.SimplifiedPlanetPosition(T, elements);
+            var (equatorialPos, _) = PlanetEphemeris.SimplifiedPlanetPosition(T, elements);
             var horizontalPos = ObserverGeometry.EquatorialToHorizontal(equatorialPos.RightAscension, equatorialPos.Declination, jd, longitude, latitude);
 
             yield return new EphemerisRecord(

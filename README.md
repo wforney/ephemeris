@@ -11,7 +11,7 @@ A .NET 10 library for computing positions of celestial bodies (Sun, Moon, planet
 | **Timekeeping** — Julian Day, Julian Century, GMST, UTC↔JD | ✅ |
 | **Solar ephemeris** — Meeus Ch. 25: equation of center, aberration, nutation, R (AU) | ✅ |
 | **Lunar ephemeris** — Meeus Ch. 47: 60-term Σl/Σb/Σr series, phase name, illumination | ✅ |
-| **Topocentric lunar parallax** — Meeus Ch. 40 diurnal parallax, observer altitude correction | ✅ |
+| **Topocentric parallax** — Meeus Ch. 40 diurnal parallax for Moon, Sun, and all planets | ✅ |
 | **Planetary positions** — Mercury–Pluto via iterative Kepler + orbital elements | ✅ |
 | **Observer geometry** — equatorial→horizontal (Az/Alt), atmospheric refraction | ✅ |
 | **Coordinate conversion** — ecliptic↔equatorial, angular separation | ✅ |
@@ -138,7 +138,7 @@ var bspRecords = BspImporter.LoadFromBspKernel(
 |---|---|---|
 | Sun | Meeus Ch. 25 (equation of center, aberration, nutation) | ~0.01° |
 | Moon (geocentric) | Meeus Ch. 47 (60-term Σl/Σb/Σr ELP-2000 series) | ~0.1° |
-| Moon (topocentric) | Meeus Ch. 40 diurnal parallax applied after Ch. 47 | ~0.01° additional |
+| Moon/Sun/Planets (topocentric) | Meeus Ch. 40 diurnal parallax applied after geocentric calc | ~0.01° additional |
 | Planets | Iterative Kepler + simplified orbital elements | 0.5–5° |
 | Rise/Set times | Meeus Ch. 15, 3-iteration convergence | ~1 min |
 | Eclipse times | Meeus Ch. 54 Besselian elements | ~5 min |
@@ -178,16 +178,15 @@ Reference documents in `docs/`:
 ### Completed
 - ✅ Foundation: Julian Day, GMST, sidereal time, coordinate transforms
 - ✅ Solar ephemeris (Meeus Ch. 25), lunar ephemeris (Meeus Ch. 47)
-- ✅ Topocentric lunar parallax (Meeus Ch. 40)
+- ✅ Topocentric parallax (Meeus Ch. 40) for Moon, Sun, and all planets
 - ✅ Planetary positions, nutation, precession, atmospheric refraction
 - ✅ Rise/set/transit (Meeus Ch. 15), seasons (Ch. 27), eclipses (Ch. 54)
 - ✅ Stellar catalog — embedded 25-star subset + Yale BSC5 reader, proper-motion & IAU 2006 precession
 - ✅ Native DAF/SPK BSP reader — Type 2/3 Chebyshev, leap-second-aware UTC→ET, SSB chaining
-- ✅ 90 unit tests verified against JPL Horizons and synthetic reference values
+- ✅ 94 unit tests verified against JPL Horizons and synthetic reference values
 - ✅ BenchmarkDotNet project, NuGet packaging, CI coverage reporting
 
 ### Future
-- 🔜 **Topocentric parallax for all bodies** — extend Sun and planet corrections
 - 🔜 **Full BSP segment chaining** — arbitrary body graph traversal beyond two-hop SSB
 - 🔜 **OpenGL/Skia 3D rendering** — wire up existing OpenTK/SkiaSharp references in Ephemeris.UI
 

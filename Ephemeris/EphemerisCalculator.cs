@@ -1,4 +1,4 @@
-﻿// Updated: 2025-07-17
+// Updated: 2026-03-10
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 using Ephemeris.Heliology;
@@ -45,6 +45,8 @@ public static class EphemerisCalculator
 
     /// <summary>
     /// Calculates the Sun's position in equatorial and horizontal coordinates for a given date and time.
+    /// Optionally applies topocentric parallax correction (Meeus Ch. 40) for the observer's location.
+    /// The Sun's equatorial horizontal parallax is ~8.794″ (max shift ~0.002°).
     /// </summary>
     /// <param name="year">The year.</param>
     /// <param name="month">The month (1-12).</param>
@@ -52,32 +54,50 @@ public static class EphemerisCalculator
     /// <param name="hour">The hour in decimal (0-24).</param>
     /// <param name="longitude">Observer longitude in degrees (east positive).</param>
     /// <param name="latitude">Observer latitude in degrees (north positive).</param>
+    /// <param name="altitudeMeters">Observer altitude above sea level in metres (default 0). Used for topocentric parallax.</param>
     /// <returns>A <see cref="CelestialObservation"/> with (RA, Dec, Azimuth, Altitude) in degrees.</returns>
-    public static CelestialObservation GetSunPosition(int year, int month, int day, double hour, double longitude, double latitude)
+    public static CelestialObservation GetSunPosition(int year, int month, int day, double hour, double longitude, double latitude, double altitudeMeters = 0)
     {
         double jd = TimeUtils.JulianDay(year, month, day, hour);
         double T = TimeUtils.JulianCentury(jd);
-        (double RA, double Dec, double _) = SunEphemeris.ApparentEquatorialCoordinates(T);
+        var (RA, Dec, R) = SunEphemeris.ApparentEquatorialCoordinates(T);
+
+        // Apply topocentric parallax correction using Sun's geocentric distance.
+        // At ~1 AU the shift is ≤ 8.8 arcseconds — small but included for completeness.
+        double distanceKm = R * 149_597_870.7; // 1 AU in km
+        var topocentricSun = TopocentricParallax.ApplyParallax(
+            new EquatorialCoordinates(RA, Dec), distanceKm, jd, longitude, latitude, altitudeMeters);
+        (RA, Dec) = (topocentricSun.RightAscension, topocentricSun.Declination);
+
         var horizontalPos = ObserverGeometry.EquatorialToHorizontal(RA, Dec, jd, longitude, latitude);
         return new CelestialObservation(RA, Dec, horizontalPos.Azimuth, horizontalPos.Altitude);
     }
 
     /// <summary>
     /// Calculates the Sun's position in equatorial and horizontal coordinates for a local date and time.
+    /// Optionally applies topocentric parallax correction (Meeus Ch. 40) for the observer's location.
     /// </summary>
     /// <param name="localDateTime">The local DateTime.</param>
     /// <param name="timeZoneId">The IANA or Windows timezone identifier (e.g., "Pacific Standard Time").</param>
     /// <param name="longitude">Observer longitude in degrees (east positive).</param>
     /// <param name="latitude">Observer latitude in degrees (north positive).</param>
+    /// <param name="altitudeMeters">Observer altitude above sea level in metres (default 0). Used for topocentric parallax.</param>
     /// <returns>A <see cref="CelestialObservation"/> with (RA, Dec, Azimuth, Altitude) in degrees.</returns>
     public static CelestialObservation GetSunPosition(
-        DateTime localDateTime, string timeZoneId, double longitude, double latitude)
+        DateTime localDateTime, string timeZoneId, double longitude, double latitude, double altitudeMeters = 0)
     {
         DateTime utcTime = TimeZoneUtils.ToUtc(localDateTime, timeZoneId);
         double jd = TimeZoneUtils.ToJulianDay(utcTime);
         double T = TimeUtils.JulianCentury(jd);
 
-        var (RA, Dec, _) = SunEphemeris.ApparentEquatorialCoordinates(T);
+        var (RA, Dec, R) = SunEphemeris.ApparentEquatorialCoordinates(T);
+
+        // Apply topocentric parallax correction using Sun's geocentric distance (~1 AU).
+        double distanceKm = R * 149_597_870.7;
+        var topocentricSun = TopocentricParallax.ApplyParallax(
+            new EquatorialCoordinates(RA, Dec), distanceKm, jd, longitude, latitude, altitudeMeters);
+        (RA, Dec) = (topocentricSun.RightAscension, topocentricSun.Declination);
+
         var horizontalPos = ObserverGeometry.EquatorialToHorizontal(RA, Dec, jd, longitude, latitude);
 
         return new CelestialObservation(RA, Dec, horizontalPos.Azimuth, horizontalPos.Altitude);
@@ -118,15 +138,17 @@ public static class EphemerisCalculator
 
     /// <summary>
     /// Calculates a planet's position in equatorial and horizontal coordinates for a local date and time.
+    /// Optionally applies topocentric parallax correction (Meeus Ch. 40) for the observer's location.
     /// </summary>
     /// <param name="planet">The planet name (mercury, venus, mars, jupiter, saturn, uranus, neptune, pluto).</param>
     /// <param name="localDateTime">The local DateTime.</param>
     /// <param name="timeZoneId">The IANA or Windows timezone identifier (e.g., "Pacific Standard Time").</param>
     /// <param name="longitude">Observer longitude in degrees (east positive).</param>
     /// <param name="latitude">Observer latitude in degrees (north positive).</param>
+    /// <param name="altitudeMeters">Observer altitude above sea level in metres (default 0). Used for topocentric parallax.</param>
     /// <returns>A <see cref="CelestialObservation"/> with (RA, Dec, Azimuth, Altitude) in degrees.</returns>
     public static CelestialObservation GetPlanetPosition(
-        string planet, DateTime localDateTime, string timeZoneId, double longitude, double latitude)
+        string planet, DateTime localDateTime, string timeZoneId, double longitude, double latitude, double altitudeMeters = 0)
     {
         DateTime utcTime = TimeZoneUtils.ToUtc(localDateTime, timeZoneId);
         double jd = TimeZoneUtils.ToJulianDay(utcTime);
@@ -152,9 +174,19 @@ public static class EphemerisCalculator
             _ => throw new ArgumentException("Unknown planet name", nameof(planet))
         };
 
-        var equatorialPos = PlanetEphemeris.SimplifiedPlanetPosition(T, elements);
-        var horizontalPos = ObserverGeometry.EquatorialToHorizontal(equatorialPos.RightAscension, equatorialPos.Declination, jd, longitude, latitude);
-        return new CelestialObservation(equatorialPos.RightAscension, equatorialPos.Declination, horizontalPos.Azimuth, horizontalPos.Altitude);
+        var (equatorialPos, distanceAu) = PlanetEphemeris.SimplifiedPlanetPosition(T, elements);
+
+        // Apply topocentric parallax using the planet's geocentric distance.
+        // Effect is largest at opposition for inner planets; negligible for outer planets.
+        double distanceKm = distanceAu * 149_597_870.7;
+        var topocentricPos = TopocentricParallax.ApplyParallax(
+            equatorialPos, distanceKm, jd, longitude, latitude, altitudeMeters);
+
+        var horizontalPos = ObserverGeometry.EquatorialToHorizontal(
+            topocentricPos.RightAscension, topocentricPos.Declination, jd, longitude, latitude);
+        return new CelestialObservation(
+            topocentricPos.RightAscension, topocentricPos.Declination,
+            horizontalPos.Azimuth, horizontalPos.Altitude);
     }
 
     /// <summary>
