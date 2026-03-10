@@ -1,4 +1,5 @@
 // Updated: 2026-03-10
+using System.ComponentModel;
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 using Ephemeris.Stellarography;
@@ -27,24 +28,15 @@ namespace Ephemeris.UI;
 /// </remarks>
 public sealed class SkyViewForm : Form
 {
-    // ── Observer defaults (Greenwich, sea level) ──────────────────────────
-    private double _longitude;
-    private double _latitude;
-
-    // ── Current simulated time ────────────────────────────────────────────
-    private DateTime _simTime;
-
-    // ── View orientation ─────────────────────────────────────────────────
-    private float _yaw;    // rotation around vertical (Y) axis, degrees
-    private float _pitch;  // tilt from horizon, degrees (0 = horizon, 90 = zenith)
-    private float _fovDeg = 90f; // vertical field of view
+    // ── View-model (observable state) ────────────────────────────────────
+    private readonly SkyViewModel _vm;
+    private bool _syncingFromVm; // prevents feedback loops during control ↔ vm sync
 
     // ── Mouse drag state ─────────────────────────────────────────────────
     private bool _dragging;
     private Point _lastMouse;
 
-    // ── Animation ────────────────────────────────────────────────────────
-    private bool _playing;
+    // ── Animation timer ───────────────────────────────────────────────────
     private readonly System.Windows.Forms.Timer _animTimer;
 
     // ── OpenGL objects ────────────────────────────────────────────────────
@@ -66,6 +58,7 @@ public sealed class SkyViewForm : Form
     private DateTimePicker _datePicker = null!;
     private NumericUpDown _lonPicker = null!;
     private NumericUpDown _latPicker = null!;
+    private ToolStripButton _playBtn = null!;
 
     // ── Star data (load once) ─────────────────────────────────────────────
     private IReadOnlyList<FixedStar> _stars = [];
@@ -82,11 +75,8 @@ public sealed class SkyViewForm : Form
     /// <param name="initialTime">Initial UTC simulation time (defaults to <see cref="DateTime.UtcNow"/>).</param>
     public SkyViewForm(double longitude = 0.0, double latitude = 51.5, DateTime initialTime = default)
     {
-        _longitude = longitude;
-        _latitude  = latitude;
-        _simTime   = initialTime == default ? DateTime.UtcNow : initialTime;
-        _pitch     = 20f; // default: look slightly above horizon toward south
-        _yaw       = 180f;
+        _vm = new SkyViewModel(longitude, latitude, initialTime);
+        _vm.PropertyChanged += OnViewModelPropertyChanged;
 
         Text          = "Ephemeris — Sky View";
         Width         = 1024;
@@ -99,8 +89,8 @@ public sealed class SkyViewForm : Form
         KeyPreview = true;
         KeyDown   += OnKeyDown;
 
-        _animTimer          = new System.Windows.Forms.Timer { Interval = 50 };
-        _animTimer.Tick    += OnAnimTick;
+        _animTimer       = new System.Windows.Forms.Timer { Interval = 50 };
+        _animTimer.Tick += (_, _) => _vm.AdvanceTick();
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -115,15 +105,14 @@ public sealed class SkyViewForm : Form
         toolbar.Items.Add(new ToolStripLabel("Date/Time UTC:"));
         _datePicker = new DateTimePicker
         {
-            Format    = DateTimePickerFormat.Custom,
+            Format       = DateTimePickerFormat.Custom,
             CustomFormat = "yyyy-MM-dd HH:mm",
-            Value     = _simTime,
-            Width     = 160,
+            Value        = _vm.SimTime,
+            Width        = 160,
         };
         _datePicker.ValueChanged += (_, _) =>
         {
-            _simTime = _datePicker.Value.ToUniversalTime();
-            InvalidateScene();
+            if (!_syncingFromVm) _vm.SimTime = _datePicker.Value.ToUniversalTime();
         };
         var dateHost = new ToolStripControlHost(_datePicker);
         toolbar.Items.Add(dateHost);
@@ -134,12 +123,11 @@ public sealed class SkyViewForm : Form
         _lonPicker = new NumericUpDown
         {
             Minimum = -180m, Maximum = 180m, DecimalPlaces = 2, Increment = 1m,
-            Value = (decimal)_longitude, Width = 75,
+            Value = (decimal)_vm.Longitude, Width = 75,
         };
         _lonPicker.ValueChanged += (_, _) =>
         {
-            _longitude = (double)_lonPicker.Value;
-            InvalidateScene();
+            if (!_syncingFromVm) _vm.Longitude = (double)_lonPicker.Value;
         };
         toolbar.Items.Add(new ToolStripControlHost(_lonPicker));
 
@@ -147,33 +135,22 @@ public sealed class SkyViewForm : Form
         _latPicker = new NumericUpDown
         {
             Minimum = -90m, Maximum = 90m, DecimalPlaces = 2, Increment = 1m,
-            Value = (decimal)_latitude, Width = 75,
+            Value = (decimal)_vm.Latitude, Width = 75,
         };
         _latPicker.ValueChanged += (_, _) =>
         {
-            _latitude = (double)_latPicker.Value;
-            InvalidateScene();
+            if (!_syncingFromVm) _vm.Latitude = (double)_latPicker.Value;
         };
         toolbar.Items.Add(new ToolStripControlHost(_latPicker));
 
         toolbar.Items.Add(new ToolStripSeparator());
 
-        var playBtn = new ToolStripButton("▶ Play") { Name = "btnPlay" };
-        playBtn.Click += (_, _) =>
-        {
-            _playing = !_playing;
-            playBtn.Text = _playing ? "⏸ Pause" : "▶ Play";
-            if (_playing) _animTimer.Start(); else _animTimer.Stop();
-        };
-        toolbar.Items.Add(playBtn);
+        _playBtn = new ToolStripButton("▶ Play") { Name = "btnPlay" };
+        _playBtn.Click += (_, _) => _vm.PlayPauseCommand.Execute(null);
+        toolbar.Items.Add(_playBtn);
 
         var nowBtn = new ToolStripButton("Now");
-        nowBtn.Click += (_, _) =>
-        {
-            _simTime = DateTime.UtcNow;
-            _datePicker.Value = _simTime.ToLocalTime();
-            InvalidateScene();
-        };
+        nowBtn.Click += (_, _) => _vm.ResetToNowCommand.Execute(null);
         toolbar.Items.Add(nowBtn);
 
         Controls.Add(toolbar);
@@ -404,7 +381,7 @@ public sealed class SkyViewForm : Form
         if (!_glReady) return;
         _gl.MakeCurrent();
 
-        double jd = TimeZoneUtils.ToJulianDay(_simTime);
+        double jd = TimeZoneUtils.ToJulianDay(_vm.SimTime);
 
         UploadStarVertices(jd);
         UploadBodyVertices(jd);
@@ -436,7 +413,7 @@ public sealed class SkyViewForm : Form
 
             // Convert RA/Dec → azimuth/altitude from observer
             var hz = ObserverGeometry.EquatorialToHorizontal(
-                eq.RightAscension, eq.Declination, jd, _longitude, _latitude);
+                eq.RightAscension, eq.Declination, jd, _vm.Longitude, _vm.Latitude);
 
             // Only render above-horizon stars (and slightly below for atmospheric refraction)
             if (hz.Altitude < -5.0) continue;
@@ -474,17 +451,17 @@ public sealed class SkyViewForm : Form
         var buffer = new List<float>(12 * floatsPerVertex);
         _labels.Clear();
 
-        int year  = _simTime.Year;
-        int month = _simTime.Month;
-        int day   = _simTime.Day;
-        double hour = _simTime.Hour + _simTime.Minute / 60.0 + _simTime.Second / 3600.0;
+        int year  = _vm.SimTime.Year;
+        int month = _vm.SimTime.Month;
+        int day   = _vm.SimTime.Day;
+        double hour = _vm.SimTime.Hour + _vm.SimTime.Minute / 60.0 + _vm.SimTime.Second / 3600.0;
 
         // Sun
-        var sun = EphemerisCalculator.GetSunPosition(year, month, day, hour, _longitude, _latitude);
+        var sun = EphemerisCalculator.GetSunPosition(year, month, day, hour, _vm.Longitude, _vm.Latitude);
         AddBodyVertex(buffer, sun.Azimuth, sun.Altitude, 1.0f, 0.97f, 0.8f, 16f, "Sun");
 
         // Moon
-        var moon = EphemerisCalculator.GetMoonPosition(year, month, day, hour, _longitude, _latitude);
+        var moon = EphemerisCalculator.GetMoonPosition(year, month, day, hour, _vm.Longitude, _vm.Latitude);
         float moonPhase = (float)(moon.Illumination ?? 0.5);
         AddBodyVertex(buffer, moon.Azimuth, moon.Altitude,
             0.8f + 0.2f * moonPhase, 0.8f + 0.2f * moonPhase, 0.8f, 12f, "Moon");
@@ -513,7 +490,7 @@ public sealed class SkyViewForm : Form
         try
         {
             var obs = EphemerisCalculator.GetPlanetPosition(
-                name, _simTime, TimeZoneInfo.Utc.Id, _longitude, _latitude);
+                name, _vm.SimTime, TimeZoneInfo.Utc.Id, _vm.Longitude, _vm.Latitude);
             AddBodyVertex(buffer, obs.Azimuth, obs.Altitude, r, g, b, size, name);
         }
         catch
@@ -580,11 +557,11 @@ public sealed class SkyViewForm : Form
 
         // Projection: perspective with user-controlled FOV
         var proj = Matrix4.CreatePerspectiveFieldOfView(
-            MathHelper.DegreesToRadians(_fovDeg), aspect, 0.01f, 10f);
+            MathHelper.DegreesToRadians(_vm.FovDeg), aspect, 0.01f, 10f);
 
         // View: look from origin in the direction defined by yaw+pitch
-        float yawRad   = MathHelper.DegreesToRadians(_yaw);
-        float pitchRad = MathHelper.DegreesToRadians(_pitch);
+        float yawRad   = MathHelper.DegreesToRadians(_vm.Yaw);
+        float pitchRad = MathHelper.DegreesToRadians(_vm.Pitch);
 
         // Target direction in unit-sphere coords
         var forward = new Vector3(
@@ -699,9 +676,9 @@ public sealed class SkyViewForm : Form
 
         string[] lines =
         [
-            $"UTC: {_simTime:yyyy-MM-dd HH:mm:ss}",
-            $"Observer: {_latitude:+0.0°;-0.0°;0.0°} N  {_longitude:+0.0°;-0.0°;0.0°} E",
-            $"View Az: {_yaw:F0}°  Alt: {_pitch:F0}°  FOV: {_fovDeg:F0}°",
+            $"UTC: {_vm.SimTime:yyyy-MM-dd HH:mm:ss}",
+            $"Observer: {_vm.Latitude:+0.0°;-0.0°;0.0°} N  {_vm.Longitude:+0.0°;-0.0°;0.0°} E",
+            $"View Az: {_vm.Yaw:F0}°  Alt: {_vm.Pitch:F0}°  FOV: {_vm.FovDeg:F0}°",
             "Drag=rotate  Wheel=zoom  Space=play  ←/→=day  F=now",
         ];
 
@@ -779,8 +756,8 @@ public sealed class SkyViewForm : Form
         float dx = e.X - _lastMouse.X;
         float dy = e.Y - _lastMouse.Y;
 
-        _yaw   = (_yaw   + dx * 0.4f + 360f) % 360f;
-        _pitch = Math.Clamp(_pitch - dy * 0.3f, -10f, 90f);
+        _vm.Yaw   = (_vm.Yaw   + dx * 0.4f + 360f) % 360f;
+        _vm.Pitch = Math.Clamp(_vm.Pitch - dy * 0.3f, -10f, 90f);
 
         _lastMouse = e.Location;
         _gl.Invalidate();
@@ -788,7 +765,7 @@ public sealed class SkyViewForm : Form
 
     private void OnMouseWheel(object? sender, MouseEventArgs e)
     {
-        _fovDeg = Math.Clamp(_fovDeg - e.Delta * 0.02f, 10f, 170f);
+        _vm.FovDeg = Math.Clamp(_vm.FovDeg - e.Delta * 0.02f, 10f, 170f);
         _gl.Invalidate();
     }
 
@@ -797,46 +774,68 @@ public sealed class SkyViewForm : Form
         switch (e.KeyCode)
         {
             case Keys.Space:
-                // Toggle play/pause via the toolbar button click simulation
-                _playing = !_playing;
-                if (_playing) _animTimer.Start(); else _animTimer.Stop();
+                _vm.PlayPauseCommand.Execute(null);
                 break;
             case Keys.Left:
-                _simTime = _simTime.AddDays(-1);
-                _datePicker.Value = _simTime.ToLocalTime();
-                InvalidateScene();
+                _vm.StepBackCommand.Execute(null);
                 break;
             case Keys.Right:
-                _simTime = _simTime.AddDays(1);
-                _datePicker.Value = _simTime.ToLocalTime();
-                InvalidateScene();
+                _vm.StepForwardCommand.Execute(null);
                 break;
             case Keys.F:
-                _simTime = DateTime.UtcNow;
-                _datePicker.Value = _simTime.ToLocalTime();
-                InvalidateScene();
+                _vm.ResetToNowCommand.Execute(null);
                 break;
             case Keys.Up:
-                _fovDeg = Math.Clamp(_fovDeg - 5f, 10f, 170f);
+                _vm.FovDeg = Math.Clamp(_vm.FovDeg - 5f, 10f, 170f);
                 _gl.Invalidate();
                 break;
             case Keys.Down:
-                _fovDeg = Math.Clamp(_fovDeg + 5f, 10f, 170f);
+                _vm.FovDeg = Math.Clamp(_vm.FovDeg + 5f, 10f, 170f);
                 _gl.Invalidate();
                 break;
         }
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // Animation
+    // ViewModel property-change synchronisation
     // ─────────────────────────────────────────────────────────────────────
 
-    private void OnAnimTick(object? sender, EventArgs e)
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        // Advance 10 minutes per tick (at 50ms tick rate → ~1 simulated hour per real second)
-        _simTime = _simTime.AddMinutes(10);
-        _datePicker.Value = _simTime.ToLocalTime();
-        InvalidateScene();
+        if (InvokeRequired) { Invoke(() => OnViewModelPropertyChanged(sender, e)); return; }
+
+        _syncingFromVm = true;
+        try
+        {
+            switch (e.PropertyName)
+            {
+                case nameof(SkyViewModel.SimTime):
+                    _datePicker.Value = _vm.SimTime.ToLocalTime();
+                    InvalidateScene();
+                    break;
+                case nameof(SkyViewModel.Longitude):
+                    _lonPicker.Value = (decimal)_vm.Longitude;
+                    InvalidateScene();
+                    break;
+                case nameof(SkyViewModel.Latitude):
+                    _latPicker.Value = (decimal)_vm.Latitude;
+                    InvalidateScene();
+                    break;
+                case nameof(SkyViewModel.Playing):
+                    _playBtn.Text = _vm.Playing ? "⏸ Pause" : "▶ Play";
+                    if (_vm.Playing) _animTimer.Start(); else _animTimer.Stop();
+                    break;
+                case nameof(SkyViewModel.Yaw):
+                case nameof(SkyViewModel.Pitch):
+                case nameof(SkyViewModel.FovDeg):
+                    InvalidateScene();
+                    break;
+            }
+        }
+        finally
+        {
+            _syncingFromVm = false;
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────

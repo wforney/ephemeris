@@ -42,7 +42,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="DotNext" Version="6.0.0" />
     <PackageReference Include="DotNext.Threading" Version="6.0.0" />
     <PackageReference Include="Generator.Equals" Version="3.3.0" />
