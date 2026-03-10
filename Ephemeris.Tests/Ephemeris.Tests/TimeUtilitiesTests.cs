@@ -202,6 +202,34 @@ public class TimeUtilitiesTests
         await Assert.That(Math.Abs(result - 180.0)).IsLessThan(0.0001);
     }
 
+    // ── LocalMeanSiderealTime / HourAngle ────────────────────────────────
+
+    [Test]
+    public async Task LocalMeanSiderealTime_AtJ2000_PrimeMeridian_IsNear280Point46Degrees()
+    {
+        // At J2000.0 and λ=0°, LMST = GMST ≈ 280.46061837° (Meeus Ch. 12)
+        double lmst = TimeUtils.LocalMeanSiderealTime(2451545.0, 0.0);
+        await Assert.That(Math.Abs(lmst - 280.4606)).IsLessThan(0.001);
+    }
+
+    [Test]
+    public async Task LocalMeanSiderealTime_IsInRange0To360()
+    {
+        double lmst = TimeUtils.LocalMeanSiderealTime(2451545.0, -200.0);
+        await Assert.That(lmst).IsGreaterThanOrEqualTo(0.0);
+        await Assert.That(lmst).IsLessThan(360.0);
+    }
+
+    [Test]
+    public async Task HourAngle_WhenObjectOnMeridian_IsZero()
+    {
+        // HA = LMST − RA; when RA = LMST the object is on the meridian → HA = 0
+        double jd = 2451545.0;
+        double lmst = TimeUtils.LocalMeanSiderealTime(jd, 0.0);
+        double ha = TimeUtils.HourAngle(jd, 0.0, lmst);
+        await Assert.That(ha).IsEqualTo(0.0).Within(0.001);
+    }
+
     // ── ToRadians / ToDegrees ─────────────────────────────────────────────
 
     [Test]
