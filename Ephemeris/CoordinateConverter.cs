@@ -93,6 +93,16 @@ public static class CoordinateConverter
     /// </summary>
     /// <param name="coordinates">Equatorial coordinates (RA in degrees [0,360), Dec in degrees [-90,90]).</param>
     /// <returns>A tuple of (L, B) where L is galactic longitude [0,360) and B is galactic latitude [-90,90], both in degrees.</returns>
+    /// <remarks>
+    /// IAU 1958 galactic coordinate system, using J2000.0 pole and node constants from ESA/Hipparcos:
+    /// <code>
+    ///   sin(b) = sin(Dec)·sin(Dec_NGP) + cos(Dec)·cos(Dec_NGP)·cos(RA − RA_NGP)
+    ///   l      = l_NCP − atan2(cos(Dec)·sin(RA − RA_NGP),
+    ///                          sin(Dec)·cos(Dec_NGP) − cos(Dec)·sin(Dec_NGP)·cos(RA − RA_NGP))
+    /// </code>
+    /// where RA_NGP = 192.859481°, Dec_NGP = 27.128251°, and l_NCP = 122.932°.
+    /// The Galactic Center lies at l ≈ 0°, b ≈ 0°.
+    /// </remarks>
     public static (double L, double B) EquatorialToGalactic(EquatorialCoordinates coordinates)
     {
         double raRad    = TimeUtils.ToRadians(coordinates.RightAscension);
@@ -117,6 +127,15 @@ public static class CoordinateConverter
     /// <param name="l">Galactic longitude in degrees [0, 360).</param>
     /// <param name="b">Galactic latitude in degrees [-90, 90].</param>
     /// <returns>Equatorial coordinates (RA in degrees [0,360), Dec in degrees [-90,90]).</returns>
+    /// <remarks>
+    /// Inverse of <see cref="EquatorialToGalactic"/> using the IAU 1958 constants (J2000.0, ESA/Hipparcos):
+    /// <code>
+    ///   sin(Dec) = sin(b)·sin(Dec_NGP) + cos(b)·cos(Dec_NGP)·cos(l_NCP − l)
+    ///   RA       = RA_NGP + atan2(cos(b)·sin(l_NCP − l),
+    ///                             sin(b)·cos(Dec_NGP) − cos(b)·sin(Dec_NGP)·cos(l_NCP − l))
+    /// </code>
+    /// where RA_NGP = 192.859481°, Dec_NGP = 27.128251°, and l_NCP = 122.932°.
+    /// </remarks>
     public static EquatorialCoordinates GalacticToEquatorial(double l, double b)
     {
         double lRad     = TimeUtils.ToRadians(l);
