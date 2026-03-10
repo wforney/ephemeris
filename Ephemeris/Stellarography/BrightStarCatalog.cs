@@ -3,7 +3,8 @@ namespace Ephemeris.Stellarography;
 
 /// <summary>
 /// Provides access to the embedded subset of the Yale Bright Star Catalog (BSC5).
-/// The built-in catalog contains the brightest named stars from the BSC5 (V ≤ 4.5).
+/// The built-in catalog contains 100 of the brightest named stars (V ≤ 3.1).
+/// For the full BSC5 catalog, use <see cref="YaleBsc5Reader"/> with an external data file.
 /// </summary>
 /// <remarks>
 /// The catalog is loaded once on first access and cached for subsequent calls.
