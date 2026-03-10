@@ -1,9 +1,10 @@
-// Updated: 2026-07-14
+// Updated: 2026-03-10
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 using Ephemeris.Heliology;
 using Ephemeris.Planetology;
 using Ephemeris.Selenography;
+using Ephemeris.Stellarography;
 
 namespace Ephemeris;
 
@@ -132,6 +133,76 @@ public static class EphemerisBatch
                 Altitude: horizontalPos.Altitude,
                 Illumination: null);
         }
+    }
+
+    /// <summary>
+    /// Generates a time series of apparent positions for a fixed star at specified intervals.
+    /// Proper-motion and precession corrections are applied at each time step.
+    /// </summary>
+    /// <param name="star">The star to track.</param>
+    /// <param name="startUtc">The starting UTC time.</param>
+    /// <param name="intervalMinutes">The interval in minutes between successive calculations.</param>
+    /// <param name="count">The number of records to generate.</param>
+    /// <param name="longitude">Observer longitude in degrees (east positive).</param>
+    /// <param name="latitude">Observer latitude in degrees (north positive).</param>
+    /// <returns>
+    /// A lazily-evaluated sequence of <see cref="EphemerisRecord"/> containing stellar positions.
+    /// The <see cref="EphemerisRecord.Magnitude"/> field is populated from the star's catalog magnitude.
+    /// </returns>
+    public static IEnumerable<EphemerisRecord> GenerateStarSeries(
+        FixedStar star,
+        DateTime startUtc, int intervalMinutes, int count,
+        double longitude, double latitude)
+    {
+        ArgumentNullException.ThrowIfNull(star);
+
+        for (int i = 0; i < count; i++)
+        {
+            DateTime dt = startUtc.AddMinutes(i * intervalMinutes);
+            double jd = TimeZoneUtils.ToJulianDay(dt);
+
+            EquatorialCoordinates equatorial = StarEphemeris.ApparentPositionJd(star, jd);
+            HorizontalCoordinates horizontal = ObserverGeometry.EquatorialToHorizontal(
+                equatorial.RightAscension, equatorial.Declination, jd, longitude, latitude);
+
+            yield return new EphemerisRecord(
+                TimeUtc: dt,
+                Body: string.IsNullOrEmpty(star.CommonName) ? star.BayerDesignation : star.CommonName,
+                RightAscension: equatorial.RightAscension,
+                Declination: equatorial.Declination,
+                Azimuth: horizontal.Azimuth,
+                Altitude: horizontal.Altitude,
+                Illumination: null,
+                Magnitude: star.Magnitude);
+        }
+    }
+
+    /// <summary>
+    /// Generates a time series of apparent positions for a named star from the built-in catalog.
+    /// </summary>
+    /// <param name="starName">
+    /// Common name (e.g., "Sirius") or Bayer designation (e.g., "alCMa") to look up in
+    /// <see cref="BrightStarCatalog"/>.
+    /// </param>
+    /// <param name="startUtc">The starting UTC time.</param>
+    /// <param name="intervalMinutes">The interval in minutes between successive calculations.</param>
+    /// <param name="count">The number of records to generate.</param>
+    /// <param name="longitude">Observer longitude in degrees (east positive).</param>
+    /// <param name="latitude">Observer latitude in degrees (north positive).</param>
+    /// <returns>A lazily-evaluated sequence of <see cref="EphemerisRecord"/> for the named star.</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="starName"/> is not found in the built-in catalog.
+    /// </exception>
+    public static IEnumerable<EphemerisRecord> GenerateStarSeries(
+        string starName,
+        DateTime startUtc, int intervalMinutes, int count,
+        double longitude, double latitude)
+    {
+        FixedStar star = BrightStarCatalog.GetStar(starName)
+            ?? throw new ArgumentException(
+                $"Star '{starName}' not found in the built-in bright-star catalog.", nameof(starName));
+
+        return GenerateStarSeries(star, startUtc, intervalMinutes, count, longitude, latitude);
     }
 
     /// <summary>

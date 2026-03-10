@@ -1,4 +1,4 @@
-// Updated: 2026-03-09
+// Updated: 2026-03-10
 using Ephemeris.Stellarography;
 using TUnit;
 
@@ -145,10 +145,10 @@ public class StarCatalogTests
     // ── Built-in catalog ──────────────────────────────────────────────────────
 
     [Test]
-    public async Task LoadBuiltIn_ReturnsTwentyFiveStars()
+    public async Task LoadBuiltIn_ReturnsHundredStars()
     {
         var catalog = StarCatalog.LoadBuiltIn();
-        await Assert.That(catalog.Count).IsEqualTo(25);
+        await Assert.That(catalog.Count).IsEqualTo(100);
     }
 
     [Test]
