@@ -87,4 +87,43 @@ public class LunarEphemerisTests
         string name = MoonEphemeris.PhaseName(90.0);
         await Assert.That(name).IsEqualTo("First Quarter");
     }
+
+    // ── Libration accuracy (Meeus Ch. 53 reference) ────────────────────────────
+
+    /// <summary>
+    /// Validates optical libration against the Meeus Ch. 53 worked example.
+    /// Reference: Meeus, "Astronomical Algorithms", 2nd ed., Ch. 53, p. 375-376.
+    /// Date: 1992 April 12, 0h TDT (JDE = 2448724.5)
+    /// Expected: l' ≈ -1.23° (longitude), b' ≈ +4.20° (latitude).
+    /// </summary>
+    [Test]
+    public async Task LunarLibration_MeeusExample_MatchesReference()
+    {
+        // 1992 April 12, 0h TDT → JDE 2448724.5
+        double T = (2448724.5 - 2451545.0) / 36525.0;
+        var (lLon, lLat) = MoonEphemeris.Libration(T);
+        // Meeus Ch. 53, p. 375-376: l' ≈ −1.23°, b' ≈ +4.20°.
+        // Tolerance of 0.5° matches the issue acceptance criterion ("Accuracy: longitude within 0.5°,
+        // latitude within 0.5°") and accounts for Meeus rounding the reference values to 2 d.p.
+        await Assert.That(lLon).IsEqualTo(-1.23).Within(0.5);
+        await Assert.That(lLat).IsEqualTo(4.20).Within(0.5);
+    }
+
+    /// <summary>
+    /// Validates that libration in longitude stays within the physically possible range
+    /// at the Meeus Ch. 53 reference date. The 0.5° margin above the documented ±8°/±7°
+    /// limits accommodates rounding in the Meeus text's stated maximums.
+    /// </summary>
+    [Test]
+    public async Task LunarLibration_MeeusDate_IsWithinPhysicalBounds()
+    {
+        double T = (2448724.5 - 2451545.0) / 36525.0;
+        var (lLon, lLat) = MoonEphemeris.Libration(T);
+        // Physical bounds: longitude ≤ ±8°, latitude ≤ ±7°; using 0.5° margin
+        // for the same safety buffer used in Phase3FeatureTests.LunarLibration_ReturnsValuesInExpectedRange.
+        await Assert.That(lLon).IsGreaterThanOrEqualTo(-8.5);
+        await Assert.That(lLon).IsLessThanOrEqualTo(8.5);
+        await Assert.That(lLat).IsGreaterThanOrEqualTo(-7.5);
+        await Assert.That(lLat).IsLessThanOrEqualTo(7.5);
+    }
 }

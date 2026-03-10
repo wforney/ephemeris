@@ -246,6 +246,23 @@ public static class MoonEphemeris
     /// A tuple of (LongitudeDeg, LatitudeDeg) optical libration angles, both in degrees.
     /// Longitude is in [-8, +8]°; latitude is in [-7, +7]°.
     /// </returns>
+    /// <remarks>
+    /// Implements the optical libration algorithm from Meeus Ch. 53, Eq. 53.1–53.3.
+    /// Physical libration corrections (ρ, σ ≈ 0.02°, Meeus Eq. 53.5–53.8) are intentionally omitted
+    /// because they are negligible relative to the 0.5° accuracy target.
+    /// <para>Algorithm steps:</para>
+    /// <code>
+    ///   W   = λ_apparent − Ω
+    ///   A   = atan2( sin W cos β cos I − sin β sin I,  cos W cos β )
+    ///   l′  = A − F                                  (libration in longitude)
+    ///   b′  = arcsin( −sin W cos β sin I − sin β cos I )  (libration in latitude)
+    /// </code>
+    /// where I = 1.5424° is the inclination of the Moon's equatorial plane to the ecliptic,
+    /// λ_apparent is the Moon's apparent ecliptic longitude (geometric + ΔΨ nutation),
+    /// Ω is the longitude of the ascending node, F is the Moon's argument of latitude,
+    /// and β is the Moon's ecliptic latitude.
+    /// <para>Reference value (Meeus Ch. 53, p. 375–376): 1992 Apr 12, 0h TDT → l′ ≈ −1.23°, b′ ≈ +4.20°.</para>
+    /// </remarks>
     public static (double LongitudeDeg, double LatitudeDeg) Libration(double T)
     {
         // Recompute Ch. 47 fundamental arguments
