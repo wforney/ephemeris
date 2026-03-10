@@ -1,4 +1,4 @@
-// Updated: 2026-03-09
+// Updated: 2026-03-10
 namespace Ephemeris.Import;
 
 /// <summary>
@@ -60,6 +60,13 @@ public sealed class SpkReader : IDisposable
     private readonly List<SpkSegmentInfo> _segments = [];
     private readonly string _filePath;
     private bool _disposed;
+
+    // Lazily-built undirected adjacency graph: bodyId → set of directly-connected body IDs.
+    // Built from _segments on first call to GetPosition that requires graph search.
+    private Dictionary<int, HashSet<int>>? _segmentGraph;
+
+    // Fast (target, center) → matching segments lookup, built alongside _segmentGraph.
+    private Dictionary<(int Target, int Center), List<SpkSegmentInfo>>? _segmentLookup;
 
     /// <summary>
     /// Opens a DAF/SPK file, validates the header, and indexes all segment descriptors.
@@ -145,19 +152,35 @@ public sealed class SpkReader : IDisposable
     /// Computes the Cartesian position [x, y, z] in kilometres for a target body
     /// relative to a center body at the given ephemeris time.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Resolution order:
+    /// <list type="number">
+    ///   <item><description>Direct segment: <c>(target, center)</c></description></item>
+    ///   <item><description>Reversed segment: <c>−(center, target)</c></description></item>
+    ///   <item><description>Graph search: BFS through all loaded segments to find any multi-hop
+    ///     path from <paramref name="targetNaifId"/> to <paramref name="centerNaifId"/>, then sums
+    ///     the position vectors along each hop.</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// For example, Moon (301) relative to Earth (399) via DE440 uses the chain
+    /// <c>301→3→399</c>: pos(301,3) − pos(399,3).
+    /// </para>
+    /// </remarks>
     /// <param name="targetNaifId">NAIF integer ID of the target body.</param>
     /// <param name="et">Ephemeris time in seconds past J2000.0 TDB.</param>
     /// <param name="centerNaifId">NAIF integer ID of the center body (default 0 = SSB).</param>
     /// <returns>A three-element array <c>[x, y, z]</c> in kilometres (ICRF/J2000).</returns>
-    /// <exception cref="InvalidOperationException">No matching segment is found.</exception>
+    /// <exception cref="InvalidOperationException">No path between the requested bodies at the given ET.</exception>
     public double[] GetPosition(int targetNaifId, double et, int centerNaifId = 0)
     {
-        // Try direct segment lookup first
+        // 1. Direct segment
         var seg = FindSegment(targetNaifId, centerNaifId, et);
         if (seg is not null)
             return EvaluateSegment(seg, et);
 
-        // Try reverse direction
+        // 2. Reverse direction
         var segReverse = FindSegment(centerNaifId, targetNaifId, et);
         if (segReverse is not null)
         {
@@ -165,21 +188,15 @@ public sealed class SpkReader : IDisposable
             return [-pos[0], -pos[1], -pos[2]];
         }
 
-        // Chain through SSB (body 0)
-        if (centerNaifId != 0)
-        {
-            var segTarget = FindSegment(targetNaifId, 0, et);
-            var segCenter = FindSegment(centerNaifId, 0, et);
-            if (segTarget is not null && segCenter is not null)
-            {
-                var posT = EvaluateSegment(segTarget, et);
-                var posC = EvaluateSegment(segCenter, et);
-                return [posT[0] - posC[0], posT[1] - posC[1], posT[2] - posC[2]];
-            }
-        }
+        // 3. General BFS graph traversal through available segments
+        int[]? path = FindPath(targetNaifId, centerNaifId, et);
+        if (path is not null)
+            return AccumulatePath(path, et);
 
+        var available = GetAvailableBodyIds(et);
         throw new InvalidOperationException(
-            $"No SPK segment found for target={targetNaifId} center={centerNaifId} at ET={et:F3}.");
+            $"No SPK path found for target={targetNaifId} center={centerNaifId} at ET={et:F3}. " +
+            $"Available body IDs at that epoch: [{string.Join(", ", available)}].");
     }
 
     /// <inheritdoc/>
@@ -191,6 +208,193 @@ public sealed class SpkReader : IDisposable
             _stream.Dispose();
             _disposed = true;
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // Segment graph + BFS path finding
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// Builds the undirected segment graph and fast lookup dictionary on first use.
+    /// </summary>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private void EnsureGraphBuilt()
+    {
+        if (_segmentGraph is not null)
+            return;
+
+        var graph = new Dictionary<int, HashSet<int>>();
+        var lookup = new Dictionary<(int, int), List<SpkSegmentInfo>>();
+
+        foreach (var seg in _segments)
+        {
+            // Adjacency (undirected)
+            if (!graph.TryGetValue(seg.TargetId, out var targetNeighbors))
+                graph[seg.TargetId] = targetNeighbors = [];
+            if (!graph.TryGetValue(seg.CenterId, out var centerNeighbors))
+                graph[seg.CenterId] = centerNeighbors = [];
+            targetNeighbors.Add(seg.CenterId);
+            centerNeighbors.Add(seg.TargetId);
+
+            // Fast (target, center) → segments lookup
+            var key = (seg.TargetId, seg.CenterId);
+            if (!lookup.TryGetValue(key, out var list))
+                lookup[key] = list = [];
+            list.Add(seg);
+        }
+
+        _segmentLookup = lookup;
+        _segmentGraph  = graph;
+    }
+
+    /// <summary>
+    /// BFS shortest path from <paramref name="source"/> to <paramref name="destination"/>
+    /// through body IDs that are connected by segments covering <paramref name="et"/>.
+    /// </summary>
+    /// <returns>Array of body IDs forming the path (inclusive), or <c>null</c> if unreachable.</returns>
+    private int[]? FindPath(int source, int destination, double et)
+    {
+        if (source == destination)
+            return [source];
+
+        EnsureGraphBuilt();
+        if (_segmentGraph is null || !_segmentGraph.ContainsKey(source) || !_segmentGraph.ContainsKey(destination))
+            return null;
+
+        var visited = new HashSet<int> { source };
+        var queue   = new Queue<List<int>>();
+        queue.Enqueue([source]);
+
+        while (queue.Count > 0)
+        {
+            var path    = queue.Dequeue();
+            int current = path[^1];
+
+            if (!_segmentGraph.TryGetValue(current, out var neighbors))
+                continue;
+
+            foreach (int neighbor in neighbors)
+            {
+                if (visited.Contains(neighbor))
+                    continue;
+                if (!HasSegmentForEdge(current, neighbor, et))
+                    continue;
+
+                var newPath = new List<int>(path) { neighbor };
+                if (neighbor == destination)
+                    return [.. newPath];
+
+                visited.Add(neighbor);
+                queue.Enqueue(newPath);
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Returns <c>true</c> if any segment exists that connects <paramref name="bodyA"/>
+    /// and <paramref name="bodyB"/> (in either direction) and covers <paramref name="et"/>.
+    /// </summary>
+    private bool HasSegmentForEdge(int bodyA, int bodyB, double et)
+    {
+        EnsureGraphBuilt();
+        if (_segmentLookup is null)
+            return false;
+
+        if (_segmentLookup.TryGetValue((bodyA, bodyB), out var forward))
+        {
+            foreach (var seg in forward)
+                if (et >= seg.StartEt && et <= seg.EndEt)
+                    return true;
+        }
+
+        if (_segmentLookup.TryGetValue((bodyB, bodyA), out var reverse))
+        {
+            foreach (var seg in reverse)
+                if (et >= seg.StartEt && et <= seg.EndEt)
+                    return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Sums position vectors along a body-ID path to compute
+    /// pos(<paramref name="path"/>[0]) relative to <paramref name="path"/>[^1] at <paramref name="et"/>.
+    /// </summary>
+    private double[] AccumulatePath(int[] path, double et)
+    {
+        double[] result = [0.0, 0.0, 0.0];
+
+        for (int i = 0; i < path.Length - 1; i++)
+        {
+            int bodyA = path[i];     // moving from this body…
+            int bodyB = path[i + 1]; // …toward this body
+
+            // pos(bodyA relative to bodyB):
+            //   if segment(bodyA, center=bodyB) → +eval
+            //   if segment(bodyB, center=bodyA) → −eval
+            var stepPos = GetStepPosition(bodyA, bodyB, et);
+            result[0] += stepPos[0];
+            result[1] += stepPos[1];
+            result[2] += stepPos[2];
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Returns the position of <paramref name="bodyA"/> relative to <paramref name="bodyB"/>
+    /// using the first matching segment that covers <paramref name="et"/>.
+    /// </summary>
+    private double[] GetStepPosition(int bodyA, int bodyB, double et)
+    {
+        EnsureGraphBuilt();
+
+        // Forward: segment(target=bodyA, center=bodyB)
+        if (_segmentLookup!.TryGetValue((bodyA, bodyB), out var forwardSegs))
+        {
+            foreach (var seg in forwardSegs)
+            {
+                if (et >= seg.StartEt && et <= seg.EndEt)
+                    return EvaluateSegment(seg, et);
+            }
+        }
+
+        // Reverse: segment(target=bodyB, center=bodyA) → negate
+        if (_segmentLookup.TryGetValue((bodyB, bodyA), out var reverseSegs))
+        {
+            foreach (var seg in reverseSegs)
+            {
+                if (et >= seg.StartEt && et <= seg.EndEt)
+                {
+                    var pos = EvaluateSegment(seg, et);
+                    return [-pos[0], -pos[1], -pos[2]];
+                }
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"No segment connecting bodies {bodyA} and {bodyB} at ET={et:F3}.");
+    }
+
+    /// <summary>
+    /// Returns the set of NAIF body IDs that have at least one segment covering <paramref name="et"/>.
+    /// Used to produce informative error messages.
+    /// </summary>
+    private SortedSet<int> GetAvailableBodyIds(double et)
+    {
+        var ids = new SortedSet<int>();
+        foreach (var seg in _segments)
+        {
+            if (et >= seg.StartEt && et <= seg.EndEt)
+            {
+                ids.Add(seg.TargetId);
+                ids.Add(seg.CenterId);
+            }
+        }
+        return ids;
     }
 
     // -----------------------------------------------------------------------
@@ -263,6 +467,19 @@ public sealed class SpkReader : IDisposable
     /// <summary>Finds the first segment matching target, center, and time.</summary>
     private SpkSegmentInfo? FindSegment(int target, int center, double et)
     {
+        // Use fast lookup if graph is already built
+        if (_segmentLookup is not null)
+        {
+            if (_segmentLookup.TryGetValue((target, center), out var candidates))
+            {
+                foreach (var seg in candidates)
+                    if (et >= seg.StartEt && et <= seg.EndEt)
+                        return seg;
+            }
+            return null;
+        }
+
+        // Fall back to linear scan before graph is built
         foreach (var seg in _segments)
         {
             if (seg.TargetId == target && seg.CenterId == center &&

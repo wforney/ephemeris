@@ -25,7 +25,7 @@ A .NET 10 library for computing positions of celestial bodies (Sun, Moon, planet
 | **Batch generation** — time-series `EphemerisRecord` collections | ✅ |
 | **Data export** — CSV and JSON serialization | ✅ |
 | **Stellar catalog** — 25-star embedded catalog + Yale BSC5 reader, proper-motion & precession | ✅ |
-| **Native BSP/SPK reader** — DAF binary parser, Type 2/3 Chebyshev, leap-second UTC→ET | ✅ |
+| **Native BSP/SPK reader** — DAF binary parser, Type 2/3 Chebyshev, BFS segment graph traversal | ✅ |
 | **NuGet package** — `Wforney.Ephemeris` 0.1.0 with CI release workflow | ✅ |
 | **Benchmarks** — BenchmarkDotNet project for Sun/Moon/planet series | ✅ |
 | **WinForms visualizer** — altitude-vs-time ScottPlot chart | ✅ |
@@ -182,12 +182,11 @@ Reference documents in `docs/`:
 - ✅ Planetary positions, nutation, precession, atmospheric refraction
 - ✅ Rise/set/transit (Meeus Ch. 15), seasons (Ch. 27), eclipses (Ch. 54)
 - ✅ Stellar catalog — embedded 25-star subset + Yale BSC5 reader, proper-motion & IAU 2006 precession
-- ✅ Native DAF/SPK BSP reader — Type 2/3 Chebyshev, leap-second-aware UTC→ET, SSB chaining
-- ✅ 94 unit tests verified against JPL Horizons and synthetic reference values
+- ✅ Native DAF/SPK BSP reader — Type 2/3 Chebyshev, leap-second-aware UTC→ET, BFS segment graph for arbitrary multi-hop chaining
+- ✅ 122 unit tests verified against JPL Horizons and synthetic reference values
 - ✅ BenchmarkDotNet project, NuGet packaging, CI coverage reporting
 
 ### Future
-- 🔜 **Full BSP segment chaining** — arbitrary body graph traversal beyond two-hop SSB
 - 🔜 **OpenGL/Skia 3D rendering** — wire up existing OpenTK/SkiaSharp references in Ephemeris.UI
 
 ---
