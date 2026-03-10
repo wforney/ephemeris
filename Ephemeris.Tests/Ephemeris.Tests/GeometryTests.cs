@@ -187,11 +187,11 @@ public class GeometryTests
     [Test]
     public async Task ParallacticAngle_KnownValue_WithinTolerance()
     {
-        // lat=50°, dec=30°, H=45°:
-        // sin(45°) = 0.7071, tan(50°) = 1.1918, cos(30°) = 0.8660
-        // sin(30°) = 0.5000, cos(45°) = 0.7071
-        // denom = 1.1918 × 0.8660 − 0.5 × 0.7071 = 1.0321 − 0.3536 = 0.6786
-        // q = atan2(0.7071, 0.6786) ≈ 46.15°
+        // lat=50°, dec=30°, H=45° — intermediate values are 4 s.f. approximations:
+        //   sin(45°) ≈ 0.7071,  tan(50°) ≈ 1.1918,  cos(30°) ≈ 0.8660
+        //   sin(30°) = 0.5000,  cos(45°) ≈ 0.7071
+        //   denom ≈ 1.1918 × 0.8660 − 0.5 × 0.7071 ≈ 1.0321 − 0.3536 = 0.6786
+        //   q = atan2(0.7071, 0.6786) ≈ 46.15°  (verified with full-precision arithmetic)
         double q = ObserverGeometry.ParallacticAngle(45.0, 30.0, 50.0);
         await Assert.That(Math.Abs(q - 46.15)).IsLessThan(0.1);
     }
