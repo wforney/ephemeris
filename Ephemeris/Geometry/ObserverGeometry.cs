@@ -72,9 +72,21 @@ public static class ObserverGeometry
     /// <param name="decDeg">Declination of the object in degrees [-90, 90].</param>
     /// <param name="latDeg">Observer latitude in degrees (north positive).</param>
     /// <returns>
-    /// Parallactic angle in degrees. Zero at transit; positive when object is east of meridian.
-    /// Returns 0° when sin(hourAngle) = 0 (at transit or anti-transit).
+    /// Parallactic angle in degrees in the range (−180, 180].
+    /// At transit (H = 0): 0° when the object is south of the zenith (Dec &lt; lat),
+    /// ±180° when the object is north of the zenith (Dec &gt; lat).
+    /// Positive when the object is west of the meridian; negative when east.
+    /// Returns 0° in the degenerate case where the object is exactly at the zenith at transit.
     /// </returns>
+    /// <remarks>
+    /// Meeus, "Astronomical Algorithms" (2nd ed.), Ch. 14, Eq. 14.1:
+    /// <code>
+    ///   tan q = sin H / (tan φ · cos δ − sin δ · cos H)
+    /// </code>
+    /// where H is the hour angle, φ is the observer latitude, and δ is the declination.
+    /// Implemented via <see cref="Math.Atan2"/> to resolve the quadrant correctly.
+    /// The degenerate case (H ≈ 0 and denominator ≈ 0, i.e., object exactly at the zenith) returns 0°.
+    /// </remarks>
     public static double ParallacticAngle(double hourAngleDeg, double decDeg, double latDeg)
     {
         double H   = TimeUtils.ToRadians(hourAngleDeg);

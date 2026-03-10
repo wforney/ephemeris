@@ -172,4 +172,75 @@ public class GeometryTests
         await Assert.That(Math.Abs(lBack - lOrig)).IsLessThanOrEqualTo(0.01);
         await Assert.That(Math.Abs(bBack - bOrig)).IsLessThanOrEqualTo(0.01);
     }
+
+    // ── ObserverGeometry.ParallacticAngle ────────────────────────────────────
+
+    [Test]
+    public async Task ParallacticAngle_TransitSouthOfZenith_ReturnsZero()
+    {
+        // Object south of zenith (dec=20° < lat=45°) at transit (H=0).
+        // Zenith is north of the object, north pole is also north → angle = 0°.
+        // denominator = tan(45°)·cos(20°) − sin(20°) = 0.940 − 0.342 = 0.598 > 0
+        // q = atan2(0, 0.598) = 0°
+        double q = ObserverGeometry.ParallacticAngle(0.0, 20.0, 45.0);
+        await Assert.That(Math.Abs(q)).IsLessThanOrEqualTo(TightTol);
+    }
+
+    [Test]
+    public async Task ParallacticAngle_TransitNorthOfZenith_Returns180Degrees()
+    {
+        // Object north of zenith (dec=60° > lat=45°) at transit (H=0).
+        // Zenith is south of the object, north pole is north → angle = 180°.
+        // denominator = tan(45°)·cos(60°) − sin(60°) = 0.500 − 0.866 = −0.366 < 0
+        // q = atan2(0, −0.366) = ±180°
+        double q = ObserverGeometry.ParallacticAngle(0.0, 60.0, 45.0);
+        await Assert.That(Math.Abs(Math.Abs(q) - 180.0)).IsLessThanOrEqualTo(TightTol);
+    }
+
+    [Test]
+    public async Task ParallacticAngle_ObjectAtZenith_ReturnsZero()
+    {
+        // Degenerate case: dec = lat, H = 0 → object exactly at zenith.
+        // Both sin(H) = 0 and denominator = tan(lat)·cos(lat) − sin(lat) = 0.
+        // Special-case guard returns 0°.
+        double q = ObserverGeometry.ParallacticAngle(0.0, 45.0, 45.0);
+        await Assert.That(q).IsEqualTo(0.0);
+    }
+
+    [Test]
+    public async Task ParallacticAngle_WestOfMeridian_PositiveAngle()
+    {
+        // H > 0 (object west of meridian) with object south of zenith → q > 0.
+        double q = ObserverGeometry.ParallacticAngle(45.0, 20.0, 45.0);
+        await Assert.That(q).IsGreaterThan(0.0);
+    }
+
+    [Test]
+    public async Task ParallacticAngle_EastOfMeridian_NegativeAngle()
+    {
+        // H < 0 (object east of meridian) with object south of zenith → q < 0.
+        double q = ObserverGeometry.ParallacticAngle(-45.0, 20.0, 45.0);
+        await Assert.That(q).IsLessThan(0.0);
+    }
+
+    [Test]
+    public async Task ParallacticAngle_OppositeHourAngles_OppositeSign()
+    {
+        // ParallacticAngle(+H, ...) = −ParallacticAngle(−H, ...) by symmetry.
+        double qWest = ObserverGeometry.ParallacticAngle(30.0, 25.0, 50.0);
+        double qEast = ObserverGeometry.ParallacticAngle(-30.0, 25.0, 50.0);
+        await Assert.That(Math.Abs(qWest + qEast)).IsLessThanOrEqualTo(TightTol);
+    }
+
+    [Test]
+    public async Task ParallacticAngle_KnownValue_WithinTolerance()
+    {
+        // lat=50°, dec=30°, H=45° — intermediate values are 4 s.f. approximations:
+        //   sin(45°) ≈ 0.7071,  tan(50°) ≈ 1.1918,  cos(30°) ≈ 0.8660
+        //   sin(30°) = 0.5000,  cos(45°) ≈ 0.7071
+        //   denom ≈ 1.1918 × 0.8660 − 0.5 × 0.7071 ≈ 1.0321 − 0.3536 = 0.6786
+        //   q = atan2(0.7071, 0.6786) ≈ 46.15°  (verified with full-precision arithmetic)
+        double q = ObserverGeometry.ParallacticAngle(45.0, 30.0, 50.0);
+        await Assert.That(Math.Abs(q - 46.15)).IsLessThan(0.1);
+    }
 }
