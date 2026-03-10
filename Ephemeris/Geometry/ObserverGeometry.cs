@@ -1,4 +1,4 @@
-﻿// Updated: 2026-07-14
+﻿// Updated: 2026-03-10
 using Ephemeris.Chronology;
 
 namespace Ephemeris.Geometry;
@@ -47,7 +47,9 @@ public static class ObserverGeometry
         double latitudeRad = TimeUtils.ToRadians(latitude);
 
         double altitudeRad = Math.Asin((Math.Sin(declinationRad) * Math.Sin(latitudeRad)) + (Math.Cos(declinationRad) * Math.Cos(latitudeRad) * Math.Cos(hourAngleRad)));
-        double azimuthRad = Math.Acos((Math.Sin(declinationRad) - (Math.Sin(altitudeRad) * Math.Sin(latitudeRad))) / (Math.Cos(altitudeRad) * Math.Cos(latitudeRad)));
+        // Clamp to [-1,1] to prevent NaN from Math.Acos when altitude ≈ 90° (zenith) or latitude ≈ ±90° (pole)
+        double azimuthArg = (Math.Sin(declinationRad) - (Math.Sin(altitudeRad) * Math.Sin(latitudeRad))) / (Math.Cos(altitudeRad) * Math.Cos(latitudeRad));
+        double azimuthRad = Math.Acos(Math.Clamp(azimuthArg, -1.0, 1.0));
 
         if (Math.Sin(hourAngleRad) > 0)
         {

@@ -1,4 +1,4 @@
-// Updated: 2026-03-09
+// Updated: 2026-03-10
 using Ephemeris.Chronology;
 
 namespace Ephemeris.Phenomenology;
@@ -86,7 +86,10 @@ public static class SeasonCalculator
 
         double jde = jde0 + (0.00001 * S / deltaLambda);
 
-        return JulianDayToDateTime(jde);
+        // Subtract ΔT to convert JDE (Terrestrial Time) → UTC
+        double approxYear = year + ((int)season + 0.5) / 4.0;
+        double deltaTdays = TimeUtils.DeltaT(approxYear) / 86400.0;
+        return TimeZoneUtils.FromJulianDay(jde - deltaTdays);
     }
 
     /// <summary>
@@ -124,32 +127,4 @@ public static class SeasonCalculator
     /// </summary>
     public static DateTime NextWinterSolstice(DateTime after) => Next(Season.WinterSolstice, after);
 
-    private static DateTime JulianDayToDateTime(double jd)
-    {
-        // JD → Gregorian calendar (Meeus Ch. 7)
-        double z = Math.Floor(jd + 0.5);
-        double f = (jd + 0.5) - z;
-        double alpha = Math.Floor((z - 1867216.25) / 36524.25);
-        double A = z + 1 + alpha - Math.Floor(alpha / 4);
-        double B = A + 1524;
-        int C = (int)Math.Floor((B - 122.1) / 365.25);
-        int D = (int)Math.Floor(365.25 * C);
-        int E = (int)Math.Floor((B - D) / 30.6001);
-
-        int day = (int)(B - D - Math.Floor(30.6001 * E));
-        int month = E < 14 ? E - 1 : E - 13;
-        int year = month > 2 ? C - 4716 : C - 4715;
-
-        // Fractional day → time
-        double dayFraction = f * 24.0;
-        int hour = (int)dayFraction;
-        double minuteFraction = (dayFraction - hour) * 60.0;
-        int minute = (int)minuteFraction;
-        double secondFraction = (minuteFraction - minute) * 60.0;
-        int second = (int)Math.Round(secondFraction);
-        if (second >= 60) { second = 0; minute++; }
-        if (minute >= 60) { minute = 0; hour++; }
-
-        return new DateTime(year, month, day, hour, minute, second, DateTimeKind.Utc);
-    }
 }

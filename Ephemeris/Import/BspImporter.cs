@@ -66,7 +66,9 @@ public static class BspImporter
         double r = Math.Sqrt(x * x + y * y + z * z); // distance (km)
         double ra = double.RadiansToDegrees(Math.Atan2(y, x));
         if (ra < 0) ra += 360;
-        double dec = double.RadiansToDegrees(Math.Asin(z / r));
+        double dec = r > 0
+            ? double.RadiansToDegrees(Math.Asin(Math.Clamp(z / r, -1.0, 1.0)))
+            : 0.0;
         return (new EquatorialCoordinates(ra, dec), r);
     }
 }

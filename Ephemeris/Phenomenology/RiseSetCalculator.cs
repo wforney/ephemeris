@@ -186,19 +186,26 @@ public static class RiseSetCalculator
         double h0)
     {
         m = NormalizeFraction(m);
+        // ΔT correction: n = m + ΔT/86400 is the interpolation argument (Meeus Eq. 15.1)
+        double yearFrac = 2000.0 + (jd0 - 2451545.0) / 365.25;
+        double deltaTdays = TimeUtils.DeltaT(yearFrac) / 86400.0;
         for (int i = 0; i < 3; i++)
         {
             double theta = TimeUtils.NormalizeDegrees(theta0 + (360.985647 * m));
-            double n = m + (jd0 - jd0);   // n = 0 offset; Meeus uses (JD0−2451545)/... here
-            double ra  = InterpolateDelta(ra1, ra2, ra3, m);
-            double dec = InterpolateDelta(dec1, dec2, dec3, m);
+            double n   = m + deltaTdays;  // interpolation argument per Meeus Eq. 15.1
+            double ra  = InterpolateDelta(ra1, ra2, ra3, n);
+            double dec = InterpolateDelta(dec1, dec2, dec3, n);
             double H   = TimeUtils.NormalizeDegrees(theta - longitude - ra); // local hour angle (deg)
             if (H > 180) H -= 360;
             double latRad = TimeUtils.ToRadians(latitude);
             double decRad = TimeUtils.ToRadians(dec);
             double hRad   = TimeUtils.ToRadians(H);
+            double sinH   = Math.Sin(hRad);
+            // Guard against divide-by-zero when H ≈ 0° or 180° (body near transit or anti-transit)
+            if (Math.Abs(sinH) < 1e-6)
+                break;
             double altitude = TimeUtils.ToDegrees(Math.Asin((Math.Sin(latRad) * Math.Sin(decRad)) + (Math.Cos(latRad) * Math.Cos(decRad) * Math.Cos(hRad))));
-            double dm = (altitude - h0) / (360.0 * Math.Cos(decRad) * Math.Cos(latRad) * Math.Sin(hRad)); // altitude correction (fraction of day)
+            double dm = (altitude - h0) / (360.0 * Math.Cos(decRad) * Math.Cos(latRad) * sinH); // altitude correction (fraction of day)
             m = NormalizeFraction(m + dm);
         }
         return m;

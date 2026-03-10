@@ -1,4 +1,4 @@
-// Updated: 2026-03-09
+// Updated: 2026-03-10
 using Ephemeris.Geometry;
 
 namespace Ephemeris.Geodesy;
@@ -69,7 +69,8 @@ public static class PrecessionCalculator
 
         double raPrecessed  = Ephemeris.Chronology.TimeUtils.NormalizeDegrees(
                                 Ephemeris.Chronology.TimeUtils.ToDegrees(Math.Atan2(A, B)) + zA);
-        double decPrecessed = Ephemeris.Chronology.TimeUtils.ToDegrees(Math.Asin(C));
+        // Clamp to [-1,1]: C is the sine of the precessed declination; floating-point can push it slightly outside range
+        double decPrecessed = Ephemeris.Chronology.TimeUtils.ToDegrees(Math.Asin(Math.Clamp(C, -1.0, 1.0)));
 
         return new EquatorialCoordinates(raPrecessed, decPrecessed);
     }

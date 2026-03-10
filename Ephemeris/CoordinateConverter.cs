@@ -1,4 +1,4 @@
-﻿// Updated: 2026-03-09
+﻿// Updated: 2026-03-10
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 
@@ -28,7 +28,7 @@ public static class CoordinateConverter
         double z = (Math.Sin(lonRad) * Math.Cos(latRad) * Math.Sin(eclipticObliquityRad)) + (Math.Sin(latRad) * Math.Cos(eclipticObliquityRad));
 
         double RA = TimeUtils.NormalizeDegrees(TimeUtils.ToDegrees(Math.Atan2(y, x)));
-        double Dec = TimeUtils.ToDegrees(Math.Asin(z));
+        double Dec = TimeUtils.ToDegrees(Math.Asin(Math.Clamp(z, -1.0, 1.0)));
 
         return new EquatorialCoordinates(RA, Dec);
     }
@@ -56,7 +56,7 @@ public static class CoordinateConverter
         double ze = (-y * Math.Sin(eclipticObliquityRad)) + (z * Math.Cos(eclipticObliquityRad));
 
         double lon = TimeUtils.NormalizeDegrees(TimeUtils.ToDegrees(Math.Atan2(ye, xe)));
-        double lat = TimeUtils.ToDegrees(Math.Asin(ze));
+        double lat = TimeUtils.ToDegrees(Math.Asin(Math.Clamp(ze, -1.0, 1.0)));
 
         return new EclipticCoordinates(lon, lat);
     }
@@ -78,6 +78,7 @@ public static class CoordinateConverter
 
         double haversineA = (Math.Sin(dDec / 2) * Math.Sin(dDec / 2))
                  + (Math.Cos(dec1Rad) * Math.Cos(dec2Rad) * Math.Sin(dRa / 2) * Math.Sin(dRa / 2));
-        return TimeUtils.ToDegrees(2 * Math.Asin(Math.Sqrt(haversineA)));
+        // Clamp to [-1,1]: haversineA can slightly exceed 1 for near-antipodal points due to floating-point rounding
+        return TimeUtils.ToDegrees(2 * Math.Asin(Math.Clamp(Math.Sqrt(haversineA), 0.0, 1.0)));
     }
 }

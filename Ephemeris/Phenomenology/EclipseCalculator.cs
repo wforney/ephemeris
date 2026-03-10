@@ -1,4 +1,4 @@
-// Updated: 2026-03-09
+// Updated: 2026-03-10
 using Ephemeris.Chronology;
 using Ephemeris.Heliology;
 using Ephemeris.Selenography;
@@ -233,7 +233,9 @@ public static class EclipseCalculator
                 type = magnitude < 0 ? EclipseType.PenumbralLunar : EclipseType.PartialLunar;
             }
 
-            return new EclipseEvent(type, JulianDayToDateTime(JDEmax), magnitude, gamma);
+            // Convert JDE (Terrestrial Time) → UTC by subtracting ΔT; use canonical TimeZoneUtils converter
+            var eclipseUtc = JdeToUtc(JDEmax);
+            return new EclipseEvent(type, eclipseUtc, magnitude, gamma);
         }
         else
         {
@@ -254,30 +256,16 @@ public static class EclipseCalculator
                 type = EclipseType.PartialSolar;
             }
 
-            return new EclipseEvent(type, JulianDayToDateTime(JDEmax), magnitude, gamma);
+            var eclipseUtc2 = JdeToUtc(JDEmax);
+            return new EclipseEvent(type, eclipseUtc2, magnitude, gamma);
         }
     }
 
-    private static DateTime JulianDayToDateTime(double jd)
+    private static DateTime JdeToUtc(double jde)
     {
-        double z = Math.Floor(jd + 0.5);
-        double f = jd + 0.5 - z;
-        double a = z >= 2299161
-            ? Math.Floor((z - 1867216.25) / 36524.25)
-            : z;
-        if (z >= 2299161)
-            a = z + 1 + a - Math.Floor(a / 4);
-        double b = a + 1524;
-        double c = Math.Floor((b - 122.1) / 365.25);
-        double d = Math.Floor(365.25 * c);
-        double e = Math.Floor((b - d) / 30.6001);
-        int day   = (int)(b - d - Math.Floor(30.6001 * e));
-        int month = e < 14 ? (int)e - 1 : (int)e - 13;
-        int year  = month > 2 ? (int)c - 4716 : (int)c - 4715;
-        int hour  = (int)(f * 24);
-        int min   = (int)((f * 24 - hour) * 60);
-        int sec   = (int)(((f * 24 - hour) * 60 - min) * 60);
-        try { return new DateTime(year, month, day, hour, min, sec, DateTimeKind.Utc); }
-        catch { return DateTime.MinValue; }
+        // JDE is in Terrestrial Time; subtract ΔT to convert to UTC
+        var approx = TimeZoneUtils.FromJulianDay(jde);
+        double deltaTdays = TimeUtils.DeltaT(approx.Year + (approx.DayOfYear / 365.25)) / 86400.0;
+        return TimeZoneUtils.FromJulianDay(jde - deltaTdays);
     }
 }
