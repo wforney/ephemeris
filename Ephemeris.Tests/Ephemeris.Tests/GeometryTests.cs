@@ -125,6 +125,54 @@ public class GeometryTests
         await Assert.That(Math.Abs(sep - 27.2)).IsLessThan(0.5);
     }
 
+    // ── CoordinateConverter galactic ↔ equatorial ────────────────────────────
+
+    [Test]
+    public async Task EquatorialToGalactic_GalacticCenter_NearZeroZero()
+    {
+        // Galactic Center J2000: RA ≈ 266.405°, Dec ≈ -28.936°  → l ≈ 0°, b ≈ 0°
+        var (l, b) = CoordinateConverter.EquatorialToGalactic(new EquatorialCoordinates(266.405, -28.936));
+
+        // Galactic longitude: allow for small wrap near 0°/360°
+        double lDist = Math.Min(l, 360.0 - l);
+        await Assert.That(lDist).IsLessThan(1.0);
+        await Assert.That(Math.Abs(b)).IsLessThan(1.0);
+    }
+
+    [Test]
+    public async Task GalacticToEquatorial_GalacticCenter_NearExpectedEquatorial()
+    {
+        // l = 0°, b = 0° → RA ≈ 266.405°, Dec ≈ -28.936°
+        var eq = CoordinateConverter.GalacticToEquatorial(0.0, 0.0);
+
+        await Assert.That(Math.Abs(eq.RightAscension - 266.405)).IsLessThan(1.0);
+        await Assert.That(Math.Abs(eq.Declination - (-28.936))).IsLessThan(1.0);
+    }
+
+    [Test]
+    public async Task EquatorialToGalactic_RoundTrip_WithinTolerance()
+    {
+        // Round-trip: equatorial → galactic → equatorial; accuracy within 0.01°
+        var original = new EquatorialCoordinates(120.0, 45.0);
+        var (l, b) = CoordinateConverter.EquatorialToGalactic(original);
+        var roundTripped = CoordinateConverter.GalacticToEquatorial(l, b);
+
+        await Assert.That(Math.Abs(roundTripped.RightAscension - original.RightAscension)).IsLessThanOrEqualTo(0.01);
+        await Assert.That(Math.Abs(roundTripped.Declination - original.Declination)).IsLessThanOrEqualTo(0.01);
+    }
+
+    [Test]
+    public async Task GalacticToEquatorial_RoundTrip_WithinTolerance()
+    {
+        // Round-trip: galactic → equatorial → galactic; accuracy within 0.01°
+        double lOrig = 45.0, bOrig = 30.0;
+        var eq = CoordinateConverter.GalacticToEquatorial(lOrig, bOrig);
+        var (lBack, bBack) = CoordinateConverter.EquatorialToGalactic(eq);
+
+        await Assert.That(Math.Abs(lBack - lOrig)).IsLessThanOrEqualTo(0.01);
+        await Assert.That(Math.Abs(bBack - bOrig)).IsLessThanOrEqualTo(0.01);
+    }
+
     // ── ObserverGeometry.ParallacticAngle ────────────────────────────────────
 
     [Test]
