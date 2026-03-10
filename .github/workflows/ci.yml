@@ -38,8 +38,7 @@ jobs:
         run: >
           dotnet test --project Ephemeris.Tests/Ephemeris.Tests/Ephemeris.Tests.csproj
           --no-build --configuration Release --log-level Information
-          --logger "trx;LogFileName=results.trx"
-          --results-directory "Ephemeris.Tests/Ephemeris.Tests/TestResults/"
+          --report-trx
           --coverage --coverage-output "${{ github.workspace }}/coverage.cobertura.xml" --coverage-output-format cobertura
 
       - name: Generate coverage report
@@ -70,5 +69,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-report
-          path: Ephemeris.Tests/Ephemeris.Tests/TestResults/
-          if-no-files-found: error
+          path: TestResults/
+          if-no-files-found: warn
