@@ -159,7 +159,6 @@ public sealed class SkyGlControl : OpenGlControlBase
 
     // ── View-model ────────────────────────────────────────────────────────
     private readonly SkyViewModel _vm;
-    private bool _syncingFromVm;
 
     // ─────────────────────────────────────────────────────────────────────
     // Construction
@@ -714,26 +713,21 @@ public sealed class SkyGlControl : OpenGlControlBase
     {
         Dispatcher.UIThread.Post(() =>
         {
-            _syncingFromVm = true;
-            try
+            switch (e.PropertyName)
             {
-                switch (e.PropertyName)
-                {
-                    case nameof(SkyViewModel.Playing):
-                        if (_vm.Playing) _animTimer.Start(); else _animTimer.Stop();
-                        break;
+                case nameof(SkyViewModel.Playing):
+                    if (_vm.Playing) _animTimer.Start(); else _animTimer.Stop();
+                    break;
 
-                    case nameof(SkyViewModel.SimTime):
-                    case nameof(SkyViewModel.Longitude):
-                    case nameof(SkyViewModel.Latitude):
-                    case nameof(SkyViewModel.Yaw):
-                    case nameof(SkyViewModel.Pitch):
-                    case nameof(SkyViewModel.FovDeg):
-                        RequestNextFrameRendering();
-                        break;
-                }
+                case nameof(SkyViewModel.SimTime):
+                case nameof(SkyViewModel.Longitude):
+                case nameof(SkyViewModel.Latitude):
+                case nameof(SkyViewModel.Yaw):
+                case nameof(SkyViewModel.Pitch):
+                case nameof(SkyViewModel.FovDeg):
+                    RequestNextFrameRendering();
+                    break;
             }
-            finally { _syncingFromVm = false; }
         });
     }
 
