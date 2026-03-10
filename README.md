@@ -35,7 +35,7 @@ A .NET 10 library for computing positions of celestial bodies (Sun, Moon, planet
 | Project | Description |
 |---|---|
 | `Ephemeris` | Core class library — calculation engine |
-| `Ephemeris.Tests` | TUnit test suite (90 tests) |
+| `Ephemeris.Tests` | TUnit test suite (122 tests) |
 | `Ephemeris.Benchmarks` | BenchmarkDotNet performance suite |
 | `Ephemeris.UI` | WinForms visualization app (Windows only) |
 
@@ -183,11 +183,13 @@ Reference documents in `docs/`:
 - ✅ Rise/set/transit (Meeus Ch. 15), seasons (Ch. 27), eclipses (Ch. 54)
 - ✅ Stellar catalog — embedded 25-star subset + Yale BSC5 reader, proper-motion & IAU 2006 precession
 - ✅ Native DAF/SPK BSP reader — Type 2/3 Chebyshev, leap-second-aware UTC→ET, BFS segment graph for arbitrary multi-hop chaining
+- ✅ OpenGL/Skia 3D sky view — `SkyViewForm` renders stars, Sun, Moon, planets with OpenTK 4 GLControl + SkiaSharp label overlay; launcher (`LauncherForm`) added to `Ephemeris.UI`
 - ✅ 122 unit tests verified against JPL Horizons and synthetic reference values
 - ✅ BenchmarkDotNet project, NuGet packaging, CI coverage reporting
 
 ### Future
-- 🔜 **OpenGL/Skia 3D rendering** — wire up existing OpenTK/SkiaSharp references in Ephemeris.UI
+
+No planned items at this time — contributions welcome!
 
 ---
 
@@ -197,7 +199,7 @@ Reference documents in `docs/`:
 - [Scrutor](https://github.com/khellang/Scrutor) — DI assembly scanning
 - [DotNext](https://github.com/dotnet/dotNext) — advanced .NET utilities and async threading
 - [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) — MVVM helpers
-- [OpenTK + SkiaSharp](https://opentk.net) — OpenGL and Skia rendering (reserved for future 3D)
+- [OpenTK + SkiaSharp](https://opentk.net) — OpenGL and Skia rendering (used in `SkyViewForm`)
 - [TUnit](https://github.com/thomhurst/TUnit) — test framework
 
 ## License
