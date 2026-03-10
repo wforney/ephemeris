@@ -203,12 +203,9 @@ public sealed class SkyGlControl : OpenGlControlBase
 
         gl.DeleteProgram(_shaderProgram);
 
-        _deleteVertexArrays!(1, [_starVao]);
-        _deleteBuffers!(1, [_starVbo]);
-        _deleteVertexArrays!(1, [_bodyVao]);
-        _deleteBuffers!(1, [_bodyVbo]);
-        _deleteVertexArrays!(1, [_horizonVao]);
-        _deleteBuffers!(1, [_horizonVbo]);
+        // Batch delete all VAOs and VBOs in two calls
+        _deleteVertexArrays!(3, [_starVao, _bodyVao, _horizonVao]);
+        _deleteBuffers!(3, [_starVbo, _bodyVbo, _horizonVbo]);
 
         _glReady = false;
     }

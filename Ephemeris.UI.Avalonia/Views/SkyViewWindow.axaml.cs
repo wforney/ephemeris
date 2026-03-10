@@ -61,8 +61,8 @@ public partial class SkyViewWindow : Window
             if (e.Key == Avalonia.Input.Key.Enter) ApplyDatePickerText();
         };
 
-        LonPicker.ValueChanged += (_, _) => { if (LonPicker.Value.HasValue) _vm.Longitude = (double)LonPicker.Value.Value; };
-        LatPicker.ValueChanged += (_, _) => { if (LatPicker.Value.HasValue) _vm.Latitude  = (double)LatPicker.Value.Value; };
+        LonPicker.ValueChanged += (_, _) => { if (LonPicker.Value is { } lon) _vm.Longitude = (double)lon; };
+        LatPicker.ValueChanged += (_, _) => { if (LatPicker.Value is { } lat) _vm.Latitude  = (double)lat; };
         PlayBtn.Click += (_, _) => _vm.PlayPauseCommand.Execute(null);
         NowBtn.Click  += (_, _) => _vm.ResetToNowCommand.Execute(null);
 
