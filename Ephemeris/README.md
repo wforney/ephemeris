@@ -142,8 +142,9 @@ foreach (string name in AsteroidEphemeris.SupportedAsteroids)
 ```
 
 > [!NOTE]
-> The position algorithm uses geocentric ecliptic longitude/latitude rather than a proper Earth-vector subtraction.
-> RA/Dec accuracy: ~1–5° for main-belt asteroids; ~2–8° for centaurs; ~5–15° for high-eccentricity TNOs (Sedna, Eris).
+> [!NOTE]
+> `GetPosition` returns true **geocentric** RA/Dec by subtracting Earth's heliocentric position vector from the asteroid's (Meeus Ch. 33). `GetObservation` derives altitude/azimuth from these geocentric coordinates.
+> RA/Dec accuracy: ~0.5–3° for main-belt asteroids; ~1–5° for centaurs; ~3–10° for high-eccentricity TNOs (Sedna, Eris).
 
 ---
 

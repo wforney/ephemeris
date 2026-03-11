@@ -259,22 +259,26 @@ public static class AsteroidEphemeris
         };
 
     /// <summary>
-    /// Calculates an asteroid's geocentric equatorial coordinates and approximate distance.
+    /// Calculates an asteroid's geocentric equatorial coordinates and true geocentric distance
+    /// by subtracting Earth's heliocentric position vector.
     /// </summary>
     /// <param name="asteroid">Asteroid name (case-insensitive).</param>
     /// <param name="T">Julian centuries since J2000.0.</param>
     /// <returns>
-    /// Equatorial coordinates (RA, Dec) in degrees and heliocentric distance in AU.
+    /// Geocentric equatorial coordinates (RA, Dec) in degrees and geocentric distance in AU.
     /// </returns>
     /// <remarks>
-    /// Distance is heliocentric rather than true geocentric because Earth's
-    /// heliocentric position is not subtracted; the error is at most ~1 AU for
-    /// close-approaching bodies and typically negligible for distant objects.
+    /// Delegates to <see cref="PlanetEphemeris.GeocentricPosition"/>, which subtracts Earth's
+    /// heliocentric ecliptic position from the asteroid's heliocentric ecliptic position before
+    /// converting to equatorial coordinates (Meeus Ch. 33).  This is important for near-Earth
+    /// objects and Mars-crossing asteroids where the heliocentric and geocentric positions can
+    /// differ by up to ~1 AU; for main-belt and outer-solar-system bodies the correction is
+    /// smaller but still improves RA/Dec accuracy by several tenths of a degree.
     /// </remarks>
     public static (EquatorialCoordinates Coordinates, double DistanceAu) GetPosition(string asteroid, double T)
     {
         OrbitalElements elements = GetElements(asteroid, T);
-        return PlanetEphemeris.SimplifiedPlanetPosition(T, elements);
+        return PlanetEphemeris.GeocentricPosition(T, elements);
     }
 
     /// <summary>

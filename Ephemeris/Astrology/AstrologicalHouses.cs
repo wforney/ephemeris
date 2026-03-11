@@ -273,9 +273,19 @@ public static class AstrologicalHouses
         double decMcRad = Math.Asin(Math.Clamp(Math.Sin(epsRad) * Math.Sin(mcRad), -1.0, 1.0));
 
         // Diurnal Semi-Arc of MC at birth latitude: DSA = arccos(-tan(φ)·tan(Dec_MC)).
-        // Clamped to handle circumpolar degrees (fall back to Porphyry arc = 60°/120°).
-        double dsaArg  = Math.Clamp(-Math.Tan(phiRad) * Math.Tan(decMcRad), -1.0, 1.0);
-        double dsaRad  = Math.Acos(dsaArg);
+        // When |-tan(φ)·tan(Dec_MC)| > 1 the MC degree is circumpolar at this latitude —
+        // there is no real semi-arc, so fall back to Porphyry quadrant trisection rather
+        // than clamping to a degenerate value (DSA=0 or DSA=π) that collapses cusps onto MC.
+        double semiArcArg = -Math.Tan(phiRad) * Math.Tan(decMcRad);
+        if (Math.Abs(semiArcArg) > 1.0)
+        {
+            return ComputePorphyry(
+                mc, asc,
+                TimeUtils.NormalizeDegrees(mc + 180.0),
+                TimeUtils.NormalizeDegrees(asc + 180.0));
+        }
+
+        double dsaRad  = Math.Acos(semiArcArg);
         double nsaRad  = Math.PI - dsaRad; // Nocturnal Semi-Arc of IC
 
         // Trisect DSA for upper hemisphere (H11, H12) and NSA for lower (H2, H3).

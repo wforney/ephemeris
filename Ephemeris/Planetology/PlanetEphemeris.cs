@@ -71,6 +71,113 @@ public static class PlanetEphemeris
 
 
     /// <summary>
+    /// Computes a body's heliocentric ecliptic Cartesian coordinates (Xh, Yh, Zh) in AU from
+    /// its Keplerian orbital elements.
+    /// </summary>
+    /// <param name="T">Julian centuries since J2000.0.</param>
+    /// <param name="elements">Keplerian orbital elements for the body.</param>
+    /// <returns>
+    /// A tuple (Xh, Yh, Zh) representing the body's heliocentric position in the J2000.0
+    /// ecliptic reference frame, in astronomical units.
+    /// </returns>
+    /// <remarks>
+    /// Solves Kepler's equation for the eccentric anomaly, converts to the orbital plane, then
+    /// rotates into the ecliptic frame via the three orientation angles (Ω, i, ω):
+    /// <code>
+    ///   xh = r·[cos Ω·cos(v+ω) − sin Ω·sin(v+ω)·cos i]
+    ///   yh = r·[sin Ω·cos(v+ω) + cos Ω·sin(v+ω)·cos i]
+    ///   zh = r·[sin(v+ω)·sin i]
+    /// </code>
+    /// where r = heliocentric distance, v = true anomaly.
+    /// This is the same calculation used internally by <see cref="SimplifiedPlanetPosition"/>.
+    /// </remarks>
+    public static (double Xh, double Yh, double Zh) HeliocentricEclipticPosition(double T, OrbitalElements elements)
+    {
+        double N = elements.LongitudeAscendingNode;
+        double i = elements.Inclination;
+        double w = elements.ArgumentOfPerihelion;
+        double a = elements.SemiMajorAxisAu;
+        double e = elements.Eccentricity;
+        double M = TimeUtils.NormalizeDegrees(elements.MeanAnomaly);
+        double E = SolveKepler(TimeUtils.ToRadians(M), e);
+
+        double xv = a * (Math.Cos(E) - e);
+        double yv = a * Math.Sqrt(1.0 - (e * e)) * Math.Sin(E);
+        double v  = TimeUtils.ToDegrees(Math.Atan2(yv, xv));
+        double r  = Math.Sqrt((xv * xv) + (yv * yv));
+
+        double nRad  = TimeUtils.ToRadians(N);
+        double vwRad = TimeUtils.ToRadians(v + w);
+        double iRad  = TimeUtils.ToRadians(i);
+
+        double xh = r * ((Math.Cos(nRad) * Math.Cos(vwRad)) - (Math.Sin(nRad) * Math.Sin(vwRad) * Math.Cos(iRad)));
+        double yh = r * ((Math.Sin(nRad) * Math.Cos(vwRad)) + (Math.Cos(nRad) * Math.Sin(vwRad) * Math.Cos(iRad)));
+        double zh = r * (Math.Sin(vwRad) * Math.Sin(iRad));
+
+        return (xh, yh, zh);
+    }
+
+    /// <summary>
+    /// Computes a body's <em>geocentric</em> equatorial coordinates and true geocentric distance
+    /// by subtracting Earth's heliocentric position vector from the body's heliocentric position.
+    /// </summary>
+    /// <param name="T">Julian centuries since J2000.0.</param>
+    /// <param name="elements">Keplerian orbital elements for the body.</param>
+    /// <returns>
+    /// Geocentric equatorial coordinates (RA, Dec) in degrees and geocentric distance in AU.
+    /// </returns>
+    /// <remarks>
+    /// This is more accurate than <see cref="SimplifiedPlanetPosition"/> for bodies whose
+    /// geocentric position differs significantly from their heliocentric position — especially
+    /// near-Earth objects and inner solar-system bodies.
+    /// <para>
+    /// Algorithm:
+    /// <code>
+    ///   (Xg, Yg, Zg) = (Xh_body − Xh_Earth, Yh_body − Yh_Earth, Zh_body − Zh_Earth)
+    ///   lon_g = atan2(Yg, Xg)     [geocentric ecliptic longitude]
+    ///   lat_g = atan2(Zg, √(Xg²+Yg²))   [geocentric ecliptic latitude]
+    ///   RA  = atan2(sin(lon_g)·cos ε − tan(lat_g)·sin ε, cos(lon_g))
+    ///   Dec = arcsin(sin(lat_g)·cos ε + cos(lat_g)·sin ε·sin(lon_g))
+    ///   Δ   = √(Xg²+Yg²+Zg²)
+    /// </code>
+    /// </para>
+    /// Reference: Meeus, <em>Astronomical Algorithms</em> (2nd ed.) Ch. 33, Eq. 33.1–33.3.
+    /// </remarks>
+    /// <seealso cref="HeliocentricEclipticPosition"/>
+    /// <seealso cref="EarthHeliocentricPosition"/>
+    public static (EquatorialCoordinates Coordinates, double DistanceAu) GeocentricPosition(double T, OrbitalElements elements)
+    {
+        var (xhBody, yhBody, zhBody) = HeliocentricEclipticPosition(T, elements);
+        var (xhEarth, yhEarth, zhEarth) = EarthHeliocentricPosition(T);
+
+        // Geocentric ecliptic Cartesian coordinates (Earth-centred, ecliptic-aligned).
+        double xg = xhBody - xhEarth;
+        double yg = yhBody - yhEarth;
+        double zg = zhBody - zhEarth;
+
+        double distanceAu = Math.Sqrt((xg * xg) + (yg * yg) + (zg * zg));
+
+        // Geocentric ecliptic spherical coordinates.
+        double lon    = TimeUtils.ToDegrees(Math.Atan2(yg, xg));
+        double lat    = TimeUtils.ToDegrees(Math.Atan2(zg, Math.Sqrt((xg * xg) + (yg * yg))));
+        double oblEps = 23.439291 - (0.0130042 * T);
+
+        double lonRad = TimeUtils.ToRadians(lon);
+        double latRad = TimeUtils.ToRadians(lat);
+        double epsRad = TimeUtils.ToRadians(oblEps);
+
+        // Convert geocentric ecliptic → equatorial (RA, Dec) via direction cosines.
+        double x = Math.Cos(lonRad) * Math.Cos(latRad);
+        double y = (Math.Sin(lonRad) * Math.Cos(latRad) * Math.Cos(epsRad)) - (Math.Sin(latRad) * Math.Sin(epsRad));
+        double z = (Math.Sin(lonRad) * Math.Cos(latRad) * Math.Sin(epsRad)) + (Math.Sin(latRad) * Math.Cos(epsRad));
+
+        double ra  = TimeUtils.NormalizeDegrees(TimeUtils.ToDegrees(Math.Atan2(y, x)));
+        double dec = TimeUtils.ToDegrees(Math.Asin(Math.Clamp(z, -1.0, 1.0)));
+
+        return (new EquatorialCoordinates(ra, dec), distanceAu);
+    }
+
+    /// <summary>
     /// Calculates a planet's equatorial coordinates and geocentric distance using simplified Kepler orbital elements.
     /// </summary>
     /// <param name="T">Julian centuries since J2000.0.</param>
