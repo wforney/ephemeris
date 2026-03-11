@@ -34,14 +34,12 @@ public enum HouseSystem
     /// <summary>
     /// Koch (Geburtsort-Häusertafel) — uses the diurnal arc of the Midheaven degree
     /// projected through the birth latitude. Popular in German-speaking countries.
-    /// Not yet implemented; throws <see cref="NotSupportedException"/>.
     /// </summary>
     Koch,
 
     /// <summary>
     /// Campanus — projects the prime vertical circle onto the ecliptic, dividing it into
     /// twelve equal sections. Attributed to Johannes Campanus (~13th century).
-    /// Not yet implemented; throws <see cref="NotSupportedException"/>.
     /// </summary>
     Campanus,
 
@@ -49,7 +47,6 @@ public enum HouseSystem
     /// Regiomontanus — divides the celestial equator into twelve equal sections and projects
     /// house boundaries onto the ecliptic via great circles through the north and south points
     /// of the horizon. Used extensively in medieval astrology.
-    /// Not yet implemented; throws <see cref="NotSupportedException"/>.
     /// </summary>
     Regiomontanus,
 }

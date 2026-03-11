@@ -195,20 +195,160 @@ public class AstrologicalHousesTests
         await Assert.That(h.HouseSystem).IsEqualTo(HouseSystem.Placidus);
     }
 
-    // ── Unimplemented systems ─────────────────────────────────────────────────────
+    // ── Koch ─────────────────────────────────────────────────────────────────────
 
     [Test]
-    public async Task Koch_ThrowsNotSupportedException()
+    public async Task Koch_AllCusps_AreInValidRange()
     {
-        await Assert.That(() => AstrologicalHouses.Calculate(Jd2000, WashingtonLon, WashingtonLat, HouseSystem.Koch))
-            .Throws<NotSupportedException>();
+        var h = AstrologicalHouses.Calculate(Jd2000, WashingtonLon, WashingtonLat, HouseSystem.Koch);
+        foreach (double c in h.Cusps)
+        {
+            await Assert.That(c).IsGreaterThanOrEqualTo(0.0);
+            await Assert.That(c).IsLessThan(360.0);
+        }
     }
 
     [Test]
-    public async Task Campanus_ThrowsNotSupportedException()
+    public async Task Koch_House1_EqualsAscendant()
     {
-        await Assert.That(() => AstrologicalHouses.Calculate(Jd2000, WashingtonLon, WashingtonLat, HouseSystem.Campanus))
-            .Throws<NotSupportedException>();
+        var h = AstrologicalHouses.Calculate(Jd2000, WashingtonLon, WashingtonLat, HouseSystem.Koch);
+        await Assert.That(Math.Abs(h.Cusps[0] - h.Ascendant)).IsLessThan(0.001);
+    }
+
+    [Test]
+    public async Task Koch_House10_EqualsMidheaven()
+    {
+        var h = AstrologicalHouses.Calculate(Jd2000, WashingtonLon, WashingtonLat, HouseSystem.Koch);
+        await Assert.That(Math.Abs(h.Cusps[9] - h.Midheaven)).IsLessThan(0.001);
+    }
+
+    [Test]
+    public async Task Koch_HouseSystem_RecordedCorrectly()
+    {
+        var h = AstrologicalHouses.Calculate(Jd2000, WashingtonLon, WashingtonLat, HouseSystem.Koch);
+        await Assert.That(h.HouseSystem).IsEqualTo(HouseSystem.Koch);
+    }
+
+    // ── Campanus ─────────────────────────────────────────────────────────────────
+
+    [Test]
+    public async Task Campanus_AllCusps_AreInValidRange()
+    {
+        var h = AstrologicalHouses.Calculate(Jd2000, WashingtonLon, WashingtonLat, HouseSystem.Campanus);
+        foreach (double c in h.Cusps)
+        {
+            await Assert.That(c).IsGreaterThanOrEqualTo(0.0);
+            await Assert.That(c).IsLessThan(360.0);
+        }
+    }
+
+    [Test]
+    public async Task Campanus_House1_EqualsAscendant()
+    {
+        var h = AstrologicalHouses.Calculate(Jd2000, WashingtonLon, WashingtonLat, HouseSystem.Campanus);
+        await Assert.That(Math.Abs(h.Cusps[0] - h.Ascendant)).IsLessThan(0.01);
+    }
+
+    [Test]
+    public async Task Campanus_House10_EqualsMidheaven()
+    {
+        var h = AstrologicalHouses.Calculate(Jd2000, WashingtonLon, WashingtonLat, HouseSystem.Campanus);
+        await Assert.That(Math.Abs(h.Cusps[9] - h.Midheaven)).IsLessThan(0.01);
+    }
+
+    [Test]
+    public async Task Campanus_HouseSystem_RecordedCorrectly()
+    {
+        var h = AstrologicalHouses.Calculate(Jd2000, WashingtonLon, WashingtonLat, HouseSystem.Campanus);
+        await Assert.That(h.HouseSystem).IsEqualTo(HouseSystem.Campanus);
+    }
+
+    // ── Regiomontanus ─────────────────────────────────────────────────────────────
+
+    [Test]
+    public async Task Regiomontanus_AllCusps_AreInValidRange()
+    {
+        var h = AstrologicalHouses.Calculate(Jd2000, WashingtonLon, WashingtonLat, HouseSystem.Regiomontanus);
+        foreach (double c in h.Cusps)
+        {
+            await Assert.That(c).IsGreaterThanOrEqualTo(0.0);
+            await Assert.That(c).IsLessThan(360.0);
+        }
+    }
+
+    [Test]
+    public async Task Regiomontanus_House1_EqualsAscendant()
+    {
+        var h = AstrologicalHouses.Calculate(Jd2000, WashingtonLon, WashingtonLat, HouseSystem.Regiomontanus);
+        await Assert.That(Math.Abs(h.Cusps[0] - h.Ascendant)).IsLessThan(0.01);
+    }
+
+    [Test]
+    public async Task Regiomontanus_House10_EqualsMidheaven()
+    {
+        var h = AstrologicalHouses.Calculate(Jd2000, WashingtonLon, WashingtonLat, HouseSystem.Regiomontanus);
+        await Assert.That(Math.Abs(h.Cusps[9] - h.Midheaven)).IsLessThan(0.01);
+    }
+
+    [Test]
+    public async Task Regiomontanus_HouseSystem_RecordedCorrectly()
+    {
+        var h = AstrologicalHouses.Calculate(Jd2000, WashingtonLon, WashingtonLat, HouseSystem.Regiomontanus);
+        await Assert.That(h.HouseSystem).IsEqualTo(HouseSystem.Regiomontanus);
+    }
+
+    // ── Cross-system: H1 = ASC and H10 = MC for quadrant-based systems ───────────
+    // Note: Equal House (H1=ASC but H10≠MC) and WholeSigns (H1=sign boundary≠ASC)
+    // are the two sign-based systems that intentionally deviate from this convention.
+
+    [Test]
+    public async Task QuadrantSystems_House1_EqualsAscendant()
+    {
+        // These systems all anchor H1 to the Ascendant exactly.
+        HouseSystem[] quadrantSystems = [HouseSystem.Placidus, HouseSystem.Porphyry,
+            HouseSystem.Koch, HouseSystem.Campanus, HouseSystem.Regiomontanus];
+        foreach (HouseSystem sys in quadrantSystems)
+        {
+            var h = AstrologicalHouses.Calculate(Jd2000, WashingtonLon, WashingtonLat, sys);
+            await Assert.That(Math.Abs(h.Cusps[0] - h.Ascendant)).IsLessThan(0.01);
+        }
+    }
+
+    [Test]
+    public async Task QuadrantSystems_House10_EqualsMidheaven()
+    {
+        // These systems all anchor H10 to the Midheaven exactly.
+        HouseSystem[] quadrantSystems = [HouseSystem.Placidus, HouseSystem.Porphyry,
+            HouseSystem.Koch, HouseSystem.Campanus, HouseSystem.Regiomontanus];
+        foreach (HouseSystem sys in quadrantSystems)
+        {
+            var h = AstrologicalHouses.Calculate(Jd2000, WashingtonLon, WashingtonLat, sys);
+            await Assert.That(Math.Abs(h.Cusps[9] - h.Midheaven)).IsLessThan(0.01);
+        }
+    }
+
+    [Test]
+    public async Task AllSystems_ReturnTwelveCusps()
+    {
+        foreach (HouseSystem sys in Enum.GetValues<HouseSystem>())
+        {
+            var h = AstrologicalHouses.Calculate(Jd2000, WashingtonLon, WashingtonLat, sys);
+            await Assert.That(h.Cusps.Count).IsEqualTo(12);
+        }
+    }
+
+    [Test]
+    public async Task AllSystems_AllCuspsInValidRange()
+    {
+        foreach (HouseSystem sys in Enum.GetValues<HouseSystem>())
+        {
+            var h = AstrologicalHouses.Calculate(Jd2000, WashingtonLon, WashingtonLat, sys);
+            foreach (double c in h.Cusps)
+            {
+                await Assert.That(c).IsGreaterThanOrEqualTo(0.0);
+                await Assert.That(c).IsLessThan(360.0);
+            }
+        }
     }
 
     // ── MC formula spot check ─────────────────────────────────────────────────────

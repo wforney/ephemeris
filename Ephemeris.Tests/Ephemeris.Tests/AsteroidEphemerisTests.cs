@@ -29,8 +29,8 @@ public class AsteroidEphemerisTests
         => await Assert.That(AsteroidEphemeris.SupportedAsteroids).Contains("eris");
 
     [Test]
-    public async Task SupportedAsteroids_HasSixBodies()
-        => await Assert.That(AsteroidEphemeris.SupportedAsteroids.Count).IsEqualTo(6);
+    public async Task SupportedAsteroids_HasThirtyFiveBodies()
+        => await Assert.That(AsteroidEphemeris.SupportedAsteroids.Count).IsEqualTo(35);
 
     // ── Orbital elements ─────────────────────────────────────────────────────────
 
@@ -157,5 +157,94 @@ public class AsteroidEphemerisTests
         await Assert.That(obs.Azimuth).IsLessThan(360.0);
         await Assert.That(obs.Altitude).IsGreaterThanOrEqualTo(-90.0);
         await Assert.That(obs.Altitude).IsLessThanOrEqualTo(90.0);
+    }
+
+    // ── New main-belt bodies ──────────────────────────────────────────────────────
+
+    [Test]
+    public async Task SupportedAsteroids_ContainsPsyche()
+        => await Assert.That(AsteroidEphemeris.SupportedAsteroids).Contains("psyche");
+
+    [Test]
+    public async Task SupportedAsteroids_ContainsEros()
+        => await Assert.That(AsteroidEphemeris.SupportedAsteroids).Contains("eros");
+
+    [Test]
+    public async Task Psyche_Elements_SemiMajorAxis_IsApproximately2p92AU()
+    {
+        var el = AsteroidEphemeris.GetElements("psyche", T2000);
+        await Assert.That(Math.Abs(el.SemiMajorAxisAu - 2.923)).IsLessThan(0.01);
+    }
+
+    [Test]
+    public async Task Eros_Distance_IsNearEarth()
+    {
+        // Eros semi-major axis ~1.46 AU; heliocentric distance should be 0.8–2.2 AU
+        var (_, dist) = AsteroidEphemeris.GetPosition("eros", T2024);
+        await Assert.That(dist).IsGreaterThan(0.5);
+        await Assert.That(dist).IsLessThan(3.0);
+    }
+
+    [Test]
+    public async Task Icarus_Elements_SemiMajorAxis_IsApproximately1p08AU()
+    {
+        var el = AsteroidEphemeris.GetElements("icarus", T2000);
+        await Assert.That(Math.Abs(el.SemiMajorAxisAu - 1.078)).IsLessThan(0.01);
+    }
+
+    // ── New centaurs ──────────────────────────────────────────────────────────────
+
+    [Test]
+    public async Task SupportedAsteroids_ContainsPholus()
+        => await Assert.That(AsteroidEphemeris.SupportedAsteroids).Contains("pholus");
+
+    [Test]
+    public async Task Pholus_Elements_SemiMajorAxis_IsApproximately20p4AU()
+    {
+        var el = AsteroidEphemeris.GetElements("pholus", T2000);
+        await Assert.That(Math.Abs(el.SemiMajorAxisAu - 20.36)).IsLessThan(0.5);
+    }
+
+    [Test]
+    public async Task Chariklo_Elements_SemiMajorAxis_IsApproximately15p8AU()
+    {
+        var el = AsteroidEphemeris.GetElements("chariklo", T2000);
+        await Assert.That(Math.Abs(el.SemiMajorAxisAu - 15.80)).IsLessThan(0.5);
+    }
+
+    // ── New TNOs and dwarf planets ────────────────────────────────────────────────
+
+    [Test]
+    public async Task SupportedAsteroids_ContainsHaumea()
+        => await Assert.That(AsteroidEphemeris.SupportedAsteroids).Contains("haumea");
+
+    [Test]
+    public async Task SupportedAsteroids_ContainsSedna()
+        => await Assert.That(AsteroidEphemeris.SupportedAsteroids).Contains("sedna");
+
+    [Test]
+    public async Task Sedna_Elements_SemiMajorAxis_IsExtremelyLarge()
+    {
+        var el = AsteroidEphemeris.GetElements("sedna", T2000);
+        await Assert.That(el.SemiMajorAxisAu).IsGreaterThan(400.0);
+    }
+
+    [Test]
+    public async Task Haumea_Elements_SemiMajorAxis_IsApproximately43AU()
+    {
+        var el = AsteroidEphemeris.GetElements("haumea", T2000);
+        await Assert.That(Math.Abs(el.SemiMajorAxisAu - 43.13)).IsLessThan(1.0);
+    }
+
+    [Test]
+    public async Task AllSupportedAsteroids_ReturnValidRA()
+    {
+        // Smoke-test: every asteroid must return a valid RA
+        foreach (string name in AsteroidEphemeris.SupportedAsteroids)
+        {
+            var (coords, _) = AsteroidEphemeris.GetPosition(name, T2024);
+            await Assert.That(coords.RightAscension).IsGreaterThanOrEqualTo(0.0);
+            await Assert.That(coords.RightAscension).IsLessThan(360.0);
+        }
     }
 }

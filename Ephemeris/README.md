@@ -63,7 +63,7 @@ var windows = EphemerisBatch.VisibilityWindows("Mars", DateTime.UtcNow,
 | `OrbitalElements` | `readonly record struct` | 6-element Keplerian set |
 | `FixedStar` | `readonly record struct` | J2000.0 position + proper motion + parallax |
 | `HouseCusps` | `readonly record struct` | 12 astrological house cusps + four Angles (ASC, MC, DSC, IC) in ecliptic degrees |
-| `HouseSystem` | `enum` | Placidus, Equal, WholeSigns, Porphyry (implemented); Koch, Campanus, Regiomontanus (stub) |
+| `HouseSystem` | `enum` | Placidus, Equal, WholeSigns, Porphyry, Koch, Campanus, Regiomontanus (all implemented) |
 
 ---
 
@@ -107,9 +107,18 @@ New injectable services must implement one of `IScopedService`, `ISingletonServi
 
 ## Asteroid Ephemeris
 
-`AsteroidEphemeris` in `Ephemeris.Planetology` computes geocentric equatorial coordinates and observer-relative horizontal coordinates for six minor planets using J2000.0 Keplerian osculating elements from the JPL Small Body Database / IAU MPC.
+`AsteroidEphemeris` in `Ephemeris.Planetology` computes geocentric equatorial coordinates and observer-relative horizontal coordinates for 35 minor planets using J2000.0 Keplerian osculating elements from the JPL Small Body Database / IAU MPC.
 
-**Supported bodies:** (1) Ceres, (2) Pallas, (3) Juno, (4) Vesta, (2060) Chiron, (136199) Eris.
+**Supported bodies (35 total):**
+
+| Category | Bodies |
+|----------|--------|
+| Classical Big Four | Ceres, Pallas, Juno, Vesta |
+| Main belt | Astraea (5), Hebe (6), Iris (7), Flora (8), Metis (9), Hygiea (10), Victoria (12), Eunomia (15), Psyche (16), Fortuna (19), Proserpina (26), Harmonia (40), Isis (42), Sappho (80), Nemesis (128) |
+| Near-Earth / Mars-crossing | Eros (433), Amor (1221), Icarus (1566) |
+| Comet-like orbit | Hidalgo (944) |
+| Centaurs | Chiron (2060), Pholus (5145), Nessus (7066), Asbolus (8405), Chariklo (10199), Hylonome (10370) |
+| TNOs / Dwarf planets | Quaoar (50000), Orcus (90482), Haumea (136108), Makemake (136472), Eris (136199), Sedna (90377) |
 
 ```csharp
 using Ephemeris.Planetology;
@@ -126,11 +135,15 @@ var obs = AsteroidEphemeris.GetObservation("ceres", jd, longitude: -87.65, latit
 // Inspect raw orbital elements
 var elements = AsteroidEphemeris.GetElements("chiron", T);
 // elements.SemiMajorAxisAu, elements.Eccentricity, etc.
+
+// Enumerate all supported bodies
+foreach (string name in AsteroidEphemeris.SupportedAsteroids)
+    Console.WriteLine(name);
 ```
 
 > [!NOTE]
-> The position algorithm (`SimplifiedPlanetPosition`) uses geocentric ecliptic longitude/latitude rather than a proper Earth-vector subtraction.
-> RA/Dec are accurate to ~1° for main-belt asteroids; centaurs and TNOs are less precise.
+> The position algorithm uses geocentric ecliptic longitude/latitude rather than a proper Earth-vector subtraction.
+> RA/Dec accuracy: ~1–5° for main-belt asteroids; ~2–8° for centaurs; ~5–15° for high-eccentricity TNOs (Sedna, Eris).
 
 ---
 
@@ -138,8 +151,17 @@ var elements = AsteroidEphemeris.GetElements("chiron", T);
 
 `AstrologicalHouses` in `Ephemeris.Astrology` computes house cusps using the RAMC (Right Ascension of the Midheaven Circle) and the obliquity of the ecliptic.
 
-**Implemented systems:** Placidus, Equal, Whole Signs, Porphyry.  
-**Stub systems** (throw `NotSupportedException`): Koch, Campanus, Regiomontanus.
+**Implemented systems (all seven):**
+
+| System | Description |
+|--------|-------------|
+| Placidus | Time-based semi-arc division; most widely used modern Western system |
+| Equal | Each house exactly 30°, starting from the Ascendant |
+| Whole Signs | Each house = one complete zodiac sign, anchored to the Ascendant's sign |
+| Porphyry | Each quadrant (MC–ASC–IC–DSC) trisected into equal ecliptic arcs |
+| Koch | Trisects the diurnal semi-arc of the MC degree at birth latitude |
+| Campanus | Prime vertical divided into 12 equal arcs; great circles through East/West horizon |
+| Regiomontanus | Celestial equator divided into 12 equal arcs; great circles through N/S horizon |
 
 ```csharp
 using Ephemeris.Astrology;
@@ -152,14 +174,18 @@ HouseCusps chart = AstrologicalHouses.Calculate(
 
 double ascendant  = chart.Ascendant;   // ecliptic degree of Asc (0–360°)
 double midheaven  = chart.Midheaven;   // ecliptic degree of MC  (0–360°)
-double house1Cusp = chart.Cusps[0];    // same as Ascendant for Placidus
+double house1Cusp = chart.Cusps[0];    // same as Ascendant for quadrant-based systems
 
 // Individual angle helpers
-double ramc = TimeUtils.GMST(jd) + (-87.65); // RAMC = GMST + longitude
+double ramc = TimeUtils.NormalizeDegrees(TimeUtils.GMST(jd) + (-87.65));
 double obliquity = AstrologicalHouses.ObliquityOfEcliptic(TimeUtils.JulianCentury(jd));
 double mc  = AstrologicalHouses.ComputeMC(ramc, obliquity);
 double asc = AstrologicalHouses.ComputeAscendant(ramc, obliquity, latitude: 41.85);
 ```
+
+> [!NOTE]
+> WholeSigns sets H1 cusp to the sign boundary (a multiple of 30°), not the Ascendant itself.
+> Equal House sets H10 = ASC + 270°, not the Midheaven.
 
 ---
 

@@ -30,9 +30,6 @@ public static class AstrologicalHouses
     /// <returns>
     /// A <see cref="HouseCusps"/> record with all twelve cusps, four Angles, and the system identifier.
     /// </returns>
-    /// <exception cref="NotSupportedException">
-    /// Thrown for Koch, Campanus, and Regiomontanus systems which are not yet implemented.
-    /// </exception>
     public static HouseCusps Calculate(double jd, double longitude, double latitude, HouseSystem system)
     {
         double T = TimeUtils.JulianCentury(jd);
@@ -50,9 +47,9 @@ public static class AstrologicalHouses
             HouseSystem.Equal         => ComputeEqual(asc),
             HouseSystem.WholeSigns    => ComputeWholeSigns(asc),
             HouseSystem.Porphyry      => ComputePorphyry(mc, asc, ic, dsc),
-            HouseSystem.Koch          => throw new NotSupportedException("Koch house system is not yet implemented."),
-            HouseSystem.Campanus      => throw new NotSupportedException("Campanus house system is not yet implemented."),
-            HouseSystem.Regiomontanus => throw new NotSupportedException("Regiomontanus house system is not yet implemented."),
+            HouseSystem.Koch          => ComputeKoch(ramc, mc, asc, obliquity, latitude),
+            HouseSystem.Campanus      => ComputeCampanus(ramc, mc, asc, obliquity, latitude),
+            HouseSystem.Regiomontanus => ComputeRegiomontanus(ramc, mc, asc, obliquity, latitude),
             _                         => throw new ArgumentOutOfRangeException(nameof(system), system, null),
         };
 
@@ -258,4 +255,144 @@ public static class AstrologicalHouses
 
         return TimeUtils.NormalizeDegrees(TimeUtils.ToDegrees(lambda));
     }
+
+    // ── Koch ─────────────────────────────────────────────────────────────────────
+    // Trisects the Diurnal Semi-Arc (DSA) of the MC degree as seen from the birth latitude
+    // to locate the upper-hemisphere intermediate cusps, and the Nocturnal Semi-Arc (NSA)
+    // for the lower-hemisphere cusps.
+    // Reference: Holden, "Astrological House Systems" (1977); Koch & Knappich (1932).
+    private static double[] ComputeKoch(double ramcDeg, double mc, double asc,
+        double obliquityDeg, double latitudeDeg)
+    {
+        double epsRad = TimeUtils.ToRadians(obliquityDeg);
+        double phiRad = TimeUtils.ToRadians(Math.Clamp(latitudeDeg, -89.9, 89.9));
+        double mcRad  = TimeUtils.ToRadians(mc);
+
+        // RA and Dec of the MC ecliptic degree.
+        double raMcRad  = Math.Atan2(Math.Cos(epsRad) * Math.Sin(mcRad), Math.Cos(mcRad));
+        double decMcRad = Math.Asin(Math.Clamp(Math.Sin(epsRad) * Math.Sin(mcRad), -1.0, 1.0));
+
+        // Diurnal Semi-Arc of MC at birth latitude: DSA = arccos(-tan(φ)·tan(Dec_MC)).
+        // Clamped to handle circumpolar degrees (fall back to Porphyry arc = 60°/120°).
+        double dsaArg  = Math.Clamp(-Math.Tan(phiRad) * Math.Tan(decMcRad), -1.0, 1.0);
+        double dsaRad  = Math.Acos(dsaArg);
+        double nsaRad  = Math.PI - dsaRad; // Nocturnal Semi-Arc of IC
+
+        // Trisect DSA for upper hemisphere (H11, H12) and NSA for lower (H2, H3).
+        double raH11 = raMcRad + dsaRad / 3.0;
+        double raH12 = raMcRad + (2.0 * dsaRad) / 3.0;
+        double raIcRad = raMcRad + Math.PI;
+        double raH2  = raIcRad + nsaRad / 3.0;
+        double raH3  = raIcRad + (2.0 * nsaRad) / 3.0;
+
+        // Convert each RA (on ecliptic) back to ecliptic longitude: λ = atan2(sin(RA), cos(RA)·cos(ε)).
+        double h11 = RaToEclipticLongitude(raH11, epsRad);
+        double h12 = RaToEclipticLongitude(raH12, epsRad);
+        double h2  = RaToEclipticLongitude(raH2,  epsRad);
+        double h3  = RaToEclipticLongitude(raH3,  epsRad);
+
+        double ic  = TimeUtils.NormalizeDegrees(mc + 180.0);
+        double dsc = TimeUtils.NormalizeDegrees(asc + 180.0);
+
+        // Opposite cusps are exactly 180° away.
+        double h5 = TimeUtils.NormalizeDegrees(h11 + 180.0);
+        double h6 = TimeUtils.NormalizeDegrees(h12 + 180.0);
+        double h8 = TimeUtils.NormalizeDegrees(h2  + 180.0);
+        double h9 = TimeUtils.NormalizeDegrees(h3  + 180.0);
+
+        return [asc, h2, h3, ic, h5, h6, dsc, h8, h9, mc, h11, h12];
+    }
+
+    // ── Campanus ──────────────────────────────────────────────────────────────────
+    // Divides the prime vertical (great circle through East, Zenith, West, Nadir) into 12
+    // equal arcs of 30° starting from the East horizon point, then draws great circles
+    // through each 30°-step point on the prime vertical and the East–West axis.
+    // The ecliptic intersection of each great circle is the house cusp.
+    //
+    // For prime-vertical angle P from the East point (toward Zenith), the great circle's
+    // normal PV(P) = cos(P)·E + sin(P)·Z (where E = East horizon, Z = Zenith in equatorial).
+    // Intersection with ecliptic: PV(P)·(cos λ, cos ε sin λ, sin ε sin λ) = 0.
+    //
+    // House 1 (ASC) → P = 90°; House 10 (MC) → P = 0°.
+    // Reference: Holden (1977); derivation from prime-vertical parametrisation.
+    private static double[] ComputeCampanus(double ramcDeg, double mc, double asc,
+        double obliquityDeg, double latitudeDeg)
+    {
+        double ramcRad = TimeUtils.ToRadians(ramcDeg);
+        double epsRad  = TimeUtils.ToRadians(obliquityDeg);
+        double phiRad  = TimeUtils.ToRadians(Math.Clamp(latitudeDeg, -89.9, 89.9));
+
+        double cosRamc = Math.Cos(ramcRad);
+        double sinRamc = Math.Sin(ramcRad);
+        double cosPhi  = Math.Cos(phiRad);
+        double sinPhi  = Math.Sin(phiRad);
+        double cosEps  = Math.Cos(epsRad);
+        double sinEps  = Math.Sin(epsRad);
+
+        double[] cusps = new double[12];
+        for (int k = 0; k < 12; k++)
+        {
+            // Prime-vertical angle P: house 1 (ASC) at P=90°, house 10 (MC) at P=0°.
+            double pRad = TimeUtils.ToRadians(90.0 + k * 30.0);
+            double cosP = Math.Cos(pRad);
+            double sinP = Math.Sin(pRad);
+
+            // Normal to Campanus circle = PV(P) = cos(P)·E_cart + sin(P)·Z_cart:
+            //   E_cart = (-sinRAMC, cosRAMC, 0)
+            //   Z_cart = (cosPhi·cosRAMC, cosPhi·sinRAMC, sinPhi)
+            // Intersection condition: normal · ecliptic_point = 0.
+            double num = (cosP * sinRamc) - (sinP * cosPhi * cosRamc);
+            double den = (cosP * cosRamc * cosEps) + (sinP * ((cosPhi * sinRamc * cosEps) + (sinPhi * sinEps)));
+
+            cusps[k] = TimeUtils.NormalizeDegrees(TimeUtils.ToDegrees(Math.Atan2(num, den)));
+        }
+
+        return cusps;
+    }
+
+    // ── Regiomontanus ─────────────────────────────────────────────────────────────
+    // Divides the celestial equator into 12 equal arcs starting from the West equatorial
+    // point (RA = RAMC + 270°) moving in the direction of decreasing RA, then draws great
+    // circles through each 30°-step equatorial point and the North–South horizon points.
+    //
+    // For equatorial point Q with RA = q (Dec = 0°), and North horizon point at
+    // RA = RAMC, Dec = 90° − φ:  Normal = N_horiz × Q (cross product).
+    // Intersection: λ = atan2(sin(q), cos(q)·cos(ε) − tan(φ)·sin(q − RAMC)·sin(ε)).
+    //
+    // House 1 (ASC) → q = RAMC + 270°; House 10 (MC) → q = RAMC.
+    // Reference: Holden (1977); Michelsen "Tables of Houses".
+    private static double[] ComputeRegiomontanus(double ramcDeg, double mc, double asc,
+        double obliquityDeg, double latitudeDeg)
+    {
+        double ramcRad = TimeUtils.ToRadians(ramcDeg);
+        double epsRad  = TimeUtils.ToRadians(obliquityDeg);
+        double phiRad  = TimeUtils.ToRadians(Math.Clamp(latitudeDeg, -89.9, 89.9));
+
+        double tanPhi = Math.Tan(phiRad);
+        double cosEps = Math.Cos(epsRad);
+        double sinEps = Math.Sin(epsRad);
+
+        double[] cusps = new double[12];
+        for (int k = 0; k < 12; k++)
+        {
+            // Equatorial RA for house cusp k: start at RAMC + 270° (West equatorial = ASC),
+            // going backwards (decreasing RA) in 30° steps.
+            double qRad = ramcRad + TimeUtils.ToRadians(270.0 - k * 30.0);
+            double sinQ = Math.Sin(qRad);
+            double cosQ = Math.Cos(qRad);
+
+            double num = sinQ;
+            double den = (cosQ * cosEps) - (tanPhi * Math.Sin(qRad - ramcRad) * sinEps);
+
+            cusps[k] = TimeUtils.NormalizeDegrees(TimeUtils.ToDegrees(Math.Atan2(num, den)));
+        }
+
+        return cusps;
+    }
+
+    // Converts a Right Ascension (radians) on the ecliptic to its ecliptic longitude (degrees).
+    // For a point ON the ecliptic: tan(λ) = tan(RA) / cos(ε), i.e. λ = atan2(sin(RA), cos(RA)·cos(ε)).
+    private static double RaToEclipticLongitude(double raRad, double epsRad) =>
+        TimeUtils.NormalizeDegrees(
+            TimeUtils.ToDegrees(Math.Atan2(Math.Sin(raRad), Math.Cos(raRad) * Math.Cos(epsRad))));
 }
