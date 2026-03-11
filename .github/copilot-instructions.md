@@ -135,11 +135,13 @@ The core library (`Ephemeris/`) is organized into domain namespaces that mirror 
 |-----------|--------|
 | `Ephemeris.Chronology` | Julian Day, ΔT, GMST, sidereal time |
 | `Ephemeris.Heliology` | Solar ephemeris (Meeus Ch. 25: RA/Dec, aberration, nutation, R) |
-| `Ephemeris.Selenography` | Lunar ephemeris (Meeus Ch. 47: 60-term series, phase, illumination) |
-| `Ephemeris.Planetology` | Planetary positions via iterative Kepler + orbital elements |
+| `Ephemeris.Selenography` | Lunar ephemeris (Meeus Ch. 47: 60-term series, phase, illumination, libration) |
+| `Ephemeris.Planetology` | Planetary and asteroid positions via iterative Kepler + orbital elements |
+| `Ephemeris.Astrology` | Astrological house cusps — 7 systems (Placidus, Equal, Whole Signs, Porphyry, Koch, Campanus, Regiomontanus) |
 | `Ephemeris.Geometry` | Equatorial↔Horizontal coordinate transforms |
 | `Ephemeris.Geodesy` | Nutation (IAU 1980 50-term) and precession (IAU 2006) |
 | `Ephemeris.Phenomenology` | Rise/set/transit, equinox/solstice, eclipses, visibility windows, planetary events |
+| `Ephemeris.Stellarography` | Fixed star catalog (Yale BSC5), proper motion, precession to current epoch |
 | `Ephemeris.Export` | CSV/JSON serialization of `EphemerisRecord` |
 | `Ephemeris.Import` | Native DAF/SPK BSP reader, SE1 ephemeris reader, DE430 binary importer |
 
@@ -365,7 +367,7 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
 
 **Scopes** (use the domain namespace, lowercase):
 
-`chronology` · `heliology` · `selenography` · `planetology` · `geometry` · `import` · `export` · `ui` · `batch` · `calculator` · `deps` · `ci`
+`chronology` · `heliology` · `selenography` · `planetology` · `astrology` · `stellarography` · `geometry` · `geodesy` · `phenomenology` · `import` · `export` · `ui` · `batch` · `calculator` · `deps` · `ci`
 
 **Examples:**
 ```
