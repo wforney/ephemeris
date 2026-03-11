@@ -84,15 +84,16 @@ When creating a new agent: add a row here, pick the lowest model tier sufficient
 
 ### Available models catalog
 
-| Task | Recommended model(s) |
-|------|----------------------|
-| Orbital mechanics, coordinate transforms, Kepler solvers, VSOP87 | `openai/o3`, `openai/o3-mini`, `openai/o4-mini` | _Reasoning tier required — verify against JPL Horizons_
-| Complete SPICE / DE430 provider stubs | `openai/o3`, `openai/o3-mini`, `openai/o4-mini` |
-| Design new public API or multi-namespace refactor | `openai/gpt-4.1`, `openai/gpt-4o`, `openai/gpt-4.1-mini` |
-| Write or fix TUnit tests | `openai/gpt-4.1`, `openai/gpt-4o`, `openai/gpt-4.1-mini` |
-| PR diff review for astronomical correctness | `openai/o3`, `openai/o3-mini`, `openai/o4-mini` |
-| Add XML doc comments or update this instructions file | `openai/gpt-4.1`, `openai/gpt-4.1-mini`, `openai/gpt-4.1-nano` |
-| Quick single-file edits, typo/style fixes | `openai/gpt-5-mini` |
+| Model ID | Publisher | Tier |
+|----------|-----------|------|
+| `anthropic/claude-opus-4-5` | Anthropic | premium |
+| `anthropic/claude-sonnet-4-5` | Anthropic | standard |
+| `anthropic/claude-haiku-4-5` | Anthropic | fast/cheap |
+| `openai/o3` | OpenAI | premium |
+| `openai/o4-mini` | OpenAI | standard |
+| `openai/gpt-4.1` | OpenAI | standard |
+| `openai/gpt-4.1-mini` | OpenAI | fast/cheap |
+| `openai/gpt-5-mini` | OpenAI | fast/cheap |
 
 
 ## Project Overview

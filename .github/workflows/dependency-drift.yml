@@ -85,6 +85,15 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Ensure dependencies label exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create "dependencies" \
+            --color "#0075ca" \
+            --description "Dependency updates and drift" \
+            2>/dev/null || true
+
       - name: Create or update drift issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

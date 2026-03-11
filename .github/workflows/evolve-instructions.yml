@@ -107,6 +107,16 @@ jobs:
               print("has_notes=false")
           EOF
 
+      - name: Ensure copilot-instructions label exists
+        if: ${{ hashFiles('evolution-notes.md') != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create "copilot-instructions" \
+            --color "#0075ca" \
+            --description "Copilot instructions evolution suggestions" \
+            2>/dev/null || true
+
       - name: Open evolution issue
         if: ${{ hashFiles('evolution-notes.md') != '' }}
         env:
