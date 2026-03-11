@@ -1,3 +1,4 @@
+<!-- Updated: 2026-03-11 -->
 # Ephemeris Wiki
 
 A .NET 10 astronomical ephemeris library — compute positions of the Sun, Moon, planets, asteroids, and stars from any observer location on Earth. Includes astrological house systems.

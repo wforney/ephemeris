@@ -1,3 +1,4 @@
+<!-- Updated: 2026-03-11 -->
 # Algorithm Reference
 
 This page documents the algorithms, formulae, and references used by the **Ephemeris** library. Each section maps to a namespace in the core library and cites the primary sources.
@@ -46,10 +47,14 @@ J2000.0 epoch = JD 2451545.0 = 2000 January 1.5 TT.
 
 ### ΔT (Difference TT − UTC)
 
-Polynomial approximations by era from Morrison & Stephenson (2004) and the IERS. Five time-range branches are used; the post-2005 branch is:
-```
-ΔT ≈ 62.92 + 0.32217(y − 2000) + 0.005589(y − 2000)²   (seconds)
-```
+Four polynomial branches by era (Morrison & Stephenson 2004 and IERS):
+
+| Year range | Formula (seconds) |
+|------------|-------------------|
+| y < 948 | `ΔT = 2177 + 497u + 44.1u²`, u = (y−2000)/100 |
+| 948 ≤ y < 1600 | `ΔT = 102 + 102u + 25.3u²`, u = (y−1000)/100 |
+| 1600 ≤ y < 2000 | `ΔT = 62.92 + 0.32217t + 0.005589t²`, t = y−2000 |
+| y ≥ 2000 | `ΔT = 64.7 + 0.293t`, t = y−2000 (linear extrapolation) |
 
 ### Greenwich Mean Sidereal Time (GMST)
 
@@ -172,11 +177,14 @@ For planets: π = 8.794″ × (1 AU / Δ).
 
 ### Parallax Corrections
 
-Observer's reduced latitude:
+Observer's geocentric latitude and geocentric radius (Meeus Eq. 40.3–40.4):
 ```
-ρ sin φ′ = 0.99664719 sin φ + (h/6378140) sin φ
-ρ cos φ′ = cos φ + (h/6378140) cos φ
+u         = atan(0.99664719 · tan φ)          [geodetic → geocentric latitude correction]
+ρ sin φ′  = 0.99664719 sin u + (h/a) sin φ
+ρ cos φ′  = cos u + (h/a) cos φ
 ```
+
+where h is the observer's altitude above sea level in metres and a = 6 378 140 m (equatorial radius).
 
 ΔRA (Meeus Eq. 40.6):
 ```
@@ -374,21 +382,20 @@ HouseCusps h = AstrologicalHouses.Calculate(jd, longitude, latitude, HouseSystem
 ### Equatorial → Horizontal
 
 ```
-H  = GMST + λ − RA          (local hour angle, degrees)
+H   = GMST + λ − RA          (local hour angle, degrees)
 Alt = arcsin(sin φ sin δ + cos φ cos δ cos H)
-Az  = atan2(sin H, cos H sin φ − tan δ cos φ)
-Az  = Az + 180°   if sin H > 0   (quadrant correction)
+Az  = arccos(clamp((sin δ − sin φ sin Alt) / (cos φ cos Alt), −1, 1))
+Az  = 360° − Az   if sin H > 0   (quadrant correction)
 ```
 
-### Atmospheric Refraction (Bennett 1982)
+### Atmospheric Refraction (Bennett)
 
-For apparent altitude `h_app` in degrees:
+For geometric altitude `h` in degrees:
 ```
-R = 1.02 / tan(h_app + 10.3 / (h_app + 5.11))   (arcminutes)
+R = 1 / tan(h + 7.31 / (h + 4.4))   (arcminutes)
 ```
 
-Cutoff: not applied below h_app = −1°.  
-Inverse (Saemundsson): `h_true = h_app − R(h_app)`
+Cutoff: not applied below h = −1°.
 
 ### Ecliptic ↔ Equatorial
 
@@ -405,7 +412,7 @@ sin δ = sin ε sin λ + cos ε cos λ sin β … (full transform via rotation b
 ### Nutation (IAU 1980)
 
 **Source:** Meeus Ch. 22; IAU 1980 nutation theory  
-48 of the 106 standard terms retained (covering > 99.9% of amplitude).
+Simplified **50-term** series (covering > 99.9% of total amplitude).
 
 Nutation in longitude Δψ (arcseconds):
 ```
@@ -526,7 +533,7 @@ Rigorous precession matrix using IAU 2006 angles ψ_A, ω_A, χ_A applied to J20
 ## SPICE/BSP Import (Import)
 
 **Classes:** `SpkReader`, `SpiceKernelDatabase`, `BspImporter`  
-**Reference:** [NAIF DAF/SPK format](SPK-BSP-Format)
+**Reference:** [NAIF DAF/SPK format](spk-format.md)
 
 ### DAF File Structure
 
