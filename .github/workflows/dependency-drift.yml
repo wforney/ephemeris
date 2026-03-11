@@ -1,4 +1,4 @@
-# Updated: 2026-03-09 04:03 UTC
+# Updated: 2026-03-11
 name: Dependency drift
 
 on:
@@ -84,6 +84,15 @@ jobs:
     if: needs.dotnet-sdk.outputs.sdk_changed == 'true' || needs.nuget-outdated.outputs.outdated == 'true'
     steps:
       - uses: actions/checkout@v4
+
+      - name: Ensure dependencies label exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create "dependencies" \
+            --color "#0075ca" \
+            --description "Dependency updates and drift" \
+            2>/dev/null || true
 
       - name: Create or update drift issue
         env:
