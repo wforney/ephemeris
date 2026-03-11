@@ -1,4 +1,4 @@
-<!-- Updated: 2026-03-10 (copilot-setup-steps added) -->
+<!-- Updated: 2026-03-11 -->
 # Copilot Instructions
 
 ## Session Checkpoints and Evolution
@@ -322,7 +322,7 @@ When modifying any of the following file types, **automatically update all relat
 // Updated: 2026-03-09
 ```
 ```markdown
-<!-- Updated: 2026-03-09 -->
+<!-- Updated: 2026-03-11 -->
 ```
 
 **Trigger rules:**

@@ -1,4 +1,4 @@
-# Updated: 2026-03-09
+# Updated: 2026-03-11
 name: Release
 
 on:
@@ -13,12 +13,12 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
 

@@ -1,4 +1,4 @@
-# Updated: 2026-03-09 04:00 UTC
+# Updated: 2026-03-11
 name: Update model table
 
 on:
@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Fetch available models
         id: fetch

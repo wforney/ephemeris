@@ -1,4 +1,4 @@
-# Updated: 2026-03-09 04:03 UTC
+# Updated: 2026-03-11
 name: Evolve instructions
 
 on:
@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Check instruction file age
         id: age
