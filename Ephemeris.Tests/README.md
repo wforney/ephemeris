@@ -1,6 +1,6 @@
 # Ephemeris.Tests
 
-Test suite for the `Ephemeris` core library. **252 tests** covering all calculation domains.
+Test suite for the `Ephemeris` core library. **358 tests** covering all calculation domains.
 
 **Framework:** [TUnit](https://github.com/thomhurst/TUnit) · **Target:** `net10.0`
 
@@ -32,7 +32,9 @@ Tests that require local ephemeris kernel files (`.bsp`, `.se1`) are automatical
 | `SolarEphemerisTests.cs` | Heliology | Sun RA/Dec/R against JPL Horizons reference values |
 | `LunarEphemerisTests.cs` | Selenography | Moon geocentric position, phase, illumination |
 | `TopocentricParallaxTests.cs` | Selenography | Parallax corrections for Moon, Sun, planets |
-| `PlanetEphemerisTests.cs` | Planetology | Heliocentric/geocentric planet positions |
+| `PlanetEphemerisTests.cs` | Planetology | Heliocentric/geocentric planet positions; Earth heliocentric |
+| `AsteroidEphemerisTests.cs` | Planetology | Ceres/Pallas/Juno/Vesta/all 35 bodies: orbital elements and positions |
+| `AstrologicalHousesTests.cs` | Astrology | Placidus, Equal, WholeSigns, Porphyry, Koch, Campanus, Regiomontanus cusps; MC/Asc angle helpers |
 | `PlanetPhysicalEphemerisTests.cs` | Planetology | Angular diameter, magnitude, elongation |
 | `PlanetaryEventTests.cs` | Phenomenology | Opposition, conjunction, quadrature, greatest elongation |
 | `RiseSetCalculatorTests.cs` | Phenomenology | Sunrise/sunset/transit times |
@@ -100,7 +102,7 @@ Test assertions are calibrated against:
 
 | Package | Purpose |
 |---------|---------|
-| `TUnit` 1.19.16 | Test framework and assertions |
+| `TUnit` 1.19.22 | Test framework and assertions |
 | `Verify.TUnit` 31.13.2 | Snapshot assertions |
 | `Imposter` 0.1.7 | Source-generated mocks |
 | `Microsoft.AspNetCore.Mvc.Testing` | Integration test host |

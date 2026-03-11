@@ -18,7 +18,7 @@ jobs:
       sdk_changed: ${{ steps.sdk.outputs.changed }}
       sdk_version: ${{ steps.sdk.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Detect latest .NET release
         id: sdk
@@ -47,9 +47,9 @@ jobs:
       outdated: ${{ steps.check.outputs.outdated }}
       report: ${{ steps.check.outputs.report }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
 
@@ -83,7 +83,7 @@ jobs:
     needs: [dotnet-sdk, nuget-outdated]
     if: needs.dotnet-sdk.outputs.sdk_changed == 'true' || needs.nuget-outdated.outputs.outdated == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Ensure dependencies label exists
         env:

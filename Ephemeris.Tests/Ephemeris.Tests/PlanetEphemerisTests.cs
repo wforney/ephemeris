@@ -1,4 +1,4 @@
-// Updated: 2026-05-29
+// Updated: 2026-03-11
 using Ephemeris;
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
@@ -100,5 +100,45 @@ public class PlanetEphemerisTests
         await Assert.That(ra).IsLessThan(360.0);
         await Assert.That(dec).IsGreaterThanOrEqualTo(-90.0);
         await Assert.That(dec).IsLessThanOrEqualTo(90.0);
+    }
+
+    // ── Earth heliocentric position tests ────────────────────────────────────────
+
+    [Test]
+    public async Task Earth_HeliocentricDistance_IsNearOneAU()
+    {
+        double T = TimeUtils.JulianCentury(TimeZoneUtils.ToJulianDay(new DateTime(2024, 6, 21, 12, 0, 0, DateTimeKind.Utc)));
+        var (xh, yh, zh) = PlanetEphemeris.EarthHeliocentricPosition(T);
+        double r = Math.Sqrt((xh * xh) + (yh * yh) + (zh * zh));
+        // Earth's heliocentric distance varies from 0.983 AU (perihelion) to 1.017 AU (aphelion)
+        await Assert.That(r).IsGreaterThan(0.95);
+        await Assert.That(r).IsLessThan(1.05);
+    }
+
+    [Test]
+    public async Task Earth_HeliocentricPosition_ZhIsNearZero()
+    {
+        // Earth's orbit is in the ecliptic plane (i=0), so Zh should always be ~0
+        double T = 0.0; // J2000.0
+        var (_, _, zh) = PlanetEphemeris.EarthHeliocentricPosition(T);
+        await Assert.That(Math.Abs(zh)).IsLessThan(1e-10);
+    }
+
+    [Test]
+    public async Task Earth_Elements_SemiMajorAxis_IsOneAU()
+    {
+        var elements = PlanetEphemeris.EarthElements(0.0);
+        await Assert.That(elements.SemiMajorAxisAu).IsEqualTo(1.0);
+    }
+
+    [Test]
+    public async Task Earth_Position_ViaService_ReturnsValidCoordinates()
+    {
+        // Earth's heliocentric coordinates via PlanetPositionService
+        var obs = PlanetPositionService.GetPlanetPosition("earth", 2024, 6, 21, 12.0, 0.0, 0.0);
+        await Assert.That(obs.RightAscension).IsGreaterThanOrEqualTo(0.0);
+        await Assert.That(obs.RightAscension).IsLessThan(360.0);
+        await Assert.That(obs.Declination).IsGreaterThanOrEqualTo(-90.0);
+        await Assert.That(obs.Declination).IsLessThanOrEqualTo(90.0);
     }
 }

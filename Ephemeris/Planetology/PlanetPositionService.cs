@@ -1,4 +1,4 @@
-// Updated: 2026-03-10
+// Updated: 2026-03-11
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 
@@ -12,7 +12,7 @@ public static class PlanetPositionService
     /// <summary>
     /// Calculates a planet's position in both equatorial and horizontal coordinates for a given date and time.
     /// </summary>
-    /// <param name="planet">The planet name (mercury, venus, mars, jupiter, saturn, uranus, neptune, pluto).</param>
+    /// <param name="planet">The planet name (mercury, venus, earth, mars, jupiter, saturn, uranus, neptune, pluto).</param>
     /// <param name="year">The year.</param>
     /// <param name="month">The month (1-12).</param>
     /// <param name="day">The day of month.</param>
@@ -20,6 +20,11 @@ public static class PlanetPositionService
     /// <param name="longitude">Observer longitude in degrees (east positive).</param>
     /// <param name="latitude">Observer latitude in degrees (north positive).</param>
     /// <returns>A <see cref="CelestialObservation"/> with equatorial and horizontal coordinates in degrees.</returns>
+    /// <remarks>
+    /// For "earth", the method returns Earth's <em>heliocentric</em> equatorial coordinates — i.e., the
+    /// direction from the Sun to Earth as seen from an inertial frame.  This is 180° opposite the apparent
+    /// direction of the Sun as seen from Earth and is useful for orbital-mechanics calculations.
+    /// </remarks>
     public static CelestialObservation GetPlanetPosition(
         string planet, int year, int month, int day, double hour,
         double longitude, double latitude)
@@ -29,6 +34,7 @@ public static class PlanetPositionService
 
         OrbitalElements elements = planet.ToLower() switch
         {
+            "earth"   => PlanetEphemeris.EarthElements(T),
             "mercury" => new OrbitalElements(48.3313 + (3.24587E-5 * T), 7.0047 + (5.00E-8 * T), 29.1241 + (1.01444E-5 * T),
                           0.387098, 0.205635 + (5.59E-10 * T), 168.6562 + (4.0923344368 * T * 36525)),
             "venus" => new OrbitalElements(76.6799 + (2.46590E-5 * T), 3.3946 + (2.75E-8 * T), 54.8910 + (1.38374E-5 * T),

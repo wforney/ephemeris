@@ -323,7 +323,7 @@ When modifying any of the following file types, **automatically update all relat
 // Updated: 2026-03-09
 ```
 ```markdown
-<!-- Updated: 2026-03-09 -->
+<!-- Updated: 2026-03-11 -->
 ```
 
 **Trigger rules:**
