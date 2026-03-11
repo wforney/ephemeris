@@ -54,8 +54,9 @@ public static class PlanetEphemeris
         double M = TimeUtils.NormalizeDegrees(e.MeanAnomaly);
         double E = SolveKepler(TimeUtils.ToRadians(M), e.Eccentricity);
 
-        double xv = Math.Cos(E) - e.Eccentricity;
-        double yv = Math.Sqrt(1.0 - (e.Eccentricity * e.Eccentricity)) * Math.Sin(E);
+        // Scale by semi-major axis (a = 1.0 AU for Earth, so numerically unchanged, but kept for consistency).
+        double xv = e.SemiMajorAxisAu * (Math.Cos(E) - e.Eccentricity);
+        double yv = e.SemiMajorAxisAu * Math.Sqrt(1.0 - (e.Eccentricity * e.Eccentricity)) * Math.Sin(E);
         double v  = TimeUtils.ToDegrees(Math.Atan2(yv, xv));
         double r  = Math.Sqrt((xv * xv) + (yv * yv));
 
@@ -89,8 +90,10 @@ public static class PlanetEphemeris
         M = TimeUtils.NormalizeDegrees(M);
         double E = SolveKepler(TimeUtils.ToRadians(M), e); // eccentric anomaly (rad)
 
-        double xv = Math.Cos(E) - e; // orbital-plane Cartesian coords
-        double yv = Math.Sqrt(1.0 - (e * e)) * Math.Sin(E);
+        // Orbital-plane Cartesian coordinates (AU). The factor of 'a' scales the unit ellipse
+        // to the actual orbit size: xv = a·(cos E − e), yv = a·√(1−e²)·sin E.
+        double xv = a * (Math.Cos(E) - e);
+        double yv = a * Math.Sqrt(1.0 - (e * e)) * Math.Sin(E);
         double v = TimeUtils.ToDegrees(Math.Atan2(yv, xv)); // true anomaly (deg)
         double r = Math.Sqrt((xv * xv) + (yv * yv)); // heliocentric distance (AU)
 

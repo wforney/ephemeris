@@ -69,7 +69,7 @@ public static class AstrologicalHouses
     /// <code>ε = 23.439291° − 0.013004° · T</code>
     /// Consistent with the formula used in <c>PlanetEphemeris</c> and <c>SunEphemeris</c>.
     /// </remarks>
-    internal static double ObliquityOfEcliptic(double T) => 23.439291 - (0.0130042 * T);
+    public static double ObliquityOfEcliptic(double T) => 23.439291 - (0.0130042 * T);
 
     /// <summary>
     /// Computes the Midheaven (MC) ecliptic longitude.
@@ -81,7 +81,7 @@ public static class AstrologicalHouses
     /// The Midheaven is the intersection of the ecliptic with the upper meridian:
     /// <code>MC = atan2(sin(RAMC), cos(RAMC) · cos(ε))</code>
     /// </remarks>
-    internal static double ComputeMC(double ramcDeg, double obliquityDeg)
+    public static double ComputeMC(double ramcDeg, double obliquityDeg)
     {
         double ramcRad = TimeUtils.ToRadians(ramcDeg);
         double epsRad  = TimeUtils.ToRadians(obliquityDeg);
@@ -104,7 +104,7 @@ public static class AstrologicalHouses
     /// </code>
     /// Geographic poles (|φ| = 90°) produce a singularity; latitude is clamped to ±89.9°.
     /// </remarks>
-    internal static double ComputeAscendant(double ramcDeg, double obliquityDeg, double latitudeDeg)
+    public static double ComputeAscendant(double ramcDeg, double obliquityDeg, double latitudeDeg)
     {
         double ramcRad = TimeUtils.ToRadians(ramcDeg);
         double epsRad  = TimeUtils.ToRadians(obliquityDeg);
@@ -219,7 +219,7 @@ public static class AstrologicalHouses
     /// Falls back to the Equal-house value when |tan(φ)·tan(Dec)| > 1 (circumpolar condition
     /// for latitudes above about 66°).
     /// </remarks>
-    internal static double PlacidusIntermediate(double targetOasc, double obliquityDeg, double latitudeDeg)
+    public static double PlacidusIntermediate(double targetOasc, double obliquityDeg, double latitudeDeg)
     {
         double epsRad    = TimeUtils.ToRadians(obliquityDeg);
         double phiRad    = TimeUtils.ToRadians(Math.Clamp(latitudeDeg, -89.9, 89.9));
