@@ -1,4 +1,4 @@
-# Updated: 2026-03-09 04:00 UTC
+# Updated: 2026-03-11
 name: Update model table
 
 on:
@@ -110,23 +110,23 @@ jobs:
 
           # Replace task table
           instructions = re.sub(
-              r"(## Model Selection.*?### Available models catalog\n)(.*?)(\n## )",
-              lambda m: m.group(1) + "\n" + table + "\n\n" + m.group(3),
+              r"(### Task → model mapping\n\n)(.*?)(\n\n### Available models catalog)",
+              lambda m: m.group(1) + table + m.group(3),
               instructions,
               flags=re.DOTALL
           )
 
           # Replace catalog table
           instructions = re.sub(
-              r"(### Available models catalog\n)(.*?)(\n\*\*Rules)",
-              lambda m: m.group(1) + "\n" + catalog + "\n\n" + m.group(3),
+              r"(### Available models catalog\n\n)(.*?)(\n\n## )",
+              lambda m: m.group(1) + catalog + m.group(3),
               instructions,
               flags=re.DOTALL
           )
 
           # Bump timestamp
           instructions = re.sub(
-              r"<!-- Updated: [\d\-: UTC]+ -->",
+              r"<!-- Updated: \d{4}-\d{2}-\d{2}[^>]* -->",
               f"<!-- Updated: {today} (model sync) -->",
               instructions,
               count=1
