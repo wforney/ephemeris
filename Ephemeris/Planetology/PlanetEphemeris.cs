@@ -1,4 +1,4 @@
-// Updated: 2026-03-10
+// Updated: 2026-03-11
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 
@@ -9,6 +9,66 @@ namespace Ephemeris.Planetology;
 /// </summary>
 public static class PlanetEphemeris
 {
+    /// <summary>
+    /// Keplerian orbital elements for Earth at epoch J2000.0, evolving with Julian century T.
+    /// </summary>
+    /// <param name="T">Julian centuries since J2000.0.</param>
+    /// <returns>Earth's <see cref="OrbitalElements"/> for use with <see cref="SimplifiedPlanetPosition"/>.</returns>
+    /// <remarks>
+    /// Elements from Paul Schlyter's simplified solar system (stjarnhimlen.se), same per-Julian-century
+    /// convention used throughout <see cref="PlanetPositionService"/>:
+    /// <list type="bullet">
+    ///   <item>N = 0° (Earth defines the ecliptic reference plane)</item>
+    ///   <item>i = 0° (Earth lies in the reference plane)</item>
+    ///   <item>ω = 282.9404° + 4.70935×10⁻⁵ · T</item>
+    ///   <item>a = 1.000000 AU</item>
+    ///   <item>e = 0.016709 − 1.151×10⁻⁹ · T</item>
+    ///   <item>M = 356.0470° + 0.9856002585° · T · 36525 (daily mean motion × days)</item>
+    /// </list>
+    /// The resulting heliocentric position vector points from the Sun toward Earth, i.e., 180° opposite
+    /// the direction to the Sun as seen from Earth.
+    /// </remarks>
+    public static OrbitalElements EarthElements(double T) =>
+        new(0.0, 0.0, 282.9404 + (4.70935E-5 * T), 1.000000,
+            0.016709 - (1.151E-9 * T), 356.0470 + (0.9856002585 * T * 36525));
+
+    /// <summary>
+    /// Returns Earth's heliocentric ecliptic Cartesian coordinates (Xh, Yh, Zh) in AU.
+    /// </summary>
+    /// <param name="T">Julian centuries since J2000.0.</param>
+    /// <returns>
+    /// A tuple (Xh, Yh, Zh) representing Earth's position relative to the Sun in the J2000.0
+    /// ecliptic reference frame, in astronomical units.
+    /// </returns>
+    /// <remarks>
+    /// Earth's heliocentric position is the geometric inverse of the Sun's geocentric position.
+    /// It can be used to correct the simplified geocentric distance in
+    /// <see cref="SimplifiedPlanetPosition"/> (which currently uses heliocentric distance as a proxy):
+    /// <code>
+    ///   Δ = |(Xh_planet − Xh_Earth, Yh_planet − Yh_Earth, Zh_planet − Zh_Earth)|
+    /// </code>
+    /// </remarks>
+    public static (double Xh, double Yh, double Zh) EarthHeliocentricPosition(double T)
+    {
+        OrbitalElements e = EarthElements(T);
+        double M = TimeUtils.NormalizeDegrees(e.MeanAnomaly);
+        double E = SolveKepler(TimeUtils.ToRadians(M), e.Eccentricity);
+
+        double xv = Math.Cos(E) - e.Eccentricity;
+        double yv = Math.Sqrt(1.0 - (e.Eccentricity * e.Eccentricity)) * Math.Sin(E);
+        double v  = TimeUtils.ToDegrees(Math.Atan2(yv, xv));
+        double r  = Math.Sqrt((xv * xv) + (yv * yv));
+
+        // With N=0, i=0: Xh = r·cos(v+ω), Yh = r·sin(v+ω), Zh = 0
+        double vw = TimeUtils.ToRadians(v + e.ArgumentOfPerihelion);
+        double xh = r * Math.Cos(vw);
+        double yh = r * Math.Sin(vw);
+        double zh = 0.0;
+
+        return (xh, yh, zh);
+    }
+
+
     /// <summary>
     /// Calculates a planet's equatorial coordinates and geocentric distance using simplified Kepler orbital elements.
     /// </summary>

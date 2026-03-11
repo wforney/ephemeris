@@ -14,6 +14,7 @@ public static class PlanetPhysicalEphemeris
     {
         ["mercury"] = (-0.36,  6.74),
         ["venus"]   = (-4.34, 16.92),
+        ["earth"]   = (-3.87, 17.57),  // as seen from a distant spacecraft; diameter = 12756 km at 1 AU
         ["mars"]    = (-1.51,  9.36),
         ["jupiter"] = (-9.40, 196.94),
         ["saturn"]  = (-8.88, 165.60),
@@ -31,6 +32,7 @@ public static class PlanetPhysicalEphemeris
         {
             "mercury" => (6.3280e-2 * i) - (1.6336e-3 * i * i) + (3.3644e-5 * i * i * i) - (3.4265e-7 * i * i * i * i),
             "venus"   => (1.0820e-3 * i) + (1.8776e-5 * i * i),
+            "earth"   => 1.600e-2 * i,   // approximate; mainly relevant for views from other bodies
             "mars"    => 2.852e-2 * i,
             "jupiter" => 1.400e-2 * i,
             "saturn"  => 1.500e-2 * i,   // ring contribution excluded (requires ring-plane tilt)
