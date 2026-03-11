@@ -563,4 +563,4 @@ where ΔAT is the number of leap seconds since 1972. The leap second table is em
 
 ---
 
-*See also:* [[SPK-BSP-Format]], [[SE1-Ephemeris-Format]], [[SEFStars-Catalog-Format]], [[Yale-BSC5-Format]]
+*See also:* [SPK/BSP Format](spk-format.md), [SE1 Ephemeris Format](se1-format.md), [SEFStars Catalog Format](sefstars-format.md), [Yale BSC5 Format](yale-bsc5-format.md)
