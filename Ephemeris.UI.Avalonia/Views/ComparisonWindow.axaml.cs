@@ -41,6 +41,8 @@ public partial class ComparisonWindow : Window
     private readonly SkyGlControl _baselineGl;
     private readonly SkyGlControl _simulationGl;
 
+    private bool _updatingFromVm;
+
     // Mouse drag state for each GL panel
     private bool _draggingBaseline;
     private bool _draggingSimulation;
@@ -89,11 +91,9 @@ public partial class ComparisonWindow : Window
         SyncHeaderFromVm();
         _vm.Baseline.PropertyChanged += OnBaselinePropertyChanged;
 
-        // Header controls — date/time text boxes
-        DatePicker.LostFocus += (_, _) => ApplyDateTimePickerText();
-        TimePicker.LostFocus += (_, _) => ApplyDateTimePickerText();
-        DatePicker.KeyDown   += (_, e) => { if (e.Key == Key.Enter) ApplyDateTimePickerText(); };
-        TimePicker.KeyDown   += (_, e) => { if (e.Key == Key.Enter) ApplyDateTimePickerText(); };
+        // Header controls — date/time pickers
+        DatePickerCtrl.SelectedDateChanged += (_, _) => ApplyDateTimePickerValues();
+        TimePickerCtrl.SelectedTimeChanged += (_, _) => ApplyDateTimePickerValues();
 
         LonPicker.ValueChanged += (_, _) =>
         {
@@ -196,8 +196,10 @@ public partial class ComparisonWindow : Window
 
     private void SyncHeaderFromVm()
     {
-        DatePicker.Text = _vm.Baseline.SimTime.ToString("yyyy-MM-dd");
-        TimePicker.Text = _vm.Baseline.SimTime.ToString("HH:mm");
+        _updatingFromVm = true;
+        DatePickerCtrl.SelectedDate = new DateTimeOffset(_vm.Baseline.SimTime.Date, TimeSpan.Zero);
+        TimePickerCtrl.SelectedTime = _vm.Baseline.SimTime.TimeOfDay;
+        _updatingFromVm = false;
         LonPicker.Value = (decimal)_vm.Baseline.Longitude;
         LatPicker.Value = (decimal)_vm.Baseline.Latitude;
         PlayBtn.Content = _vm.Baseline.Playing ? "⏸" : "▶";
@@ -208,8 +210,10 @@ public partial class ComparisonWindow : Window
         switch (e.PropertyName)
         {
             case nameof(SkyViewModel.SimTime):
-                DatePicker.Text = _vm.Baseline.SimTime.ToString("yyyy-MM-dd");
-                TimePicker.Text = _vm.Baseline.SimTime.ToString("HH:mm");
+                _updatingFromVm = true;
+                DatePickerCtrl.SelectedDate = new DateTimeOffset(_vm.Baseline.SimTime.Date, TimeSpan.Zero);
+                TimePickerCtrl.SelectedTime = _vm.Baseline.SimTime.TimeOfDay;
+                _updatingFromVm = false;
                 break;
             case nameof(SkyViewModel.Longitude):
                 LonPicker.Value = (decimal)_vm.Baseline.Longitude;
@@ -223,20 +227,14 @@ public partial class ComparisonWindow : Window
         }
     }
 
-    private void ApplyDateTimePickerText()
+    private void ApplyDateTimePickerValues()
     {
-        var dateStr = DatePicker.Text?.Trim() ?? string.Empty;
-        var timeStr = TimePicker.Text?.Trim() ?? string.Empty;
-        if (string.IsNullOrEmpty(timeStr)) timeStr = "00:00";
-
-        if (DateTime.TryParseExact($"{dateStr} {timeStr}", "yyyy-MM-dd HH:mm",
-            System.Globalization.CultureInfo.InvariantCulture,
-            System.Globalization.DateTimeStyles.AssumeUniversal |
-            System.Globalization.DateTimeStyles.AdjustToUniversal,
-            out var dt))
-        {
-            _vm.Baseline.SimTime = dt;
-        }
+        if (_updatingFromVm) return;
+        if (DatePickerCtrl.SelectedDate is not { } date) return;
+        var time = TimePickerCtrl.SelectedTime ?? TimeSpan.Zero;
+        var dt = new DateTime(date.Year, date.Month, date.Day,
+                              time.Hours, time.Minutes, 0, DateTimeKind.Utc);
+        _vm.Baseline.SimTime = dt;
     }
 
     // ── Input: Baseline panel ────────────────────────────────────────────

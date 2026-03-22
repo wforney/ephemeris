@@ -20,18 +20,14 @@
                 <Separator Width="1" Background="#555" Margin="4,0" />
 
                 <TextBlock Text="Date:" Foreground="#CCC" VerticalAlignment="Center" />
-                <TextBox x:Name="DatePicker"
-                         Watermark="yyyy-MM-dd"
-                         Width="110"
-                         Background="#2A2A3E"
-                         Foreground="White" />
+                <DatePicker x:Name="DatePickerCtrl"
+                            Background="#2A2A3E"
+                            Foreground="White" />
 
                 <TextBlock Text="Time:" Foreground="#CCC" VerticalAlignment="Center" />
-                <TextBox x:Name="TimePicker"
-                         Watermark="HH:mm"
-                         Width="70"
-                         Background="#2A2A3E"
-                         Foreground="White" />
+                <TimePicker x:Name="TimePickerCtrl"
+                            Background="#2A2A3E"
+                            Foreground="White" />
 
                 <Separator Width="1" Background="#555" Margin="4,0" />
 
@@ -39,7 +35,7 @@
                 <NumericUpDown x:Name="LonPicker"
                                Minimum="-180" Maximum="180"
                                Increment="1" FormatString="F2"
-                               Width="100"
+                               Width="130"
                                Background="#2A2A3E"
                                Foreground="White" />
 
@@ -47,7 +43,7 @@
                 <NumericUpDown x:Name="LatPicker"
                                Minimum="-90" Maximum="90"
                                Increment="1" FormatString="F2"
-                               Width="80"
+                               Width="120"
                                Background="#2A2A3E"
                                Foreground="White" />
 

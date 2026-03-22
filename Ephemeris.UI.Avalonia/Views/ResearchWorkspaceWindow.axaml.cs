@@ -58,6 +58,9 @@ public partial class ResearchWorkspaceWindow : Window,
     // Animation timer — fires every 100 ms; advances sim time when Playing.
     private readonly DispatcherTimer _animTimer;
 
+    // Prevents feedback loops when programmatically setting the date/time pickers.
+    private bool _updatingFromVm;
+
     // Mouse drag state (for the sky GL control)
     private bool _dragging;
     private Point _lastMouse;
@@ -110,10 +113,8 @@ public partial class ResearchWorkspaceWindow : Window,
         _workspace.PropertyChanged += OnWorkspacePropertyChanged;
 
         // ── Toolbar wire-up ───────────────────────────────────────────
-        DateBox.LostFocus += (_, _) => ApplyDateTimeInput();
-        DateBox.KeyDown   += OnDateTimeKeyDown;
-        TimeBox.LostFocus += (_, _) => ApplyDateTimeInput();
-        TimeBox.KeyDown   += OnDateTimeKeyDown;
+        DatePicker.SelectedDateChanged += (_, _) => ApplyDateTimePickerValues();
+        TimePicker.SelectedTimeChanged += (_, _) => ApplyDateTimePickerValues();
 
         LonPicker.ValueChanged += (_, _) =>
         {
@@ -270,35 +271,29 @@ public partial class ResearchWorkspaceWindow : Window,
 
     private void OnDateTimeKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Enter) ApplyDateTimeInput();
+        // Native DatePicker/TimePicker handle all keyboard input internally.
     }
 
     private void SyncToolbarFromVm()
     {
-        DateBox.Text    = _vm.SimTime.ToString("yyyy-MM-dd");
-        TimeBox.Text    = _vm.SimTime.ToString("HH:mm");
+        _updatingFromVm = true;
+        DatePicker.SelectedDate = new DateTimeOffset(_vm.SimTime.Date, TimeSpan.Zero);
+        TimePicker.SelectedTime = _vm.SimTime.TimeOfDay;
+        _updatingFromVm = false;
         LonPicker.Value = (decimal)_vm.Longitude;
         LatPicker.Value = (decimal)_vm.Latitude;
         UpdatePlayPauseButton();
         CurrentTimeLabel.Text = $"UTC: {_vm.SimTime:yyyy-MM-dd HH:mm}";
     }
 
-    private void ApplyDateTimeInput()
+    private void ApplyDateTimePickerValues()
     {
-        var dateText = DateBox.Text?.Trim() ?? string.Empty;
-        var timeText = TimeBox.Text?.Trim() ?? string.Empty;
-        if (string.IsNullOrEmpty(timeText)) timeText = "00:00";
-
-        if (DateTime.TryParseExact(
-                $"{dateText} {timeText}",
-                "yyyy-MM-dd HH:mm",
-                System.Globalization.CultureInfo.InvariantCulture,
-                System.Globalization.DateTimeStyles.AssumeUniversal |
-                System.Globalization.DateTimeStyles.AdjustToUniversal,
-                out var dt))
-        {
-            _vm.SimTime = dt;
-        }
+        if (_updatingFromVm) return;
+        if (DatePicker.SelectedDate is not { } date) return;
+        var time = TimePicker.SelectedTime ?? TimeSpan.Zero;
+        var dt = new DateTime(date.Year, date.Month, date.Day,
+                              time.Hours, time.Minutes, 0, DateTimeKind.Utc);
+        _vm.SimTime = dt;
     }
 
     private void UpdatePlayPauseButton() =>
@@ -316,8 +311,10 @@ public partial class ResearchWorkspaceWindow : Window,
         switch (e.PropertyName)
         {
             case nameof(SkyViewModel.SimTime):
-                DateBox.Text = _vm.SimTime.ToString("yyyy-MM-dd");
-                TimeBox.Text = _vm.SimTime.ToString("HH:mm");
+                _updatingFromVm = true;
+                DatePicker.SelectedDate = new DateTimeOffset(_vm.SimTime.Date, TimeSpan.Zero);
+                TimePicker.SelectedTime = _vm.SimTime.TimeOfDay;
+                _updatingFromVm = false;
                 CurrentTimeLabel.Text = $"UTC: {_vm.SimTime:yyyy-MM-dd HH:mm}";
                 _workspace.SimTime = _vm.SimTime;
                 break;
