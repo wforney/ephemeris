@@ -1,0 +1,88 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Ephemeris.UI.Avalonia.Controls.BiblicalCalendarCard">
+
+    <!-- Biblical Calendar info card for the research workspace sidebar.
+         Call Update(date) from code-behind to populate the displayed fields. -->
+
+    <Border BorderBrush="{DynamicResource SystemAccentColor}"
+            BorderThickness="1"
+            CornerRadius="4"
+            Padding="8,6">
+
+        <StackPanel Spacing="4">
+
+            <!-- Section header -->
+            <TextBlock Text="BIBLICAL CALENDAR"
+                       FontWeight="SemiBold"
+                       FontSize="11"
+                       Opacity="0.7"
+                       LetterSpacing="1" />
+
+            <Separator Margin="0,2" />
+
+            <!-- Hebrew Year -->
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" Text="Hebrew Year:" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1"
+                           x:Name="HebrewYearText"
+                           Text="—"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Right" />
+            </Grid>
+
+            <!-- Month -->
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" Text="Month:" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1"
+                           x:Name="MonthText"
+                           Text="—"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Right" />
+            </Grid>
+
+            <!-- Day of Month -->
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" Text="Day:" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1"
+                           x:Name="DayText"
+                           Text="—"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Right" />
+            </Grid>
+
+            <!-- Season -->
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" Text="Season:" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1"
+                           x:Name="SeasonText"
+                           Text="—"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Right" />
+            </Grid>
+
+            <!-- Sun in Mazzaroth -->
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" Text="Sun in:" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1"
+                           x:Name="SolarSignText"
+                           Text="—"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Right" />
+            </Grid>
+
+            <!-- Crescent visibility -->
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" Text="Crescent:" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1"
+                           x:Name="CrescentText"
+                           Text="—"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Right" />
+            </Grid>
+
+        </StackPanel>
+
+    </Border>
+
+</UserControl>
