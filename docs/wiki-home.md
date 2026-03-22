@@ -6,6 +6,8 @@ asteroids, and stars from any observer location on Earth. Includes astrological 
 systems. Powers the **Ephemeris Research App**, a celestial visualization and simulation
 platform for Biblical cosmology researchers.
 
+> ✅ **Research App — Implementation Complete** (420/420 tests passing)
+
 [![CI](https://github.com/wforney/ephemeris/actions/workflows/ci.yml/badge.svg)](https://github.com/wforney/ephemeris/actions/workflows/ci.yml)
 
 ## Documentation

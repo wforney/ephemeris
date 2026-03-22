@@ -36,13 +36,13 @@ var windows = EphemerisBatch.VisibilityWindows("Mars", DateTime.UtcNow,
 
 | Namespace | Domain | Key Classes | Algorithm Reference |
 |-----------|--------|-------------|---------------------|
-| `Ephemeris.Chronology` | Timekeeping | `TimeUtils`, `TimeZoneUtils` | [Timekeeping](https://github.com/wforney/ephemeris/wiki/Algorithm-Reference#timekeeping-chronology) |
+| `Ephemeris.Chronology` | Timekeeping | `TimeUtils`, `TimeZoneUtils`, `ProlepticDate` | [Timekeeping](https://github.com/wforney/ephemeris/wiki/Algorithm-Reference#timekeeping-chronology) |
 | `Ephemeris.Heliology` | Solar ephemeris | `SunEphemeris` | [Solar](https://github.com/wforney/ephemeris/wiki/Algorithm-Reference#solar-ephemeris-heliology) |
 | `Ephemeris.Selenography` | Lunar ephemeris | `MoonEphemeris`, `TopocentricParallax` | [Lunar](https://github.com/wforney/ephemeris/wiki/Algorithm-Reference#lunar-ephemeris-selenography) |
 | `Ephemeris.Planetology` | Planetary positions | `PlanetEphemeris`, `PlanetPhysicalEphemeris`, `PlanetPositionService`, `AsteroidEphemeris` | [Planetary](https://github.com/wforney/ephemeris/wiki/Algorithm-Reference#planetary-positions-planetology) |
 | `Ephemeris.Geometry` | Coordinate types & transforms | `ObserverGeometry`, `CoordinateConverter`, `EquatorialCoordinates`, `HorizontalCoordinates` | [Transforms](https://github.com/wforney/ephemeris/wiki/Algorithm-Reference#coordinate-transforms-geometry) |
 | `Ephemeris.Geodesy` | Earth corrections | `NutationCalculator`, `PrecessionCalculator`, `RefractionCalculator` | [Nutation & Precession](https://github.com/wforney/ephemeris/wiki/Algorithm-Reference#nutation--precession-geodesy) |
-| `Ephemeris.Phenomenology` | Observable events | `RiseSetCalculator`, `EclipseCalculator`, `SeasonCalculator`, `PlanetaryEventCalculator`, `InnerPlanetEventCalculator` | [Phenomena](https://github.com/wforney/ephemeris/wiki/Algorithm-Reference#observable-phenomena-phenomenology) |
+| `Ephemeris.Phenomenology` | Observable events | `RiseSetCalculator`, `EclipseCalculator`, `SeasonCalculator`, `PlanetaryEventCalculator`, `InnerPlanetEventCalculator`, `CelestialEventDetector`, `BiblicalCalendarHelper` | [Phenomena](https://github.com/wforney/ephemeris/wiki/Algorithm-Reference#observable-phenomena-phenomenology) |
 | `Ephemeris.Stellarography` | Fixed stars | `StarCatalog`, `BrightStarCatalog`, `StarEphemeris`, `YaleBsc5Reader` | [Fixed Stars](https://github.com/wforney/ephemeris/wiki/Algorithm-Reference#fixed-stars-stellarography) |
 | `Ephemeris.Export` | Serialization | `EphemerisExporter` | — |
 | `Ephemeris.Import` | Data import | `SpkReader`, `SpiceKernelDatabase`, `BspImporter`, `Se1EphemerisReader`, `DE430Importer` | [SPICE/BSP](https://github.com/wforney/ephemeris/wiki/Algorithm-Reference#spicebsp-import-import) |
@@ -60,7 +60,7 @@ var windows = EphemerisBatch.VisibilityWindows("Mars", DateTime.UtcNow,
 | `HorizontalCoordinates` | `readonly record struct` | (Azimuth°, Altitude°) |
 | `EclipticCoordinates` | `readonly record struct` | (Longitude°, Latitude°) |
 | `CartesianPosition` | `readonly record struct` | (X, Y, Z) in AU or km |
-| `OrbitalElements` | `readonly record struct` | 6-element Keplerian set |
+| `ProlepticDate` | `readonly struct` | BCE/BC date using Julian Day Number; `FromBce(year,month,day)`, `ToJulianDay()`, `FromJulianDay(jd)`, `ToHistoricalString()`, `ToAstronomicalString()`; `IEquatable`/`IComparable` (Meeus Ch. 7) |
 | `FixedStar` | `readonly record struct` | J2000.0 position + proper motion + parallax |
 | `HouseCusps` | `readonly record struct` | 12 astrological house cusps + four Angles (ASC, MC, DSC, IC) in ecliptic degrees |
 | `HouseSystem` | `enum` | Placidus, Equal, WholeSigns, Porphyry, Koch, Campanus, Regiomontanus (all implemented) |
@@ -187,6 +187,82 @@ double asc = AstrologicalHouses.ComputeAscendant(ramc, obliquity, latitude: 41.8
 > [!NOTE]
 > WholeSigns sets H1 cusp to the sign boundary (a multiple of 30°), not the Ascendant itself.
 > Equal House sets H10 = ASC + 270°, not the Midheaven.
+
+---
+
+## Proleptic Dates (BCE/BC Support)
+
+`ProlepticDate` in `Ephemeris.Chronology` represents calendar dates before year 1 CE using
+Julian Day Number internally (Meeus Ch. 7), enabling the Ephemeris engine to compute
+celestial positions for any historical epoch including Hezekiah's Sundial (~701 BCE) and
+Joshua's Long Day (~1406 BCE).
+
+```csharp
+using Ephemeris.Chronology;
+
+// Create a BCE date
+var date = ProlepticDate.FromBce(701, 8, 1);     // 701 BCE, August 1 → Year = -700
+double jd = date.ToJulianDay();                  // ≈ 1502917
+double T  = TimeUtils.JulianCentury(jd);        // pass to SunEphemeris, MoonEphemeris, etc.
+
+// Formatting
+Console.WriteLine(date.ToHistoricalString());    // "701 BCE Aug 01"
+Console.WriteLine(date.ToAstronomicalString());  // "-0700-08-01"
+
+// Round-trip from Julian Day
+ProlepticDate back = ProlepticDate.FromJulianDay(jd);
+
+// Comparison
+bool earlier = ProlepticDate.FromBce(1406, 6, 21) < date; // true (1406 BCE is earlier)
+```
+
+---
+
+## Celestial Event Detection
+
+`CelestialEventDetector` in `Ephemeris.Phenomenology` scans date ranges for notable
+astronomical events — full/new moons, equinoxes, solstices, and eclipses.
+
+```csharp
+using Ephemeris.Phenomenology;
+
+// Scan for events in a window
+IReadOnlyList<CelestialEventDetector.CelestialEvent> events =
+    CelestialEventDetector.Scan(DateTime.UtcNow, DateTime.UtcNow.AddMonths(6));
+
+// Get the next N events
+IReadOnlyList<CelestialEventDetector.CelestialEvent> next10 =
+    CelestialEventDetector.GetNext(DateTime.UtcNow, count: 10);
+
+foreach (var ev in next10)
+    Console.WriteLine($"{ev.UtcTime:yyyy-MM-dd} — {ev.Description}");
+// e.g. "2026-04-13 — Full Moon"
+//      "2026-03-20 — Vernal Equinox"
+```
+
+---
+
+## Biblical Calendar
+
+`BiblicalCalendarHelper` in `Ephemeris.Phenomenology` computes approximate Hebrew luni-solar
+calendar data from Julian Day and observer location.
+
+```csharp
+using Ephemeris.Phenomenology;
+
+double jd = TimeZoneUtils.ToJulianDay(DateTime.UtcNow);
+BiblicalCalendarHelper.BiblicalDate date =
+    BiblicalCalendarHelper.GetBiblicalDate(jd, longitude: 35.22, latitude: 31.77);
+
+Console.WriteLine($"Hebrew year: {date.Year}");          // e.g. 5786
+Console.WriteLine($"Month: {date.MonthName}");           // e.g. "Nisan"
+Console.WriteLine($"Sun in: {date.SolarSign}");          // e.g. "Aries (Taleh)"
+Console.WriteLine($"Crescent: {date.IsNewMoonVisibility}"); // true/false
+
+// Direct helpers
+string sign = BiblicalCalendarHelper.GetMazzarothSign(sunLon: 45.0); // "Taurus (Shor)"
+bool visible = BiblicalCalendarHelper.IsCrescentVisible(jd, 35.22, 31.77);
+```
 
 ---
 

@@ -39,43 +39,120 @@ sudo apt-get install libx11-dev libxrandr-dev libxi-dev libxcursor-dev libgl1-me
 sudo dnf install libX11-devel libXrandr-devel libXi-devel libXcursor-devel mesa-libGL-devel
 ```
 
-> **Note:** The app launches with an empty dataset. To see real data, replace the placeholder
-> in `LauncherWindow.axaml.cs` (`List<EphemerisRecord> allData = []`) with a call to
-> `EphemerisBatch.GenerateSunSeries(...)` or similar before opening the plot window.
+The app opens `HomeWindow` — choose **New Research Session** to start, or select a scriptural preset.
 
 ---
 
 ## Windows / Views
 
-### `LauncherWindow`
+### `HomeWindow` *(startup)*
 
-Application entry point (equivalent of `Ephemeris.UI.LauncherForm`).
-Opens either the 3D sky view or the altitude chart.
-Uses `CommunityToolkit.Mvvm.WeakReferenceMessenger` to track:
-- `ObserverChangedMessage` — observer longitude/latitude changes
-- `SimTimeChangedMessage` — simulation time advances
+Application entry point — replaces the legacy `LauncherWindow` as `MainWindow`.
+
+- **New Research Session** → opens `ResearchWorkspaceWindow`
+- **Load Scriptural Event** → opens `ScripturalEventLibraryWindow`
+- **Resume Previous Session** → file picker for `.json` session files
+- **Quick-Start form** — date / time / location → **LOAD SKY**
+- **Recent sessions** list — last 3 `.json` files from `%APPDATA%/EphemerisResearch/sessions/`
+- Legacy shortcuts: **3D Sky View** → `SkyViewWindow` · **Altitude Chart** → `EphemerisPlotWindow`
+
+### `ResearchWorkspaceWindow`
+
+Main research workspace:
+- Sidebar: Sun/Moon Az/Alt readouts, rise/set times, next lunar phase, `BiblicalCalendarCard` section
+- Scenario picker (`ComboBox` bound to `BuiltInScenarios.All`) — includes BCE presets
+- Historical Mode: shows `DisplayDate` (e.g. "701 BCE Aug 01") + 📜 badge when BCE scenario loaded
+- `EmptyStateControl` placeholder (🌌 "No Data") until first sky data loads
+
+### `ComparisonWindow`
+
+Side-by-side simulation comparison:
+- Freeze motion toggle, Sun altitude offset slider, extended daylight toggle
+- `EmptyStateControl` (⚖ "No Simulation Active") when no overrides are active
+- `SkyDisplayToggleBar` for sky overlay controls
+
+### `ScripturalEventLibraryWindow`
+
+Preset library browser — lists `BuiltInScenarios.All` with scripture reference and description.
+`EmptyStateControl` shown if no events are configured.
+
+### `NotesPanel`
+
+Collapsible research notes panel — auto-saved to `SessionModel.Notes`.
 
 ### `SkyViewWindow`
 
-3D interactive sky view (equivalent of `Ephemeris.UI.SkyViewForm`).
-Contains a `SkyGlControl` that derives from `Avalonia.OpenGL.Controls.OpenGlControlBase`.
+3D interactive sky view (existing, unchanged entry point from `HomeWindow`).
 
-Renders via OpenGL 3.3 shaders:
-- Stars from the built-in catalog (magnitude/spectral-type coloured points)
-- Sun, Moon, and inner/outer planets as coloured dots
+### `LauncherWindow`
+
+Legacy entry point — still present; `HomeWindow` is the new default startup window.
+
+---
+
+## Controls
+
+### `SkyGlControl`
+
+Derives from `Avalonia.OpenGL.Controls.OpenGlControlBase`. Full feature set:
+
+**Rendering:**
+- Stars (magnitude/spectral-type coloured points, magnitude limit configurable)
+- Sun, Moon, and inner/outer planets as coloured dots with optional labels
 - Horizon ring (green line loop)
+- Constellation line overlays (15 constellations, drawn as dim blue-white `GL_LINES`)
+- Sun path arc (yellow, 24-hour daily arc) and Moon path arc (silver-blue)
+- Mazzaroth ecliptic overlay (12 coloured bands with Hebrew names, `GL_LINES`)
 
-Mouse drag = rotate view · scroll wheel = zoom · Space = play/pause · ←/→ = step day · F = now
+**Display toggle properties:**
 
-### `EphemerisPlotWindow`
+| Property | Default | Description |
+|----------|---------|-------------|
+| `ShowConstellations` | `false` | Constellation line pairs |
+| `ShowStarLabels` | `false` | Labels for stars brighter than magnitude 2.0 |
+| `ShowPlanetLabels` | `true` | Labels next to Sun/Moon/planets |
+| `ShowHorizonGrid` | `true` | Horizon ring |
+| `StarMagnitudeLimit` | `5.5` | Stars dimmer than this are hidden |
+| `ShowSunPath` | `false` | 24-hour Sun altitude arc |
+| `ShowMoonPath` | `false` | 24-hour Moon altitude arc |
+| `ShowMazzarothOverlay` | `false` | 12 ecliptic Mazzaroth bands |
+| `SimulationOverride` | `null` | Freeze / Sun-offset / daylight override |
 
-Altitude-vs-time scatter chart (equivalent of `Ephemeris.UI.EphemerisPlotForm`).
-Uses **ScottPlot.Avalonia** (`AvaPlot` control).
+### `SkyDisplayToggleBar`
 
-```csharp
-var window = new EphemerisPlotWindow(records, "Moon");
-await window.ShowDialog(parent);
-```
+`UserControl` toolbar with 7 `ToggleButton`s + magnitude `Slider` (0–7, default 5.5).
+`Attach(SkyGlControl)` wires all toggles to the control. Used in `SkyViewWindow` and `ComparisonWindow`.
+
+### `EmptyStateControl`
+
+Reusable empty-state placeholder `UserControl` with `Icon`, `Title`, `Subtitle` styled properties.
+
+### `BiblicalCalendarCard`
+
+Sidebar `UserControl` displaying Hebrew calendar data:
+- Hebrew Year, Month (with ordinal), Day
+- Season, Sun-in-Mazzaroth sign, Crescent visibility status
+- Populated via `Update(BiblicalCalendarHelper.BiblicalDate?)`
+
+---
+
+## Styles
+
+### `ResearchTheme.axaml`
+
+Resource dictionary merged into `App.axaml`. Provides the dark observatory colour palette:
+
+| Resource | Value | Use |
+|----------|-------|-----|
+| `ResearchBackground` | `#0D0D1A` | Window background (very dark navy) |
+| `ResearchSurface` | `#1A1A2E` | Panel background |
+| `ResearchSidebar` | `#16213E` | Sidebar background |
+| `ResearchAccent` | `#4A9EFF` | Buttons, highlights (blue) |
+| `ResearchTextPrimary` | `#EEEEFF` | Primary text |
+| `ResearchTextSecondary` | `#AAAACC` | Secondary / metadata text |
+
+Class-based styles: `Button.Research`, `Button.ResearchSecondary`, `TextBox.Research`,
+`TextBlock.Monospace` (Courier New), `Border.ResearchPanel`, `Border.ResearchSidebar`.
 
 ---
 

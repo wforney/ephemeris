@@ -1,6 +1,6 @@
 # Ephemeris.Tests
 
-Test suite for the `Ephemeris` core library. **358 tests** covering all calculation domains.
+Test suite for the `Ephemeris` core library. **420 tests** covering all calculation domains.
 
 **Framework:** [TUnit](https://github.com/thomhurst/TUnit) · **Target:** `net10.0`
 
@@ -38,6 +38,9 @@ Tests that require local ephemeris kernel files (`.bsp`, `.se1`) are automatical
 | `PlanetPhysicalEphemerisTests.cs` | Planetology | Angular diameter, magnitude, elongation |
 | `PlanetaryEventTests.cs` | Phenomenology | Opposition, conjunction, quadrature, greatest elongation |
 | `RiseSetCalculatorTests.cs` | Phenomenology | Sunrise/sunset/transit times |
+| `CelestialEventDetectorTests.cs` | Phenomenology | Full/new moon scans, equinox/solstice detection, eclipse events, ordering, `CelestialEvent.CompareTo` |
+| `ProlepticDateTests.cs` | Chronology | JD round-trip, `FromBce` factory, formatting, comparison operators, validation guards |
+| `BiblicalCalendarHelperTests.cs` | Phenomenology | Sign boundaries, season mapping, month/year approximation, crescent logic |
 | `GeometryTests.cs` | Geometry | Coordinate transforms, angular separation, refraction |
 | `NutationCalculatorTests.cs` | Geodesy | IAU 1980 nutation Δψ/Δε |
 | `PrecessionCalculatorTests.cs` | Geodesy | IAU 2006 precession angles |

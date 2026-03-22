@@ -14,6 +14,7 @@ A .NET 10 library for computing positions of celestial bodies (Sun, Moon, planet
 | Category | Status |
 |---|---|
 | **Timekeeping** — Julian Day, Julian Century, GMST, UTC↔JD | ✅ |
+| **Proleptic dates** — `ProlepticDate` struct (Meeus Ch. 7): BCE/BC dates, JD round-trip, historical formatting | ✅ |
 | **Solar ephemeris** — Meeus Ch. 25: equation of center, aberration, nutation, R (AU) | ✅ |
 | **Lunar ephemeris** — Meeus Ch. 47: 60-term Σl/Σb/Σr series, phase name, illumination | ✅ |
 | **Topocentric parallax** — Meeus Ch. 40 diurnal parallax for Moon, Sun, and all planets | ✅ |
@@ -24,10 +25,12 @@ A .NET 10 library for computing positions of celestial bodies (Sun, Moon, planet
 | **Rise/set/transit** — Sun, Moon, and planet rise/set/transit (Meeus Ch. 15) | ✅ |
 | **Eclipse prediction** — solar and lunar eclipse finder (Meeus Ch. 54) | ✅ |
 | **Seasons** — equinox and solstice times (Meeus Ch. 27) | ✅ |
+| **Celestial event detection** — `CelestialEventDetector`: full/new moons, equinoxes, solstices, lunar/solar eclipses in any date range | ✅ |
 | **Next-event queries** — `NextFullMoon`, `NextSunrise`, `NextVernalEquinox`, etc. | ✅ |
 | **Visibility windows** — `EphemerisBatch.VisibilityWindows(body, altThreshold)` | ✅ |
 | **Planet physical ephemeris** — apparent magnitude, angular diameter, elongation | ✅ |
 | **Planetary events** — opposition, conjunction, quadrature (outer); greatest elongation (inner) | ✅ |
+| **Biblical calendar** — `BiblicalCalendarHelper`: Hebrew year/month, Mazzaroth sign, crescent visibility | ✅ |
 | **Batch generation** — time-series `EphemerisRecord` collections | ✅ |
 | **Data export** — CSV and JSON serialization | ✅ |
 | **Stellar catalog** — 25-star embedded catalog + Yale BSC5 reader, proper-motion & precession | ✅ |
@@ -35,14 +38,14 @@ A .NET 10 library for computing positions of celestial bodies (Sun, Moon, planet
 | **NuGet package** — `WilliamForney.Ephemeris` 0.1.0 with CI release workflow | ✅ |
 | **Benchmarks** — BenchmarkDotNet project for Sun/Moon/planet series | ✅ |
 | **WinForms visualizer** — altitude-vs-time ScottPlot chart | ✅ |
-| **Avalonia cross-platform UI** — sky view + chart on Windows, Linux, macOS | ✅ |
+| **Research App** — full Avalonia cross-platform research platform for Biblical cosmology (HomeWindow, research workspace, BCE scenarios, Mazzaroth overlay, Biblical calendar) | ✅ |
 
 ## Projects
 
 | Project | Description |
 |---|---|
 | [`Ephemeris`](Ephemeris/README.md) | Core class library — calculation engine |
-| [`Ephemeris.Tests`](Ephemeris.Tests/README.md) | TUnit test suite (252 tests) |
+| [`Ephemeris.Tests`](Ephemeris.Tests/README.md) | TUnit test suite (420 tests) |
 | [`Ephemeris.Benchmarks`](Ephemeris.Benchmarks/README.md) | BenchmarkDotNet performance suite |
 | [`Ephemeris.UI`](Ephemeris.UI/README.md) | WinForms visualization app (Windows only) |
 | [`Ephemeris.UI.Shared`](Ephemeris.UI.Shared/README.md) | Shared view-model and messaging (cross-platform) |
@@ -54,13 +57,13 @@ Domain namespaces mirror astronomical subdisciplines:
 
 | Namespace | Domain |
 |---|---|
-| `Ephemeris.Chronology` | Julian Day, ΔT, GMST, sidereal time |
+| `Ephemeris.Chronology` | Julian Day, ΔT, GMST, sidereal time, `ProlepticDate` (BCE/BC dates, Meeus Ch. 7) |
 | `Ephemeris.Heliology` | Solar ephemeris — Meeus Ch. 25 (RA/Dec, aberration, nutation, R) |
 | `Ephemeris.Selenography` | Lunar ephemeris — Meeus Ch. 47 (60-term series, phase, illumination, topocentric parallax) |
 | `Ephemeris.Planetology` | Planetary positions via iterative Kepler + orbital elements |
 | `Ephemeris.Geometry` | Equatorial↔horizontal coordinate transforms, refraction, coordinate record structs |
 | `Ephemeris.Geodesy` | Nutation (IAU 1980 50-term) and precession (IAU 2006) |
-| `Ephemeris.Phenomenology` | Rise/set/transit, eclipses, seasons, visibility windows, planetary events (opposition/conjunction/elongation) |
+| `Ephemeris.Phenomenology` | Rise/set/transit, eclipses, seasons, visibility windows, planetary events, `CelestialEventDetector`, `BiblicalCalendarHelper` |
 | `Ephemeris.Export` | CSV/JSON serialization of `EphemerisRecord` |
 | `Ephemeris.Import` | Native DAF/SPK BSP reader, DE430 binary importer |
 | `Ephemeris.Stellarography` | Fixed star catalog, proper-motion corrections, Yale BSC5 reader |
@@ -220,8 +223,21 @@ Reference documents in `docs/` and on the **[GitHub Wiki](https://github.com/wfo
 - ✅ Native DAF/SPK BSP reader — Type 2/3 Chebyshev, leap-second-aware UTC→ET, BFS segment graph for arbitrary multi-hop chaining
 - ✅ OpenGL/Skia 3D sky view — `SkyViewForm` renders stars, Sun, Moon, planets with OpenTK 4 GLControl + SkiaSharp label overlay; launcher (`LauncherForm`) added to `Ephemeris.UI`
 - ✅ Planetary event calculators — opposition, conjunction, quadrature for outer planets; greatest elongation for inner planets
-- ✅ 252 unit tests verified against JPL Horizons and synthetic reference values
+- ✅ 420 unit tests verified against JPL Horizons and synthetic reference values
 - ✅ BenchmarkDotNet project, NuGet packaging, CI coverage reporting
+
+### Research App (completed 2026-03-22)
+
+- ✅ `CelestialResearchService` + `WorkspaceViewModel` — research workspace foundation
+- ✅ `ResearchWorkspaceWindow` — Sun/Moon data sidebar, scenario picker, historical mode badge
+- ✅ `PlaybackEngine`, `ScripturalEventLibraryWindow`, `NotesPanel`, JSON session persistence
+- ✅ `ComparisonViewModel` + `ComparisonWindow` with simulation override (freeze, Sun-offset, daylight)
+- ✅ `HomeWindow` startup screen + dark observatory theme (`ResearchTheme.axaml`)
+- ✅ `CelestialEventDetector` — full/new moons, equinoxes, solstices, eclipse scanning
+- ✅ Constellation overlays + `SkyDisplayToggleBar` display controls
+- ✅ `ProlepticDate` — BCE/BC date struct for Hezekiah (~701 BCE) and Joshua (~1406 BCE) scenarios
+- ✅ Mazzaroth ecliptic overlay in `SkyGlControl`
+- ✅ `BiblicalCalendarHelper` — Hebrew calendar, Mazzaroth signs, crescent moon visibility
 
 ### Future
 
