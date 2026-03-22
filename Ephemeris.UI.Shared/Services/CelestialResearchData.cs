@@ -1,4 +1,6 @@
 // Updated: 2026-03-22
+using Ephemeris.Phenomenology;
+
 namespace Ephemeris.UI.Services;
 
 /// <summary>
@@ -13,6 +15,7 @@ namespace Ephemeris.UI.Services;
 /// <param name="Moonset">UTC time of today's moonset, or <c>null</c> if circumpolar or not visible.</param>
 /// <param name="NextFullMoon">UTC time of the next full moon after the query instant.</param>
 /// <param name="NextNewMoon">UTC time of the next new moon after the query instant.</param>
+/// <param name="BiblicalDate">Approximate Hebrew luni-solar calendar information, or <c>null</c> if not computed.</param>
 public record CelestialResearchData(
     CelestialObservation Sun,
     CelestialObservation Moon,
@@ -21,4 +24,5 @@ public record CelestialResearchData(
     DateTime? Moonrise,
     DateTime? Moonset,
     DateTime? NextFullMoon,
-    DateTime? NextNewMoon);
+    DateTime? NextNewMoon,
+    BiblicalCalendarHelper.BiblicalDate? BiblicalDate = null);

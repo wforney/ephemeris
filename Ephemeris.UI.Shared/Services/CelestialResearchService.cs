@@ -64,6 +64,10 @@ public class CelestialResearchService : ICelestialResearchService, ISingletonSer
         DateTime nextFullMoon = EphemerisCalculator.NextFullMoon(utcTime);
         DateTime nextNewMoon  = EphemerisCalculator.NextNewMoon(utcTime);
 
+        // Biblical calendar data derived from Julian Day.
+        double jd = TimeZoneUtils.ToJulianDay(utcTime);
+        BiblicalCalendarHelper.BiblicalDate? biblicalDate = BiblicalCalendarHelper.GetBiblicalDate(jd, longitude, latitude);
+
         return new CelestialResearchData(
             Sun:          sun,
             Moon:         moon,
@@ -72,7 +76,8 @@ public class CelestialResearchService : ICelestialResearchService, ISingletonSer
             Moonrise:     moonRst.Rise,
             Moonset:      moonRst.Set,
             NextFullMoon: nextFullMoon,
-            NextNewMoon:  nextNewMoon);
+            NextNewMoon:  nextNewMoon,
+            BiblicalDate: biblicalDate);
     }
 
     /// <summary>
@@ -102,4 +107,5 @@ public class CelestialResearchService : ICelestialResearchService, ISingletonSer
             NextFullMoon: null,
             NextNewMoon:  null);
     }
+
 }
