@@ -531,10 +531,10 @@ UploadStarVertices(gl, jd);
                 _uniformMatrix4fv!(_mvpLoc, 1, false, p);
         }
 
-        _bindVertexArray(_starVao);
+        _bindVertexArray!(_starVao);
         gl.DrawArrays(GlPoints, 0, _starCount);
 
-        _bindVertexArray(_bodyVao);
+        _bindVertexArray!(_bodyVao);
         gl.DrawArrays(GlPoints, 0, _bodyVertexCount);
 
         // ── Line pass (constellation lines, paths, horizon ring) ──────────
@@ -938,23 +938,36 @@ UploadStarVertices(gl, jd);
     {
         var (zenR, zenG, zenB, horR, horG, horB) = SkyGradientColors(_lastSunAltitude);
 
-        // Full-screen quad in NDC: 4 vertices × 7 floats (pos3 + color4), triangle strip order
-        float[] verts =
-        [
-            -1f, -1f, 0f,  horR, horG, horB, 1f,  // bottom-left  (horizon)
-             1f, -1f, 0f,  horR, horG, horB, 1f,  // bottom-right (horizon)
-            -1f,  1f, 0f,  zenR, zenG, zenB, 1f,  // top-left     (zenith)
-             1f,  1f, 0f,  zenR, zenG, zenB, 1f,  // top-right    (zenith)
-        ];
-
-        _bindVertexArray!(_bgVao);
-        gl.BindBuffer(GlArrayBuffer, _bgVbo);
+        // Full-screen quad in NDC: 4 vertices × 7 floats (pos3 + color4), triangle strip order.
+        // Use stackalloc to avoid a per-frame heap allocation for this fixed-size buffer.
+        const int floatsPerVertex = 7;
+        const int vertexCount = 4;
         unsafe
         {
-            fixed (float* p = verts)
-                _bufferData!(GlArrayBuffer, (IntPtr)(verts.Length * sizeof(float)), p, GlDynamicDraw);
+            float* verts = stackalloc float[floatsPerVertex * vertexCount];
+            var i = 0;
+
+            // bottom-left  (horizon)
+            verts[i++] = -1f; verts[i++] = -1f; verts[i++] = 0f;
+            verts[i++] = horR; verts[i++] = horG; verts[i++] = horB; verts[i++] = 1f;
+
+            // bottom-right (horizon)
+            verts[i++] = 1f;  verts[i++] = -1f; verts[i++] = 0f;
+            verts[i++] = horR; verts[i++] = horG; verts[i++] = horB; verts[i++] = 1f;
+
+            // top-left     (zenith)
+            verts[i++] = -1f; verts[i++] = 1f;  verts[i++] = 0f;
+            verts[i++] = zenR; verts[i++] = zenG; verts[i++] = zenB; verts[i++] = 1f;
+
+            // top-right    (zenith)
+            verts[i++] = 1f;  verts[i++] = 1f;  verts[i++] = 0f;
+            verts[i++] = zenR; verts[i++] = zenG; verts[i++] = zenB; verts[i++] = 1f;
+
+            _bindVertexArray!(_bgVao);
+            gl.BindBuffer(GlArrayBuffer, _bgVbo);
+            _bufferData!(GlArrayBuffer, (IntPtr)(i * sizeof(float)), verts, GlDynamicDraw);
+            _bindVertexArray!(0);
         }
-        _bindVertexArray(0);
     }
 
     /// <summary>
