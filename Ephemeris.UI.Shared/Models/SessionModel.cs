@@ -87,4 +87,16 @@ public class SessionModel
         await JsonSerializer.SerializeAsync(stream, this, new JsonSerializerOptions { WriteIndented = true })
                             .ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Serialises this session as UTF-8 JSON to an already-opened writable stream.
+    /// </summary>
+    /// <param name="stream">A writable stream to write the JSON to.</param>
+    public async Task SaveAsync(Stream stream)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        stream.SetLength(0);
+        await JsonSerializer.SerializeAsync(stream, this, new JsonSerializerOptions { WriteIndented = true })
+                            .ConfigureAwait(false);
+    }
 }

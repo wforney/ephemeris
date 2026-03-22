@@ -8,6 +8,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Messaging;
+using Ephemeris.UI;
 using Ephemeris.UI.Avalonia.Controls;
 using Ephemeris.UI.Messages;
 
@@ -304,23 +305,8 @@ public partial class ResearchWorkspaceWindow : Window,
     // Sidebar action buttons
     // ─────────────────────────────────────────────────────────────────────
 
-    private async void OnScripturalEventsClick(object? sender, RoutedEventArgs e)
-    {
-        // TODO: open ScripturalEventLibraryWindow when implemented
-        var dlg = new Window
-        {
-            Title   = "Scriptural Events",
-            Width   = 480,
-            Height  = 320,
-            Content = new TextBlock
-            {
-                Text              = "Scriptural Event Library — coming soon.",
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Center,
-            },
-        };
-        await dlg.ShowDialog(this);
-    }
+    private async void OnScripturalEventsClick(object? sender, RoutedEventArgs e) =>
+        await new ScripturalEventLibraryWindow(_vm).ShowDialog(this);
 
     private async void OnComparisonModeClick(object? sender, RoutedEventArgs e)
     {
@@ -340,23 +326,8 @@ public partial class ResearchWorkspaceWindow : Window,
         await dlg.ShowDialog(this);
     }
 
-    private async void OnNotesClick(object? sender, RoutedEventArgs e)
-    {
-        // TODO: show NotesPanel when implemented
-        var dlg = new Window
-        {
-            Title   = "Notes",
-            Width   = 480,
-            Height  = 320,
-            Content = new TextBlock
-            {
-                Text              = "Notes — coming soon.",
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Center,
-            },
-        };
-        await dlg.ShowDialog(this);
-    }
+    private async void OnNotesClick(object? sender, RoutedEventArgs e) =>
+        await new NotesPanel(_vm).ShowDialog(this);
 
     // ─────────────────────────────────────────────────────────────────────
     // GL control input handling (same patterns as SkyViewWindow)
