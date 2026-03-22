@@ -1,84 +1,97 @@
 // Updated: 2026-03-22
+using Ephemeris.Chronology;
+
 namespace Ephemeris.UI.Models;
 
 /// <summary>
-/// An immutable preset that encodes a scriptural or historical celestial event,
-/// pre-populated with a suggested date, observer location, and descriptive metadata.
+/// Represents a predefined research scenario — a named combination of observer location,
+/// suggested modern UTC time, scripture reference, and (where applicable) a historical
+/// <see cref="ProlepticDate"/> for BCE-era dates that .NET <see cref="DateTime"/> cannot represent.
 /// </summary>
-/// <param name="Name">Short display name, e.g. "Hezekiah's Sundial".</param>
-/// <param name="ScriptureReference">Biblical chapter/verse reference, e.g. "Isaiah 38:8".</param>
-/// <param name="Description">One-to-two sentence description of the event.</param>
-/// <param name="SuggestedUtcTime">
-/// Suggested UTC date/time for the simulation.
-/// <para>
-/// <b>Note:</b> .NET <see cref="DateTime"/> does not support BC/BCE dates.
-/// Ancient scenario dates use CE placeholder values (e.g., year 701 represents 701 BCE)
-/// until BC/BCE support is added — see GitHub issue #85.
-/// </para>
-/// </param>
-/// <param name="Longitude">Observer longitude in degrees (East positive).</param>
-/// <param name="Latitude">Observer latitude in degrees (North positive).</param>
-/// <param name="LocationName">Human-readable place name, e.g. "Jerusalem".</param>
-public record ScenarioModel(
-    string Name,
-    string ScriptureReference,
-    string Description,
-    DateTime SuggestedUtcTime,
-    double Longitude,
-    double Latitude,
-    string LocationName);
+public sealed class ScenarioModel
+{
+    /// <summary>Human-readable name shown in the scenario picker.</summary>
+    public required string Name { get; init; }
+
+    /// <summary>Biblical chapter/verse reference, e.g. "Isaiah 38:8".</summary>
+    public string ScriptureReference { get; init; } = string.Empty;
+
+    /// <summary>One-to-two sentence description of the event.</summary>
+    public string? Description { get; init; }
+
+    /// <summary>Human-readable place name, e.g. "Jerusalem".</summary>
+    public string LocationName { get; init; } = string.Empty;
+
+    /// <summary>Observer longitude in degrees (east positive).</summary>
+    public double Longitude { get; init; }
+
+    /// <summary>Observer latitude in degrees (north positive).</summary>
+    public double Latitude { get; init; }
+
+    /// <summary>
+    /// Modern UTC proxy time for DateTime-based display or as fallback when
+    /// <see cref="HistoricalDate"/> is not set.
+    /// </summary>
+    public DateTime SuggestedUtcTime { get; init; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Historical date in the BC/BCE era represented as a <see cref="ProlepticDate"/>.
+    /// When set, the scenario operates in historical mode and
+    /// <see cref="ToJulianDay"/> returns the JD of this date.
+    /// </summary>
+    public ProlepticDate? HistoricalDate { get; init; }
+
+    /// <summary>
+    /// Returns the Julian Day number to use as the calculation epoch.
+    /// Prefers <see cref="HistoricalDate"/> when available; falls back to
+    /// <see cref="SuggestedUtcTime"/>.
+    /// </summary>
+    public double ToJulianDay() =>
+        HistoricalDate.HasValue
+            ? HistoricalDate.Value.ToJulianDay()
+            : TimeZoneUtils.ToJulianDay(SuggestedUtcTime);
+}
 
 /// <summary>
 /// Provides the built-in scriptural event presets for the Ephemeris Research App.
 /// </summary>
 public static class BuiltInScenarios
 {
-    /// <summary>
-    /// Hezekiah's Sundial — the shadow retreated ten steps on the stairway of Ahaz.
-    /// </summary>
+    /// <summary>Hezekiah's Sundial — the shadow retreated ten steps on the stairway of Ahaz.</summary>
     /// <remarks>
-    /// Observer: Jerusalem (31.8° N, 35.2° E).
-    /// Approximate date: August 701 BCE.
-    /// <b>Placeholder date:</b> <c>new DateTime(701, 8, 1)</c> represents 701 BCE.
-    /// BC/BCE date support is tracked in GitHub issue #85.
+    /// Observer: Jerusalem (31.8° N, 35.2° E). Approximate date: August 701 BCE.
+    /// Reference: Meeus, Astronomical Algorithms (2nd ed.), Ch. 7.
     /// </remarks>
-    public static ScenarioModel HezekiahSundial => new(
-        Name:             "Hezekiah's Sundial",
-        ScriptureReference: "Isaiah 38:8 / 2 Kings 20:11",
-        Description:      "The shadow on the stairway of Ahaz retreated ten steps as a sign to King Hezekiah. " +
-                          "Simulates the sky over Jerusalem circa 701 BCE.",
-        // Placeholder: year 701 CE represents 701 BCE — see issue #85 for BC/BCE support.
-        SuggestedUtcTime: new DateTime(701, 8, 1, 12, 0, 0, DateTimeKind.Utc),
-        Longitude:        35.2,   // Jerusalem, approx.
-        Latitude:         31.8,
-        LocationName:     "Jerusalem");
+    public static ScenarioModel HezekiahSundial { get; } = new()
+    {
+        Name               = "Hezekiah's Sundial",
+        ScriptureReference = "Isaiah 38:8 / 2 Kings 20:11",
+        Description        = "The shadow on the stairway of Ahaz retreated ten steps as a sign to King Hezekiah (~701 BCE).",
+        LocationName       = "Jerusalem",
+        Longitude          = 35.2,
+        Latitude           = 31.8,
+        SuggestedUtcTime   = new DateTime(2000, 8, 1, 12, 0, 0, DateTimeKind.Utc),
+        HistoricalDate     = ProlepticDate.FromBce(701, 8, 1),
+    };
 
-    /// <summary>
-    /// Joshua's Long Day — the Sun stood still over Gibeon and the Moon over the Valley of Aijalon.
-    /// </summary>
+    /// <summary>Joshua's Long Day — the Sun and Moon stood still over Gibeon.</summary>
     /// <remarks>
-    /// Observer: Gibeon (31.85° N, 35.18° E).
-    /// Approximate date: ~1406 BCE.
-    /// <b>Placeholder date:</b> <c>new DateTime(1406, 8, 1)</c> represents 1406 BCE.
-    /// BC/BCE date support is tracked in GitHub issue #85.
+    /// Observer: Gibeon (31.85° N, 35.18° E). Approximate date: June 1406 BCE.
+    /// Reference: Meeus, Astronomical Algorithms (2nd ed.), Ch. 7.
     /// </remarks>
-    public static ScenarioModel JoshuasLongDay => new(
-        Name:             "Joshua's Long Day",
-        ScriptureReference: "Joshua 10:12-14",
-        Description:      "The Sun stood still over Gibeon and the Moon over the Valley of Aijalon " +
-                          "while Israel fought the Amorites. Simulates the sky over Gibeon circa 1406 BCE.",
-        // Placeholder: year 1406 CE represents 1406 BCE — see issue #85 for BC/BCE support.
-        SuggestedUtcTime: new DateTime(1406, 8, 1, 12, 0, 0, DateTimeKind.Utc),
-        Longitude:        35.18,  // Gibeon, approx.
-        Latitude:         31.85,
-        LocationName:     "Gibeon");
+    public static ScenarioModel JoshuasLongDay { get; } = new()
+    {
+        Name               = "Joshua's Long Day",
+        ScriptureReference = "Joshua 10:12-14",
+        Description        = "The Sun and Moon stood still over Gibeon and the Valley of Aijalon (~1406 BCE).",
+        LocationName       = "Gibeon",
+        Longitude          = 35.2,
+        Latitude           = 31.9,
+        SuggestedUtcTime   = new DateTime(2000, 6, 21, 12, 0, 0, DateTimeKind.Utc),
+        HistoricalDate     = ProlepticDate.FromBce(1406, 6, 21),
+    };
 
-    /// <summary>
-    /// All built-in scenario presets, in display order.
-    /// </summary>
-    public static IReadOnlyList<ScenarioModel> All =>
-    [
-        HezekiahSundial,
-        JoshuasLongDay,
-    ];
+    /// <summary>Returns all built-in scenarios in display order.</summary>
+    public static IReadOnlyList<ScenarioModel> All { get; } =
+        [HezekiahSundial, JoshuasLongDay];
 }

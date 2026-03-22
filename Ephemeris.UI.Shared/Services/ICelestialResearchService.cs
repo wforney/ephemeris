@@ -11,16 +11,19 @@ public interface ICelestialResearchService
     /// <summary>
     /// Returns a full celestial data snapshot for the specified UTC time and observer location.
     /// </summary>
-    /// <param name="utcTime">The UTC date and time of the observation.</param>
-    /// <param name="longitude">Observer longitude in degrees (East positive).</param>
-    /// <param name="latitude">Observer latitude in degrees (North positive).</param>
-    /// <param name="ct">Optional cancellation token.</param>
-    /// <returns>
-    /// A <see cref="CelestialResearchData"/> containing Sun/Moon positions, rise/set times,
-    /// and the next full and new moon times.
-    /// </returns>
     Task<CelestialResearchData> GetDataAsync(
         DateTime utcTime,
+        double longitude,
+        double latitude,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Returns a celestial data snapshot for any Julian Day (including BCE/historical dates).
+    /// Rise/set event times and next new/full moon fields will be <see langword="null"/> for
+    /// historical epochs; instantaneous positions and lunar illumination are still computed.
+    /// </summary>
+    Task<CelestialResearchData> GetDataForJulianDayAsync(
+        double julianDay,
         double longitude,
         double latitude,
         CancellationToken ct = default);
