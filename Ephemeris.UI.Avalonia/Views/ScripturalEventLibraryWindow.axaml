@@ -1,63 +1,83 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:controls="clr-namespace:Ephemeris.UI.Avalonia.Controls"
+        xmlns:models="clr-namespace:Ephemeris.UI.Models;assembly=Ephemeris.UI.Shared"
         x:Class="Ephemeris.UI.Avalonia.Views.ScripturalEventLibraryWindow"
-        Classes="Research"
-        Title="Ephemeris — Scriptural Event Library"
-        Width="720" Height="540"
+        Title="Scriptural Event Library"
+        Width="500" Height="400"
+        CanResize="False"
         WindowStartupLocation="CenterOwner">
 
-    <Grid RowDefinitions="Auto,*,Auto"
-          Background="{DynamicResource ResearchBackgroundBrush}">
+    <DockPanel Margin="16">
 
-        <!-- Header -->
-        <Border Grid.Row="0"
-                Background="{DynamicResource ResearchSurfaceBrush}"
-                BorderBrush="{DynamicResource ResearchBorderBrush}"
-                BorderThickness="0,0,0,1"
-                Padding="16,12">
-            <StackPanel>
-                <TextBlock Text="📖  Scriptural Event Library"
-                           FontSize="16"
-                           FontWeight="Bold"
-                           Foreground="{DynamicResource ResearchTextPrimaryBrush}" />
-                <TextBlock Text="Select a Biblical event to load its celestial configuration"
-                           FontSize="12"
-                           Foreground="{DynamicResource ResearchTextSecondaryBrush}" />
-            </StackPanel>
-        </Border>
+        <!-- Title -->
+        <TextBlock DockPanel.Dock="Top"
+                   Text="SCRIPTURAL EVENT LIBRARY"
+                   FontWeight="Bold"
+                   FontSize="14"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,8" />
 
-        <!-- Content: list or empty state -->
-        <Panel Grid.Row="1">
+        <Separator DockPanel.Dock="Top" Margin="0,0,0,8" />
 
-            <!-- Empty state shown when BuiltInScenarios.All is empty -->
-            <controls:EmptyStateControl x:Name="EventsEmptyState"
-                                        Icon="📖"
-                                        Title="No Events"
-                                        Subtitle="No scriptural events are configured"
-                                        IsVisible="False" />
+        <!-- Close button -->
+        <Button DockPanel.Dock="Bottom"
+                x:Name="CloseBtn"
+                Content="Close"
+                HorizontalAlignment="Center"
+                Width="100"
+                Margin="0,8,0,0" />
 
-            <ListBox x:Name="EventsList"
-                     Background="{DynamicResource ResearchBackgroundBrush}"
-                     Margin="12" />
+        <!-- Scrollable scenario list -->
+        <ScrollViewer>
+            <ItemsControl x:Name="ScenarioList" Margin="0,4">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="models:ScenarioModel">
+                        <Border BorderBrush="Gray"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Padding="12,8"
+                                Margin="0,4">
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto">
 
-        </Panel>
+                                <!-- Name (bold) -->
+                                <TextBlock Grid.Row="0"
+                                           Text="{Binding Name}"
+                                           FontWeight="Bold"
+                                           FontSize="13" />
 
-        <!-- Footer buttons -->
-        <StackPanel Grid.Row="2"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Right"
-                    Spacing="8"
-                    Margin="16,8">
-            <Button x:Name="CancelBtn"
-                    Classes="ResearchSecondary"
-                    Content="Cancel" />
-            <Button x:Name="OpenBtn"
-                    Classes="Research"
-                    Content="Open Event"
-                    IsEnabled="False" />
-        </StackPanel>
+                                <!-- Scripture reference (italic) -->
+                                <TextBlock Grid.Row="1"
+                                           Text="{Binding ScriptureReference}"
+                                           FontStyle="Italic"
+                                           Opacity="0.8"
+                                           Margin="0,2,0,0" />
 
-    </Grid>
+                                <!-- Description -->
+                                <TextBlock Grid.Row="2"
+                                           Text="{Binding Description}"
+                                           Margin="0,2,0,0" />
+
+                                <!-- Location + Load button -->
+                                <Grid Grid.Row="3"
+                                      ColumnDefinitions="*,Auto"
+                                      Margin="0,4,0,0">
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding LocationName}"
+                                               Opacity="0.7"
+                                               VerticalAlignment="Center" />
+                                    <Button Grid.Column="1"
+                                            Content="Load Event"
+                                            Tag="{Binding}"
+                                            Click="OnLoadEventClick" />
+                                </Grid>
+
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+    </DockPanel>
 
 </Window>
