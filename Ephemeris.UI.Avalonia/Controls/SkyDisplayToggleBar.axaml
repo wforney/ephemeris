@@ -1,0 +1,72 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Ephemeris.UI.Avalonia.Controls.SkyDisplayToggleBar">
+
+    <StackPanel Orientation="Horizontal"
+                Spacing="6"
+                Margin="4,2"
+                VerticalAlignment="Center">
+
+        <!-- Stars toggle -->
+        <ToggleButton x:Name="StarsToggle"
+                      Content="⭐ Stars"
+                      IsChecked="True"
+                      ToolTip.Tip="Toggle star rendering" />
+
+        <!-- Constellations toggle -->
+        <ToggleButton x:Name="ConstellationsToggle"
+                      Content="✦ Constellations"
+                      IsChecked="False"
+                      ToolTip.Tip="Toggle constellation line overlay" />
+
+        <!-- Star labels toggle -->
+        <ToggleButton x:Name="StarLabelsToggle"
+                      Content="🏷 Star Labels"
+                      IsChecked="False"
+                      ToolTip.Tip="Show names for stars brighter than magnitude 2" />
+
+        <!-- Planet labels toggle -->
+        <ToggleButton x:Name="PlanetLabelsToggle"
+                      Content="🪐 Planet Labels"
+                      IsChecked="True"
+                      ToolTip.Tip="Show planet and Sun/Moon labels" />
+
+        <!-- Horizon grid toggle -->
+        <ToggleButton x:Name="HorizonGridToggle"
+                      Content="📐 Horizon"
+                      IsChecked="True"
+                      ToolTip.Tip="Toggle horizon ring" />
+
+        <!-- Sun path toggle -->
+        <ToggleButton x:Name="SunPathToggle"
+                      Content="☀ Sun Path"
+                      IsChecked="False"
+                      ToolTip.Tip="Show Sun's daily arc (yellow)" />
+
+        <!-- Moon path toggle -->
+        <ToggleButton x:Name="MoonPathToggle"
+                      Content="🌙 Moon Path"
+                      IsChecked="False"
+                      ToolTip.Tip="Show Moon's daily arc (silver-blue)" />
+
+        <!-- Magnitude limit label + slider -->
+        <TextBlock Text="Mag limit:"
+                   VerticalAlignment="Center"
+                   Margin="6,0,2,0" />
+
+        <Slider x:Name="MagSlider"
+                Minimum="0.0"
+                Maximum="7.0"
+                Value="5.5"
+                Width="100"
+                VerticalAlignment="Center"
+                ToolTip.Tip="Star magnitude limit (lower = brighter/fewer stars)" />
+
+        <TextBlock x:Name="MagLabel"
+                   Text="5.5"
+                   Width="28"
+                   VerticalAlignment="Center" />
+
+    </StackPanel>
+
+</UserControl>

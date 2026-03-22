@@ -1,4 +1,4 @@
-// Updated: 2026-03-10
+// Updated: 2026-03-22
 using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
@@ -59,6 +59,7 @@ public partial class SkyViewWindow : Window
         };
 
         GlHost.Content = _glControl;
+        ToggleBar.Attach(_glControl);
 
         // Initialise toolbar from view-model
         SyncToolbarFromVm();
@@ -97,6 +98,7 @@ public partial class SkyViewWindow : Window
         foreach (var (screen, label, colorArgb) in _glControl.Labels)
         {
             if (screen.X < 0 || screen.Y < 0) continue;
+            if (string.IsNullOrEmpty(label)) continue;
             var tb = new TextBlock
             {
                 Text       = label,
