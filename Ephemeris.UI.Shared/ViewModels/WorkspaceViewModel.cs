@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using Ephemeris.Chronology;
 using Ephemeris.UI.Messages;
 using Ephemeris.UI.Models;
 using Ephemeris.UI.Services;
@@ -35,13 +36,39 @@ public sealed partial class WorkspaceViewModel : ObservableRecipient
     [ObservableProperty]
     private double _latitude;
 
-    /// <summary>Current simulated UTC time.</summary>
+    /// <summary>Current simulated UTC time. Used only when not in historical mode.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DisplayDate), nameof(CurrentJulianDay))]
     private DateTime _simTime;
+
+    /// <summary>
+    /// Historical date set when a scenario with a BCE epoch is loaded.
+    /// <see langword="null"/> when in modern-era mode.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsHistoricalMode), nameof(DisplayDate), nameof(CurrentJulianDay))]
+    private ProlepticDate? _historicalDate;
 
     /// <summary>Whether the time animation is currently playing.</summary>
     [ObservableProperty]
     private bool _playing;
+
+    /// <summary><see langword="true"/> when a BCE/historical epoch is active.</summary>
+    public bool IsHistoricalMode => HistoricalDate.HasValue;
+
+    /// <summary>Human-readable date string for display in the toolbar.</summary>
+    public string DisplayDate =>
+        IsHistoricalMode
+            ? HistoricalDate!.Value.ToHistoricalString()
+            : SimTime.ToString("yyyy-MM-dd HH:mm UTC");
+
+    /// <summary>
+    /// Julian Day for the current epoch. Use this when calling Ephemeris core methods.
+    /// </summary>
+    public double CurrentJulianDay =>
+        IsHistoricalMode
+            ? HistoricalDate!.Value.ToJulianDay()
+            : TimeZoneUtils.ToJulianDay(SimTime);
 
     // ── Workspace state ───────────────────────────────────────────────────────
 
@@ -110,6 +137,11 @@ public sealed partial class WorkspaceViewModel : ObservableRecipient
         _ = DebounceRefreshAsync();
     }
 
+    partial void OnHistoricalDateChanged(ProlepticDate? value)
+    {
+        _ = DebounceRefreshAsync();
+    }
+
     partial void OnLongitudeChanged(double value)
     {
         Messenger.Send(new ObserverChangedMessage(new ObserverLocation(value, Latitude)));
@@ -135,8 +167,20 @@ public sealed partial class WorkspaceViewModel : ObservableRecipient
         StatusMessage = "Loading…";
         try
         {
-            CelestialData = await _service.GetDataAsync(SimTime, Longitude, Latitude, ct).ConfigureAwait(false);
-            StatusMessage = $"{SimTime:yyyy-MM-dd HH:mm} UTC · {Latitude:F2}°N {Longitude:F2}°E";
+            if (IsHistoricalMode)
+            {
+                CelestialData = await _service
+                    .GetDataForJulianDayAsync(CurrentJulianDay, Longitude, Latitude, ct)
+                    .ConfigureAwait(false);
+                StatusMessage = $"{HistoricalDate!.Value.ToHistoricalString()} · {Latitude:F2}°N {Longitude:F2}°E";
+            }
+            else
+            {
+                CelestialData = await _service
+                    .GetDataAsync(SimTime, Longitude, Latitude, ct)
+                    .ConfigureAwait(false);
+                StatusMessage = $"{SimTime:yyyy-MM-dd HH:mm} UTC · {Latitude:F2}°N {Longitude:F2}°E";
+            }
         }
         catch (OperationCanceledException)
         {
@@ -161,18 +205,31 @@ public sealed partial class WorkspaceViewModel : ObservableRecipient
     private void ResetToNow()
     {
         ActiveScenarioName = null;
+        HistoricalDate = null;
         SimTime = DateTime.UtcNow;
     }
 
     /// <summary>Advances the simulation time by <paramref name="step"/>.</summary>
-    /// <param name="step">The amount of time to add to <see cref="SimTime"/>.</param>
+    /// <param name="step">The amount of time to add to <see cref="SimTime"/> or <see cref="HistoricalDate"/>.</param>
     [RelayCommand]
-    private void StepForward(TimeSpan step) => SimTime = SimTime.Add(step);
+    private void StepForward(TimeSpan step)
+    {
+        if (IsHistoricalMode)
+            HistoricalDate = ProlepticDate.FromJulianDay(HistoricalDate!.Value.ToJulianDay() + step.TotalDays);
+        else
+            SimTime = SimTime.Add(step);
+    }
 
     /// <summary>Rewinds the simulation time by <paramref name="step"/>.</summary>
-    /// <param name="step">The amount of time to subtract from <see cref="SimTime"/>.</param>
+    /// <param name="step">The amount of time to subtract from <see cref="SimTime"/> or <see cref="HistoricalDate"/>.</param>
     [RelayCommand]
-    private void StepBack(TimeSpan step) => SimTime = SimTime.Add(-step);
+    private void StepBack(TimeSpan step)
+    {
+        if (IsHistoricalMode)
+            HistoricalDate = ProlepticDate.FromJulianDay(HistoricalDate!.Value.ToJulianDay() - step.TotalDays);
+        else
+            SimTime = SimTime.Add(-step);
+    }
 
     /// <summary>
     /// Applies a <see cref="ScenarioModel"/> preset: sets <see cref="SimTime"/>,
@@ -183,11 +240,20 @@ public sealed partial class WorkspaceViewModel : ObservableRecipient
     private void LoadScenario(ScenarioModel scenario)
     {
         ArgumentNullException.ThrowIfNull(scenario);
-        SimTime            = scenario.SuggestedUtcTime;
         Longitude          = scenario.Longitude;
         Latitude           = scenario.Latitude;
         ActiveScenarioName = scenario.Name;
         StatusMessage      = $"{scenario.LocationName} — {scenario.Name}";
+
+        if (scenario.HistoricalDate.HasValue)
+        {
+            HistoricalDate = scenario.HistoricalDate;
+        }
+        else
+        {
+            HistoricalDate = null;
+            SimTime        = scenario.SuggestedUtcTime;
+        }
     }
 
     // ── Auto-refresh debounce ─────────────────────────────────────────────────
@@ -217,5 +283,11 @@ public sealed partial class WorkspaceViewModel : ObservableRecipient
     /// Advances the simulation time by one animation tick (10 minutes).
     /// Called by the animation timer when <see cref="Playing"/> is <see langword="true"/>.
     /// </summary>
-    public void AdvanceTick() => SimTime = SimTime.AddMinutes(10);
+    public void AdvanceTick()
+    {
+        if (IsHistoricalMode)
+            HistoricalDate = ProlepticDate.FromJulianDay(HistoricalDate!.Value.ToJulianDay() + (10.0 / 1440.0));
+        else
+            SimTime = SimTime.AddMinutes(10);
+    }
 }

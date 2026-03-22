@@ -178,6 +178,7 @@ public sealed class SkyGlControl : OpenGlControlBase
     private int _starVao, _starVbo;
     private int _bodyVao, _bodyVbo;
     private int _horizonVao, _horizonVbo;
+    private int _mazzarothVao, _mazzarothVbo;
     private int _constVao, _constVbo;   // constellation lines
     private int _pathVao, _pathVbo;     // Sun/Moon path arcs
     private int _mvpLoc;
@@ -185,6 +186,7 @@ public sealed class SkyGlControl : OpenGlControlBase
     private bool _glReady;
     private int _starCount;
     private int _bodyVertexCount;
+    private int _mazzarothVertexCount;
     private int _constVertexCount;
     private int _pathVertexCount;
 
@@ -351,6 +353,44 @@ public sealed class SkyGlControl : OpenGlControlBase
         ("Arcturus",   "Izar"),
     ];
 
+    // ── Mazzaroth overlay toggle ──────────────────────────────────────────
+
+    private bool _showMazzarothOverlay;
+
+    /// <summary>
+    /// When <see langword="true"/>, renders the 12 Mazzaroth (zodiac) constellation
+    /// regions as colored bands along the ecliptic with their Hebrew names.
+    /// Default is <see langword="false"/>.
+    /// </summary>
+    public bool ShowMazzarothOverlay
+    {
+        get => _showMazzarothOverlay;
+        set
+        {
+            if (_showMazzarothOverlay == value) return;
+            _showMazzarothOverlay = value;
+            Dispatcher.UIThread.Post(RequestNextFrameRendering);
+        }
+    }
+
+    // ── Mazzaroth constellation data ──────────────────────────────────────
+
+    private static readonly (double StartLon, string Hebrew, float R, float G, float B)[] MazzarothBands =
+    [
+        (  0, "טָלֶה / Taleh (Aries)",      1.0f, 0.5f, 0.5f),
+        ( 30, "שׁוֹר / Shor (Taurus)",       1.0f, 0.7f, 0.3f),
+        ( 60, "תְּאוֹמִים / Teomim (Gemini)", 1.0f, 1.0f, 0.4f),
+        ( 90, "סַרְטָן / Sartan (Cancer)",   0.4f, 1.0f, 0.6f),
+        (120, "אַרְיֵה / Aryeh (Leo)",        1.0f, 0.6f, 0.2f),
+        (150, "בְּתוּלָה / Betulah (Virgo)",  0.6f, 1.0f, 0.6f),
+        (180, "מֹאזְנַיִם / Moznayim (Libra)", 0.5f, 0.9f, 1.0f),
+        (210, "עַקְרָב / Akrav (Scorpio)",    0.9f, 0.3f, 0.3f),
+        (240, "קֶשֶׁת / Keshet (Sagittarius)", 0.8f, 0.5f, 1.0f),
+        (270, "גְּדִי / Gedi (Capricorn)",    0.6f, 0.8f, 0.5f),
+        (300, "דְּלִי / Deli (Aquarius)",     0.4f, 0.7f, 1.0f),
+        (330, "דָּגִים / Dagim (Pisces)",     0.6f, 0.6f, 1.0f),
+    ];
+
     // ── Simulation override ───────────────────────────────────────────────
     private SimulationOverride? _override;
 
@@ -423,9 +463,9 @@ public sealed class SkyGlControl : OpenGlControlBase
         gl.DeleteProgram(_shaderProgram);
         gl.DeleteProgram(_lineProgram);
 
-        // Batch delete all VAOs and VBOs in two calls
-        _deleteVertexArrays!(5, [_starVao, _bodyVao, _horizonVao, _constVao, _pathVao]);
-        _deleteBuffers!(5, [_starVbo, _bodyVbo, _horizonVbo, _constVbo, _pathVbo]);
+        // Batch delete all VAOs and VBOs in a single call each
+        _deleteVertexArrays!(6, [_starVao, _bodyVao, _horizonVao, _mazzarothVao, _constVao, _pathVao]);
+        _deleteBuffers!(6, [_starVbo, _bodyVbo, _horizonVbo, _mazzarothVbo, _constVbo, _pathVbo]);
 
         _glReady = false;
     }
@@ -449,6 +489,8 @@ public sealed class SkyGlControl : OpenGlControlBase
         UploadStarVertices(gl, jd);
         UploadConstellationVertices(gl, jd);
         UploadPathVertices(gl, jd);
+        if (_showMazzarothOverlay)
+            UploadMazzarothVertices(gl, jd);
 
         gl.Viewport(0, 0, w, h);
         gl.Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -493,6 +535,13 @@ public sealed class SkyGlControl : OpenGlControlBase
         {
             _bindVertexArray(_pathVao);
             gl.DrawArrays(GlLines, 0, _pathVertexCount);
+        }
+
+        // Draw Mazzaroth ecliptic overlay
+        if (_showMazzarothOverlay && _mazzarothVertexCount > 0)
+        {
+            _bindVertexArray(_mazzarothVao);
+            gl.DrawArrays(GlLines, 0, _mazzarothVertexCount);
         }
 
         _bindVertexArray(0);
@@ -676,7 +725,11 @@ public sealed class SkyGlControl : OpenGlControlBase
         BuildHorizonRing();
         _bindVertexArray(0);
 
-        // Constellation lines VAO/VBO (pos + color, for GL_LINES)
+// Mazzaroth overlay VAO/VBO (same 8-float layout as stars/bodies)
+        _genVertexArrays!(1, arr); _mazzarothVao = arr[0];
+        _genBuffers!(1, arr);      _mazzarothVbo = arr[0];
+        SetupVaoLayout(gl, _mazzarothVao, _mazzarothVbo);
+// Constellation lines VAO/VBO (pos + color, for GL_LINES)
         _genVertexArrays!(1, arr); _constVao = arr[0];
         _genBuffers!(1, arr);      _constVbo = arr[0];
         SetupLineVaoLayout(gl, _constVao, _constVbo);
@@ -850,6 +903,103 @@ public sealed class SkyGlControl : OpenGlControlBase
         uint argb = (255u << 24) | ((uint)(r * 255) << 16) | ((uint)(g * 255) << 8) | (uint)(b * 255);
         _bodyWorldPos.Add(new Vector3(x, y, z));
         _labels.Add((Vector2.Zero, label ?? string.Empty, argb));
+    }
+
+    /// <summary>
+    /// Computes and uploads the Mazzaroth (ecliptic) overlay geometry into the Mazzaroth VBO.
+    /// </summary>
+    /// <param name="gl">Active GL interface.</param>
+    /// <param name="jd">Julian Day for the current epoch (used to project to horizontal coords).</param>
+    /// <remarks>
+    /// Algorithm:
+    /// <list type="number">
+    ///   <item>Compute mean obliquity of the ecliptic: ε = 23.439291° − 0.013004° × T.</item>
+    ///   <item>Sample the ecliptic at 1° intervals (λ = 0°…360°, β = 0°).</item>
+    ///   <item>
+    ///     Convert ecliptic → equatorial (Meeus Ch. 13):
+    ///     RA = atan2(sin(λ)·cos(ε), cos(λ)),  Dec = asin(sin(ε)·sin(λ))
+    ///   </item>
+    ///   <item>Convert equatorial → horizontal via <see cref="ObserverGeometry.EquatorialToHorizontal"/>.</item>
+    ///   <item>Build line-segment pairs for each adjacent sample, coloured per 30° Mazzaroth band.</item>
+    /// </list>
+    /// A label entry is added for the midpoint of each Mazzaroth band visible above the horizon.
+    /// </remarks>
+    private void UploadMazzarothVertices(GlInterface gl, double jd)
+    {
+        const int floatsPerVertex = 8;
+        const int samplesPerBand  = 30; // one sample per degree within each 30° band
+        var buffer = new List<float>(12 * samplesPerBand * 2 * floatsPerVertex);
+
+        double T       = Ephemeris.Chronology.TimeUtils.JulianCentury(jd);
+        double epsilon = 23.439291 - 0.013004 * T; // mean obliquity in degrees
+        double epsRad  = double.DegreesToRadians(epsilon);
+
+        // Precompute horizontal coordinates for ecliptic longitudes 0–360°
+        // (one extra sample so we can always close the last segment)
+        const int totalSamples = 361;
+        var hzPoints = new (double Az, double Alt, bool Above)[totalSamples];
+        for (int i = 0; i < totalSamples; i++)
+        {
+            double lam = double.DegreesToRadians(i);
+            double ra  = double.RadiansToDegrees(Math.Atan2(Math.Sin(lam) * Math.Cos(epsRad), Math.Cos(lam)));
+            double dec = double.RadiansToDegrees(Math.Asin(Math.Sin(epsRad) * Math.Sin(lam)));
+            ra = Ephemeris.Chronology.TimeUtils.NormalizeDegrees(ra);
+
+            var hz = ObserverGeometry.EquatorialToHorizontal(
+                ra, dec, jd, _vm.Longitude, _vm.Latitude, applyRefraction: false);
+            hzPoints[i] = (hz.Azimuth, hz.Altitude, hz.Altitude > -5.0);
+        }
+
+        // For each Mazzaroth band, emit line segments and a label at the midpoint
+        for (int band = 0; band < MazzarothBands.Length; band++)
+        {
+            var (startLon, hebrew, r, g, b) = MazzarothBands[band];
+            int startIdx = (int)startLon;
+            int endIdx   = startIdx + samplesPerBand;
+
+            // Emit adjacent-sample line segments for this band
+            for (int i = startIdx; i < endIdx; i++)
+            {
+                var p0 = hzPoints[i];
+                var p1 = hzPoints[i + 1];
+                if (!p0.Above && !p1.Above) continue;
+                EmitEclipticVertex(buffer, p0.Az, p0.Alt, r, g, b);
+                EmitEclipticVertex(buffer, p1.Az, p1.Alt, r, g, b);
+            }
+
+            // Label at midpoint (longitude startLon + 15)
+            int midIdx = startIdx + 15;
+            if (midIdx < totalSamples && hzPoints[midIdx].Above)
+            {
+                var mp = hzPoints[midIdx];
+                var (lx, ly, lz) = AzAltToUnitSphere(mp.Az, mp.Alt);
+                uint argb = (200u << 24)
+                          | ((uint)(r * 255) << 16)
+                          | ((uint)(g * 255) << 8)
+                          | (uint)(b * 255);
+                _bodyWorldPos.Add(new Vector3(lx, ly, lz));
+                _labels.Add((Vector2.Zero, hebrew, argb));
+            }
+        }
+
+        _mazzarothVertexCount = buffer.Count / floatsPerVertex;
+        float[] data = [.. buffer];
+
+        _bindVertexArray!(_mazzarothVao);
+        gl.BindBuffer(GlArrayBuffer, _mazzarothVbo);
+        UploadVertexBuffer(data, GlDynamicDraw);
+        _bindVertexArray(0);
+    }
+
+    /// <summary>Emits one ecliptic-line vertex (position + colour + point-size = 8 floats).</summary>
+    private static void EmitEclipticVertex(
+        List<float> buffer, double azimuth, double altitude, float r, float g, float b)
+    {
+        var (x, y, z) = AzAltToUnitSphere(azimuth, altitude);
+        buffer.Add(x); buffer.Add(y); buffer.Add(z);
+        buffer.Add(r); buffer.Add(g); buffer.Add(b); buffer.Add(0.5f);
+        buffer.Add(1f); // stride-filler (pointSize, unused for lines)
+
     }
 
     private void UploadVertexBuffer(float[] data, int usage)
