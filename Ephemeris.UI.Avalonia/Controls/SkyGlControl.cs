@@ -48,6 +48,7 @@ public sealed class SkyGlControl : OpenGlControlBase
     private const int GlLineLoop          = 0x0002;
     private const int GlLineStrip         = 0x0003;
     private const int GlPoints            = 0x0000;
+    private const int GlTriangleStrip     = 0x0005;
     private const int GlFloat             = 0x1406;
     private const int GlArrayBuffer       = 0x8892;
     private const int GlStaticDraw        = 0x88B4;
@@ -181,6 +182,7 @@ public sealed class SkyGlControl : OpenGlControlBase
     private int _mazzarothVao, _mazzarothVbo;
     private int _constVao, _constVbo;   // constellation lines
     private int _pathVao, _pathVbo;     // Sun/Moon path arcs
+    private int _bgVao,  _bgVbo;        // sky gradient background quad
     private int _mvpLoc;
     private int _lineMvpLoc;
     private bool _glReady;
@@ -189,6 +191,10 @@ public sealed class SkyGlControl : OpenGlControlBase
     private int _mazzarothVertexCount;
     private int _constVertexCount;
     private int _pathVertexCount;
+
+    // Current sun altitude, cached during UploadBodyVertices for background shading.
+    // Written and read exclusively on the GL render thread within OnOpenGlRender.
+    private double _lastSunAltitude;
 
     // ── Scene data ────────────────────────────────────────────────────────
     private IReadOnlyList<FixedStar> _stars = [];
@@ -441,7 +447,7 @@ public sealed class SkyGlControl : OpenGlControlBase
     {
         LoadExtensionFunctions(gl);
 
-        gl.ClearColor(0.02f, 0.02f, 0.08f, 1f); // deep night sky
+        gl.ClearColor(0f, 0f, 0f, 1f); // cleared each frame before sky gradient quad
         gl.Enable(GlDepthTest);
         gl.Enable(GlProgramPointSize);
         gl.Enable(GlBlend);
@@ -464,8 +470,8 @@ public sealed class SkyGlControl : OpenGlControlBase
         gl.DeleteProgram(_lineProgram);
 
         // Batch delete all VAOs and VBOs in a single call each
-        _deleteVertexArrays!(6, [_starVao, _bodyVao, _horizonVao, _mazzarothVao, _constVao, _pathVao]);
-        _deleteBuffers!(6, [_starVbo, _bodyVbo, _horizonVbo, _mazzarothVbo, _constVbo, _pathVbo]);
+        _deleteVertexArrays!(7, [_starVao, _bodyVao, _horizonVao, _mazzarothVao, _constVao, _pathVao, _bgVao]);
+        _deleteBuffers!(7, [_starVbo, _bodyVbo, _horizonVbo, _mazzarothVbo, _constVbo, _pathVbo, _bgVbo]);
 
         _glReady = false;
     }
@@ -491,9 +497,29 @@ UploadStarVertices(gl, jd);
         UploadPathVertices(gl, jd);
         if (_showMazzarothOverlay)
             UploadMazzarothVertices(gl, jd);
+        UploadSkyBackground(gl);
 
         gl.Viewport(0, 0, w, h);
         gl.Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // ── Sky gradient background (screen-space quad, no depth test) ─────
+        gl.Disable(GlDepthTest);
+        gl.UseProgram(_lineProgram);
+        unsafe
+        {
+            // Identity MVP so NDC quad vertices pass straight through to clip space
+            float* id = stackalloc float[16]
+            {
+                1f, 0f, 0f, 0f,
+                0f, 1f, 0f, 0f,
+                0f, 0f, 1f, 0f,
+                0f, 0f, 0f, 1f,
+            };
+            _uniformMatrix4fv!(_lineMvpLoc, 1, false, id);
+        }
+        _bindVertexArray!(_bgVao);
+        gl.DrawArrays(GlTriangleStrip, 0, 4);
+        gl.Enable(GlDepthTest);
 
         float[] mvp = BuildMvp(w, h);
 
@@ -508,7 +534,7 @@ UploadStarVertices(gl, jd);
         _bindVertexArray!(_starVao);
         gl.DrawArrays(GlPoints, 0, _starCount);
 
-        _bindVertexArray(_bodyVao);
+        _bindVertexArray!(_bodyVao);
         gl.DrawArrays(GlPoints, 0, _bodyVertexCount);
 
         // ── Line pass (constellation lines, paths, horizon ring) ──────────
@@ -738,6 +764,11 @@ UploadStarVertices(gl, jd);
         _genVertexArrays!(1, arr); _pathVao = arr[0];
         _genBuffers!(1, arr);      _pathVbo = arr[0];
         SetupLineVaoLayout(gl, _pathVao, _pathVbo);
+
+        // Sky gradient background VAO/VBO (pos + color, for GL_TRIANGLE_STRIP)
+        _genVertexArrays!(1, arr); _bgVao = arr[0];
+        _genBuffers!(1, arr);      _bgVbo = arr[0];
+        SetupLineVaoLayout(gl, _bgVao, _bgVbo);
     }
 
     /// <summary>
@@ -855,6 +886,7 @@ UploadStarVertices(gl, jd);
 
         var sun = EphemerisCalculator.GetSunPosition(year, month, day, hour, _vm.Longitude, _vm.Latitude);
         double sunAltitude = sun.Altitude + (_override?.SunAltitudeOffsetDegrees ?? 0.0);
+        _lastSunAltitude = sunAltitude;
         AddBodyVertex(buffer, sun.Azimuth, sunAltitude, 1.0f, 0.97f, 0.8f, 16f, _showPlanetLabels ? "Sun" : null);
 
         var moon = EphemerisCalculator.GetMoonPosition(year, month, day, hour, _vm.Longitude, _vm.Latitude);
@@ -890,6 +922,115 @@ UploadStarVertices(gl, jd);
             // Skip bodies that can't be computed
         }
     }
+
+    /// <summary>
+    /// Uploads a full-screen gradient quad into the background VBO based on the
+    /// cached sun altitude (<see cref="_lastSunAltitude"/>).
+    /// </summary>
+    /// <remarks>
+    /// Uses <see cref="SkyGradientColors"/> to determine zenith and horizon RGB stops,
+    /// then uploads four vertices in GL_TRIANGLE_STRIP order (BL, BR, TL, TR) so
+    /// the GPU interpolates a smooth vertical gradient.  The shader MVP is set to the
+    /// identity matrix in <see cref="OnOpenGlRender"/> so the NDC-space vertices pass
+    /// straight through to clip space.
+    /// </remarks>
+    private void UploadSkyBackground(GlInterface gl)
+    {
+        var (zenR, zenG, zenB, horR, horG, horB) = SkyGradientColors(_lastSunAltitude);
+
+        // Full-screen quad in NDC: 4 vertices × 7 floats (pos3 + color4), triangle strip order.
+        // Use stackalloc to avoid a per-frame heap allocation for this fixed-size buffer.
+        const int floatsPerVertex = 7;
+        const int vertexCount = 4;
+        unsafe
+        {
+            float* verts = stackalloc float[floatsPerVertex * vertexCount];
+            var i = 0;
+
+            // bottom-left  (horizon)
+            verts[i++] = -1f; verts[i++] = -1f; verts[i++] = 0f;
+            verts[i++] = horR; verts[i++] = horG; verts[i++] = horB; verts[i++] = 1f;
+
+            // bottom-right (horizon)
+            verts[i++] = 1f;  verts[i++] = -1f; verts[i++] = 0f;
+            verts[i++] = horR; verts[i++] = horG; verts[i++] = horB; verts[i++] = 1f;
+
+            // top-left     (zenith)
+            verts[i++] = -1f; verts[i++] = 1f;  verts[i++] = 0f;
+            verts[i++] = zenR; verts[i++] = zenG; verts[i++] = zenB; verts[i++] = 1f;
+
+            // top-right    (zenith)
+            verts[i++] = 1f;  verts[i++] = 1f;  verts[i++] = 0f;
+            verts[i++] = zenR; verts[i++] = zenG; verts[i++] = zenB; verts[i++] = 1f;
+
+            _bindVertexArray!(_bgVao);
+            gl.BindBuffer(GlArrayBuffer, _bgVbo);
+            _bufferData!(GlArrayBuffer, (IntPtr)(i * sizeof(float)), verts, GlDynamicDraw);
+            _bindVertexArray!(0);
+        }
+    }
+
+    /// <summary>
+    /// Returns the zenith and horizon RGB colour stops for the sky gradient given the
+    /// sun's current altitude above the horizon.
+    /// </summary>
+    /// <param name="sunAltDeg">Sun altitude in degrees; negative = below horizon.</param>
+    /// <returns>
+    /// A value tuple of six <see langword="float"/> channels:
+    /// (zenithR, zenithG, zenithB, horizonR, horizonG, horizonB).
+    /// </returns>
+    /// <remarks>
+    /// Five transition bands are defined:
+    /// <list type="table">
+    ///   <item><term>Night</term><description>sun &lt; −18° — very dark blue</description></item>
+    ///   <item><term>Astronomical twilight</term><description>−18° to −12°</description></item>
+    ///   <item><term>Nautical twilight</term><description>−12° to −6°</description></item>
+    ///   <item><term>Civil twilight / dawn/dusk</term><description>−6° to  0°</description></item>
+    ///   <item><term>Daytime</term><description>0° to 90° — blue sky, lighter near horizon</description></item>
+    /// </list>
+    /// Colours are linearly interpolated between the band boundaries.
+    /// </remarks>
+    private static (float ZenR, float ZenG, float ZenB, float HorR, float HorG, float HorB)
+        SkyGradientColors(double sunAltDeg)
+    {
+        // Night: sun below astronomical twilight limit
+        if (sunAltDeg < -18.0)
+            return (0.01f, 0.01f, 0.06f,   0.02f, 0.02f, 0.08f);
+
+        // Astronomical twilight: -18° → -12°
+        if (sunAltDeg < -12.0)
+        {
+            float t = (float)((sunAltDeg + 18.0) / 6.0);
+            return (Lerp(0.01f, 0.03f, t), Lerp(0.01f, 0.03f, t), Lerp(0.06f, 0.12f, t),
+                    Lerp(0.02f, 0.05f, t), Lerp(0.02f, 0.04f, t), Lerp(0.08f, 0.15f, t));
+        }
+
+        // Nautical twilight: -12° → -6°
+        if (sunAltDeg < -6.0)
+        {
+            float t = (float)((sunAltDeg + 12.0) / 6.0);
+            return (Lerp(0.03f, 0.05f, t), Lerp(0.03f, 0.05f, t), Lerp(0.12f, 0.20f, t),
+                    Lerp(0.05f, 0.10f, t), Lerp(0.04f, 0.08f, t), Lerp(0.15f, 0.22f, t));
+        }
+
+        // Civil twilight / dawn-dusk: -6° → 0°
+        if (sunAltDeg < 0.0)
+        {
+            float t = (float)((sunAltDeg + 6.0) / 6.0);
+            return (Lerp(0.05f, 0.08f, t), Lerp(0.05f, 0.10f, t), Lerp(0.20f, 0.28f, t),
+                    Lerp(0.10f, 0.55f, t), Lerp(0.08f, 0.30f, t), Lerp(0.22f, 0.10f, t));
+        }
+
+        // Daytime: 0° → 90° (clamp at 45° for saturation)
+        {
+            float t = (float)Math.Min(sunAltDeg / 45.0, 1.0);
+            return (Lerp(0.08f, 0.05f, t), Lerp(0.10f, 0.20f, t), Lerp(0.28f, 0.55f, t),
+                    Lerp(0.55f, 0.35f, t), Lerp(0.30f, 0.55f, t), Lerp(0.10f, 0.75f, t));
+        }
+    }
+
+    /// <summary>Linearly interpolates between <paramref name="a"/> and <paramref name="b"/> by factor <paramref name="t"/>.</summary>
+    private static float Lerp(float a, float b, float t) => a + (b - a) * t;
 
     private void AddBodyVertex(List<float> buffer,
         double azimuth, double altitude,
