@@ -1,4 +1,4 @@
-<!-- Updated: 2026-03-22 -->
+<!-- Updated: 2026-03-22T08:24Z -->
 # Copilot Instructions
 
 ## Session Checkpoints and Evolution
@@ -33,6 +33,7 @@ This instructions file is a living document. Update it whenever:
 | Domain namespace added or renamed | Update Architecture table |
 | Commit or PR convention changes | Update Git Repository Management section |
 | Model table drifts (weekly workflow) | Handled automatically by `update-models.yml` |
+| Publish profiles added or release workflow changed | Update Release Procedures section |
 
 **Automated audits** run on schedule and open GitHub issues with suggestions:
 - `update-models.yml` — Mondays: syncs model catalog, opens PR if table changed
@@ -61,6 +62,7 @@ Reusable prompt files in `.github/prompts/`. Invoke via `/implement-calculation`
 | `review-pr` | opus | PR review focused on astronomical correctness, algorithm accuracy, convention adherence |
 | `refactor` | sonnet | Internal restructuring — preserves all public API contracts and angle conventions |
 | `evolve` | sonnet | Maintain and evolve instructions, MCP config, workflows, and prompt files over time |
+| `release` | sonnet | End-to-end release: pre-flight checks, version bump, tag, push, CI verification, rollback |
 
 When creating a new agent: add a row here, pick the lowest model tier sufficient for the task, and follow the `<!-- Updated: -->` + frontmatter schema in the existing prompts.
 
@@ -467,9 +469,60 @@ Do **not** push secrets, binary ephemeris kernels (`.bsp`, `.bpc`), or large DE4
 ### Auto-update on git operations
 When creating a commit that modifies scripts, workflows, or prompt files, refresh their date stamps in the same commit (see [Auto-Updating Scripts, Agents, and Prompts](#auto-updating-scripts-agents-and-prompts) below).
 
+## Release Procedures
+
+Releases are triggered by pushing a **`v*` tag** to `main`. The `.github/workflows/release.yml` workflow runs two parallel jobs:
+
+| Job | Runner | What it does |
+|-----|--------|-------------|
+| `nuget` | ubuntu-latest | Packs `Ephemeris.csproj` → uploads `.nupkg` to the GitHub Release |
+| `publish-ui` (matrix × 4) | win/linux/macos | Publishes single-file UI executable per RID → uploads to GitHub Release |
+
+### Release artifacts
+
+Each GitHub Release contains:
+
+| File | Description |
+|------|-------------|
+| `*.nupkg` | Ephemeris core library (NuGet) |
+| `EphemerisApp-win-x64.exe` | Windows x64 self-contained single-file (~144 MB) |
+| `EphemerisApp-linux-x64` | Linux x64 self-contained single-file |
+| `EphemerisApp-osx-x64` | macOS Intel self-contained single-file |
+| `EphemerisApp-osx-arm64` | macOS Apple Silicon self-contained single-file |
+
+### Publish profiles
+
+Four publish profiles live in `Ephemeris.UI.Avalonia/Properties/PublishProfiles/`. All set `SelfContained=true`, `PublishSingleFile=true`, `PublishReadyToRun=true`, `IncludeNativeLibrariesForSelfExtract=true`.
+
+**Publish locally:**
+```bash
+dotnet publish Ephemeris.UI.Avalonia/Ephemeris.UI.Avalonia.csproj /p:PublishProfile=win-x64
+# Output: Ephemeris.UI.Avalonia/bin/publish/win-x64/Ephemeris.UI.Avalonia.exe
+```
+
+### Creating a release (use the `release` agent)
+
+Invoke `/release` in Copilot Chat. The agent will:
+1. Run pre-flight build and test checks
+2. Bump `<Version>` in all project files
+3. Commit, tag `v<VERSION>`, and push
+4. Monitor CI and confirm all artifacts are attached
+
+**Manual steps:**
+```bash
+# Edit <Version> in csproj files, then:
+dotnet build -c Release && dotnet test
+git add -A && git commit -m "chore(release): bump version to X.Y.Z"
+git tag vX.Y.Z && git push origin main && git push origin vX.Y.Z
+```
+
+### Avalonia window constructor rule
+
+All Avalonia `Window` subclasses that accept constructor parameters **must also have a public parameterless constructor** that calls only `InitializeComponent()` — required by the Avalonia XAML runtime loader (suppresses AVLN3001). Fields initialized only in the parameterized constructor should be declared `= null!` rather than `readonly`.
+
 ## MCP Servers
 
-Configured in `.vscode/mcp.json`. Four servers are available:
+Four servers are available:
 
 | Server | Type | Purpose |
 |--------|------|---------|
