@@ -2,41 +2,23 @@
 namespace Ephemeris.UI.Services;
 
 /// <summary>
-/// Snapshot of computed celestial data for a single body at a given instant.
+/// Snapshot of celestial data for a single observer location and UTC instant,
+/// as returned by <see cref="ICelestialResearchService.GetDataAsync"/>.
 /// </summary>
-/// <param name="Azimuth">Azimuth in degrees, measured from North clockwise (0–360).</param>
-/// <param name="Altitude">Altitude in degrees above the horizon (−90 to +90).</param>
-/// <param name="RightAscension">Right ascension in degrees (0–360).</param>
-/// <param name="Declination">Declination in degrees (−90 to +90).</param>
-/// <param name="Illumination">Fractional illumination [0, 1] if applicable (Moon only).</param>
-public sealed record CelestialObservation(
-    double  Azimuth,
-    double  Altitude,
-    double  RightAscension,
-    double  Declination,
-    double? Illumination = null);
-
-/// <summary>
-/// Aggregate of computed celestial positions and rise/set times for a single
-/// observer instant.  Returned by <c>CelestialResearchService</c>.
-/// </summary>
-public sealed record CelestialResearchData
-{
-    /// <summary>Computed Sun position and coordinates.</summary>
-    public required CelestialObservation Sun { get; init; }
-
-    /// <summary>Computed Moon position, coordinates, and illumination.</summary>
-    public required CelestialObservation Moon { get; init; }
-
-    /// <summary>UTC time of sunrise, or <see langword="null"/> if the Sun does not rise.</summary>
-    public DateTime? Sunrise { get; init; }
-
-    /// <summary>UTC time of sunset, or <see langword="null"/> if the Sun does not set.</summary>
-    public DateTime? Sunset { get; init; }
-
-    /// <summary>UTC time of moonrise, or <see langword="null"/> if the Moon does not rise.</summary>
-    public DateTime? Moonrise { get; init; }
-
-    /// <summary>UTC time of moonset, or <see langword="null"/> if the Moon does not set.</summary>
-    public DateTime? Moonset { get; init; }
-}
+/// <param name="Sun">Sun's equatorial and horizontal coordinates.</param>
+/// <param name="Moon">Moon's equatorial and horizontal coordinates with illumination fraction.</param>
+/// <param name="Sunrise">UTC time of today's sunrise, or <c>null</c> if circumpolar.</param>
+/// <param name="Sunset">UTC time of today's sunset, or <c>null</c> if circumpolar.</param>
+/// <param name="Moonrise">UTC time of today's moonrise, or <c>null</c> if circumpolar or not visible.</param>
+/// <param name="Moonset">UTC time of today's moonset, or <c>null</c> if circumpolar or not visible.</param>
+/// <param name="NextFullMoon">UTC time of the next full moon after the query instant.</param>
+/// <param name="NextNewMoon">UTC time of the next new moon after the query instant.</param>
+public record CelestialResearchData(
+    CelestialObservation Sun,
+    CelestialObservation Moon,
+    DateTime? Sunrise,
+    DateTime? Sunset,
+    DateTime? Moonrise,
+    DateTime? Moonset,
+    DateTime? NextFullMoon,
+    DateTime? NextNewMoon);

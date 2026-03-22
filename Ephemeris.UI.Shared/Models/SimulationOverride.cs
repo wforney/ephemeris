@@ -4,26 +4,42 @@ using CommunityToolkit.Mvvm.ComponentModel;
 namespace Ephemeris.UI.Models;
 
 /// <summary>
-/// Holds user-controlled overrides that modify celestial motion in the simulation panel.
-/// All properties default to zero / false so a fresh instance represents "no override".
+/// Holds optional simulation overrides that are applied post-calculation in the
+/// <see cref="Ephemeris.UI.Services.CelestialResearchService"/> layer, without modifying
+/// core ephemeris calculations.
 /// </summary>
 /// <remarks>
-/// The simulation layer in <c>CelestialResearchService</c> reads these values and applies
-/// them post-calculation; the core Ephemeris library is never modified.
+/// All overrides default to inactive / zero so that the normal computation path is taken
+/// unless the researcher explicitly enables them.  Bind UI controls directly to these
+/// observable properties.
 /// </remarks>
-public sealed partial class SimulationOverride : ObservableObject
+public partial class SimulationOverride : ObservableObject
 {
-    /// <summary>Whether any override is currently active.</summary>
-    [ObservableProperty] private bool _isActive;
+    /// <summary>Whether any simulation overrides are currently active.</summary>
+    [ObservableProperty]
+    private bool _isActive;
 
-    /// <summary>When <see langword="true"/> celestial bodies are frozen at the moment the override was activated.</summary>
-    [ObservableProperty] private bool _motionFrozen;
+    /// <summary>
+    /// When <see langword="true"/>, celestial body positions are frozen at the
+    /// time the override was activated (simulating stopped heavenly motion).
+    /// </summary>
+    [ObservableProperty]
+    private bool _motionFrozen;
 
-    /// <summary>Signed offset in degrees added to the Sun's altitude (positive = higher in sky).</summary>
-    [ObservableProperty] private double _sunAltitudeOffsetDegrees;
+    /// <summary>
+    /// Additional altitude offset applied to the Sun's computed altitude, in degrees.
+    /// Positive values raise the Sun above its computed position; negative values lower it.
+    /// Used to model events such as Hezekiah's sundial reversal.
+    /// </summary>
+    [ObservableProperty]
+    private double _sunAltitudeOffsetDegrees;
 
-    /// <summary>Additional hours of daylight appended after the computed sunset time.</summary>
-    [ObservableProperty] private double _extendDaylightHours;
+    /// <summary>
+    /// Number of hours by which daylight is extended beyond the computed sunset.
+    /// Zero means normal day length.  Used to model Joshua's Long Day.
+    /// </summary>
+    [ObservableProperty]
+    private double _extendDaylightHours;
 
     /// <summary>
     /// Resets all overrides to their default (inactive) state.
