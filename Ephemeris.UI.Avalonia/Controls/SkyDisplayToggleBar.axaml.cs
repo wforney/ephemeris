@@ -30,6 +30,9 @@ namespace Ephemeris.UI.Avalonia.Controls;
 /// </remarks>
 public partial class SkyDisplayToggleBar : UserControl
 {
+    /// <summary>Sentinel value written to <see cref="SkyGlControl.StarMagnitudeLimit"/> when star rendering is disabled.</summary>
+    private const double DisabledStarMagnitude = -99.0;
+
     private SkyGlControl? _skyControl;
     private double _lastMagLimit = 5.5;
 
@@ -73,7 +76,7 @@ public partial class SkyDisplayToggleBar : UserControl
     {
         if (_skyControl is null) return;
         // Initialise toggles from control state
-        StarsToggle.IsChecked         = _skyControl.StarMagnitudeLimit > -90;
+        StarsToggle.IsChecked         = _skyControl.StarMagnitudeLimit > DisabledStarMagnitude;
         ConstellationsToggle.IsChecked = _skyControl.ShowConstellations;
         StarLabelsToggle.IsChecked    = _skyControl.ShowStarLabels;
         PlanetLabelsToggle.IsChecked  = _skyControl.ShowPlanetLabels;
@@ -87,7 +90,7 @@ public partial class SkyDisplayToggleBar : UserControl
     {
         if (_skyControl is null) return;
         bool on = StarsToggle.IsChecked == true;
-        _skyControl.StarMagnitudeLimit = on ? _lastMagLimit : -99;
+        _skyControl.StarMagnitudeLimit = on ? _lastMagLimit : DisabledStarMagnitude;
     }
 
     private void OnConstellationsChanged(object? sender, RoutedEventArgs e)

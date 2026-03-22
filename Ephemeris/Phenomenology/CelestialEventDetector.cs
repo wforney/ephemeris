@@ -113,6 +113,8 @@ public static class CelestialEventDetector
     public static IReadOnlyList<CelestialEvent> GetNext(DateTime afterUtc, int count = 10)
     {
         var result = new List<CelestialEvent>(count);
+        // Use a HashSet for O(1) duplicate detection instead of O(n) Any()
+        var seen = new HashSet<(DateTime, EventType)>();
         DateTime windowEnd = afterUtc.AddDays(30);
         DateTime maxHorizon = afterUtc.AddDays(365 * 5);
 
@@ -123,8 +125,7 @@ public static class CelestialEventDetector
             {
                 if (result.Count >= count)
                     break;
-                // Avoid duplicates if window overlaps
-                if (!result.Any(existing => existing.UtcTime == ev.UtcTime && existing.Type == ev.Type))
+                if (seen.Add((ev.UtcTime, ev.Type)))
                     result.Add(ev);
             }
             afterUtc = windowEnd;
@@ -159,12 +160,17 @@ public static class CelestialEventDetector
 
     /// <summary>
     /// Finds the next Full Moon after <paramref name="after"/>.
-    /// Full Moon is detected when the phase jumps from near 0° to near 359°
-    /// (the phase passes through 0°/360° while decreasing).
+    /// Full Moon is detected when the normalized phase jumps from near 0° to near 359°.
     /// </summary>
     /// <remarks>
-    /// Uses <see cref="EphemerisCalculator.NextFullMoon"/> which correctly detects
-    /// the jump at 0°/360° (condition: prevPhase &lt; 180 &amp;&amp; phase ≥ 180).
+    /// Uses <see cref="EphemerisCalculator.NextFullMoon"/>, which detects the Full Moon
+    /// via the condition <c>prevPhase &lt; 180 &amp;&amp; phase ≥ 180</c>.
+    /// Under the <see cref="MoonEphemeris.PhaseAngle"/> convention (phase ≈ 0° at Full Moon,
+    /// phase ≈ 180° at New Moon), the phase DECREASES from 180° toward 0° in the first half
+    /// of the lunation. When the Moon is exactly at Full Moon (phase = 0°), the next step
+    /// shows phase ≈ 359° — a discontinuous jump from near 0° to near 359°.
+    /// The condition <c>prevPhase &lt; 180 &amp;&amp; phase ≥ 180</c> reliably catches this
+    /// jump (prevPhase ≈ 1°, phase ≈ 359°) and does NOT trigger at the New Moon passage.
     /// </remarks>
     private static DateTime FindNextFullMoon(DateTime after)
         => EphemerisCalculator.NextFullMoon(after);

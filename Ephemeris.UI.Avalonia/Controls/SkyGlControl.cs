@@ -189,6 +189,7 @@ public sealed class SkyGlControl : OpenGlControlBase
 
     // ── Scene data ────────────────────────────────────────────────────────
     private IReadOnlyList<FixedStar> _stars = [];
+    private Dictionary<string, FixedStar> _starByName = [];  // cached for constellation lookup
     private readonly List<(Vector2 Screen, string Label, uint ColorArgb)> _labels = [];
     private readonly List<Vector3> _bodyWorldPos = [];
 
@@ -384,8 +385,9 @@ public sealed class SkyGlControl : OpenGlControlBase
 
         CompileShaders(gl);
         InitBuffers(gl);
-        _stars   = StarCatalog.LoadBuiltIn();
-        _glReady = true;
+        _stars     = StarCatalog.LoadBuiltIn();
+        _starByName = _stars.ToDictionary(s => s.CommonName, StringComparer.OrdinalIgnoreCase);
+        _glReady   = true;
         RequestNextFrameRendering();
     }
 
@@ -852,13 +854,10 @@ public sealed class SkyGlControl : OpenGlControlBase
         const int floatsPerVertex = 7; // pos(3) + color(4)
         var buffer = new List<float>(s_constellationPairs.Length * 2 * floatsPerVertex);
 
-        // Build a lookup dictionary for fast star access by common name
-        var starMap = _stars.ToDictionary(s => s.CommonName, StringComparer.OrdinalIgnoreCase);
-
         foreach (var (s1Name, s2Name) in s_constellationPairs)
         {
-            if (!starMap.TryGetValue(s1Name, out var star1) ||
-                !starMap.TryGetValue(s2Name, out var star2))
+            if (!_starByName.TryGetValue(s1Name, out var star1) ||
+                !_starByName.TryGetValue(s2Name, out var star2))
                 continue;
 
             var eq1 = star1.AtEpoch(jd);
@@ -996,7 +995,8 @@ public sealed class SkyGlControl : OpenGlControlBase
     /// we transpose the matrix manually before flattening to the float array.
     /// </para>
     /// </remarks>
-    private float[] BuildMvp(int width, int height)    {
+    private float[] BuildMvp(int width, int height)
+    {
         float aspect = width > 0 && height > 0 ? (float)width / height : 1f;
         float fovRad = float.DegreesToRadians(_vm.FovDeg);
 
