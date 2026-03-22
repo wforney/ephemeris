@@ -40,7 +40,9 @@ jobs:
 
   # ── Single-file UI: per-platform matrix ───────────────────────────────
   publish-ui:
+    continue-on-error: true   # one platform failure does not fail the release
     strategy:
+      fail-fast: false         # run all matrix legs even if one fails
       matrix:
         include:
           - os: windows-latest
@@ -74,13 +76,20 @@ jobs:
       - name: Publish single-file (${{ matrix.rid }})
         run: >
           dotnet publish Ephemeris.UI.Avalonia/Ephemeris.UI.Avalonia.csproj
-          /p:PublishProfile=${{ matrix.rid }}
+          -c Release
+          -r ${{ matrix.rid }}
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:PublishReadyToRun=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -o Ephemeris.UI.Avalonia/bin/publish/${{ matrix.rid }}
 
       - name: Rename artifact for release
         shell: bash
         run: |
           SRC="Ephemeris.UI.Avalonia/bin/publish/${{ matrix.rid }}/${{ matrix.artifact }}"
-          DST="Ephemeris.UI.Avalonia/bin/publish/${{ matrix.rid }}/EphemerisApp-${{ matrix.rid }}${{ matrix.rid == 'win-x64' && '.exe' || '' }}"
+          EXT="${{ matrix.rid == 'win-x64' && '.exe' || '' }}"
+          DST="Ephemeris.UI.Avalonia/bin/publish/${{ matrix.rid }}/EphemerisApp-${{ matrix.rid }}${EXT}"
           mv "$SRC" "$DST"
 
       - name: Upload to GitHub Release
@@ -88,3 +97,4 @@ jobs:
         with:
           files: Ephemeris.UI.Avalonia/bin/publish/${{ matrix.rid }}/EphemerisApp-${{ matrix.rid }}*
           generate_release_notes: false
+

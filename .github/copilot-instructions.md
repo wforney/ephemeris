@@ -494,10 +494,18 @@ Each GitHub Release contains:
 
 Four publish profiles live in `Ephemeris.UI.Avalonia/Properties/PublishProfiles/`. All set `SelfContained=true`, `PublishSingleFile=true`, `PublishReadyToRun=true`, `IncludeNativeLibrariesForSelfExtract=true`.
 
-**Publish locally:**
+**Publish locally** (profiles work reliably on Windows):
 ```bash
 dotnet publish Ephemeris.UI.Avalonia/Ephemeris.UI.Avalonia.csproj /p:PublishProfile=win-x64
 # Output: Ephemeris.UI.Avalonia/bin/publish/win-x64/Ephemeris.UI.Avalonia.exe
+```
+
+**CI** passes flags explicitly (avoids `NETSDK1198` profile-not-found on macOS/Linux):
+```bash
+dotnet publish ... -c Release -r <rid> --self-contained true \
+  -p:PublishSingleFile=true -p:PublishReadyToRun=true \
+  -p:IncludeNativeLibrariesForSelfExtract=true \
+  -o Ephemeris.UI.Avalonia/bin/publish/<rid>
 ```
 
 ### Creating a release (use the `release` agent)

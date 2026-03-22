@@ -60,7 +60,7 @@ The `v*` tag push triggers `.github/workflows/release.yml`, which:
 
 After pushing the tag:
 1. Use the GitHub MCP server to check the `release` workflow run status.
-2. Confirm both jobs (`nuget` and `publish-ui` matrix × 4) succeed.
+2. Confirm both jobs (`nuget` and `publish-ui` matrix × 4) complete. Individual platform failures are non-fatal (`continue-on-error: true` + `fail-fast: false`); the release succeeds as long as the `nuget` job passes and at least one platform binary uploads.
 3. Verify the GitHub Release at `https://github.com/wforney/ephemeris/releases/tag/v<VERSION>` has all five artifacts:
    - `*.nupkg` (core library NuGet)
    - `EphemerisApp-win-x64.exe`
