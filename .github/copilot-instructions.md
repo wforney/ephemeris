@@ -1,4 +1,4 @@
-<!-- Updated: 2026-03-11 -->
+<!-- Updated: 2026-03-22 -->
 # Copilot Instructions
 
 ## Session Checkpoints and Evolution
@@ -98,12 +98,25 @@ When creating a new agent: add a row here, pick the lowest model tier sufficient
 
 ## Project Overview
 
-**Ephemeris** is a .NET 10.0 astronomical calculations library that computes positions of celestial bodies (Sun, Moon, planets) as seen from any observer location on Earth. The solution has four projects:
+**Ephemeris** is a .NET 10.0 astronomical calculations library that computes positions of celestial bodies (Sun, Moon, planets) as seen from any observer location on Earth. It powers the **Ephemeris Research App** — a celestial visualization and simulation platform for Biblical cosmology researchers studying the Mazzaroth and scriptural events (Hezekiah's Sundial, Joshua's Long Day).
+
+The solution has six projects:
 
 - **Ephemeris** — Core class library (the calculation engine)
 - **Ephemeris.Tests** — Test suite using TUnit
 - **Ephemeris.UI** — WinForms visualization app (Windows only, `net10.0-windows`)
+- **Ephemeris.UI.Avalonia** — Cross-platform Avalonia UI (primary research app host; OpenGL sky canvas via `OpenGlControlBase`, charts via ScottPlot.Avalonia)
+- **Ephemeris.UI.Shared** — Shared ViewModels, app state (`SkyViewModel`), and messaging used by both UI projects
 - **Ephemeris.Benchmarks** — BenchmarkDotNet performance benchmarks
+
+### Research App Context
+
+The primary product goal is the **Ephemeris Research App** — see [`docs/research-app.md`](../docs/research-app.md) for user persona, use cases, and architecture. Key design intent:
+
+- **User**: Biblical Cosmology & Astronomy Researcher studying celestial timekeeping and scriptural events
+- **Core scenarios**: visualize any historical sky, simulate altered motion (freeze/reverse/extend daylight), compare normal vs. simulated views side by side, load predefined scriptural event presets
+- **Architecture**: MVVM over a `CelestialResearchService` wrapper → Ephemeris core library
+- **Build roadmap**: 25 GitHub issues across 4 milestones; tracked at https://github.com/wforney/ephemeris/issues
 
 ## Build & Test Commands
 
@@ -254,7 +267,30 @@ public EphemerisPlotForm(IEnumerable<EphemerisRecord> records, string body)
 
 `Program.cs` bootstraps with an empty dataset; replace the `List<EphemerisRecord> allData = []` with real batch output before running.
 
-## SPICE / DE430 Import Pipeline
+## Avalonia UI (Ephemeris.UI.Avalonia) — Research App
+
+`Ephemeris.UI.Avalonia` is the **primary research application** and the main product UI. It is cross-platform (`net10.0`) and uses Avalonia 11.3.12.
+
+**Key packages:** `Avalonia`, `Avalonia.Desktop`, `ScottPlot.Avalonia`  
+**OpenGL:** sky rendering via `OpenGlControlBase` + `GlInterface.GetProcAddress`  
+**Shared code:** ViewModels and messaging live in `Ephemeris.UI.Shared` (`SkyViewModel`, `Messages`)
+
+### Research App Components
+
+When building new UI features for the research app, follow this MVVM pattern:
+
+| Layer | Location | Responsibilities |
+|-------|----------|-----------------|
+| View | `Ephemeris.UI.Avalonia/Views/` | AXAML + code-behind; data binding only |
+| ViewModel | `Ephemeris.UI.Shared/ViewModels/` | Commands, state, observable properties |
+| Service | `Ephemeris.UI.Shared/Services/` | `CelestialResearchService` — wraps Ephemeris core |
+| Model | `Ephemeris.UI.Shared/Models/` | `SessionModel`, `ScenarioModel`, `SimulationOverride` |
+
+**Scriptural presets** (Hezekiah's Sundial, Joshua's Long Day) are encoded as `ScenarioModel` instances with a historical date, observer location (lat/lon), and optional simulation parameters. See `docs/research-app.md` for full use-case descriptions.
+
+**Simulation layer:** UI-level overrides (freeze motion, reverse, extend daylight) are stored in `SimulationOverride` and passed through `CelestialResearchService` before reaching the Ephemeris core. They do not modify the core library — all overrides are applied post-calculation in the service layer.
+
+
 
 ### Data flow
 ```
