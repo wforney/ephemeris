@@ -1,61 +1,69 @@
 // Updated: 2026-03-22
-using Ephemeris;
-using Ephemeris.Chronology;
 using Ephemeris.Phenomenology;
-using Ephemeris.UI.Models;
 
 namespace Ephemeris.UI.Services;
 
 /// <summary>
-/// High-level service that wraps the Ephemeris core library to compute a combined
-/// snapshot of celestial data (including the biblical calendar) for a single instant
-/// and observer location.
+/// Default implementation of <see cref="ICelestialResearchService"/>.
+/// Wraps the static <see cref="EphemerisCalculator"/> and <see cref="RiseSetCalculator"/>
+/// APIs and offloads computation to a thread-pool thread so that UI threads are never blocked.
 /// </summary>
 /// <remarks>
-/// This service is the bridge between the MVVM layer and the core calculation engine.
-/// All simulation overrides (freeze, reverse, extend daylight) should be applied
-/// at this layer — they must not modify the core library.
-/// <para>
-/// Implements <see cref="ISingletonService"/> so that Scrutor assembly scanning
-/// automatically registers it as a singleton via
-/// <c>services.AddEphemerisServices()</c>.
-/// </para>
+/// This class implements <see cref="ISingletonService"/> so that Scrutor's assembly scan
+/// in <see cref="Ephemeris.ServiceCollectionExtensions.AddEphemerisServices"/> will register
+/// it as a singleton in the DI container when the UI.Shared assembly is included in the scan.
 /// </remarks>
-public sealed class CelestialResearchService : ISingletonService
+public class CelestialResearchService : ICelestialResearchService, ISingletonService
 {
-    /// <summary>
-    /// Asynchronously computes all celestial data for the given observer and time.
-    /// The calculation runs on a thread-pool thread so the UI thread is not blocked.
-    /// </summary>
-    /// <param name="timeUtc">The UTC date and time of the observation.</param>
-    /// <param name="longitude">Observer longitude in degrees (east positive).</param>
-    /// <param name="latitude">Observer latitude in degrees (north positive).</param>
-    /// <param name="cancellationToken">Optional cancellation token.</param>
-    /// <returns>
-    /// A <see cref="CelestialResearchData"/> snapshot for the requested moment,
-    /// including the approximate biblical calendar date.
-    /// </returns>
+    /// <inheritdoc />
     /// <remarks>
-    /// Biblical date computation calls <see cref="BiblicalCalendarHelper.GetBiblicalDate"/>
-    /// with the Julian Day derived from <paramref name="timeUtc"/> via
-    /// <see cref="TimeZoneUtils.ToJulianDay"/>.
+    /// All calculation work is dispatched to <see cref="Task.Run"/> to keep UI threads
+    /// responsive. The <paramref name="ct"/> is passed through to enable cancellation of
+    /// queued work before results are returned.
     /// </remarks>
     public Task<CelestialResearchData> GetDataAsync(
-        DateTime timeUtc,
+        DateTime utcTime,
         double longitude,
         double latitude,
-        CancellationToken cancellationToken = default) =>
-        Task.Run(() =>
-        {
-            double jd = TimeZoneUtils.ToJulianDay(timeUtc);
-            var biblicalDate = BiblicalCalendarHelper.GetBiblicalDate(jd, longitude, latitude);
+        CancellationToken ct = default)
+    {
+        return Task.Run(() => Compute(utcTime, longitude, latitude), ct);
+    }
 
-            return new CelestialResearchData
-            {
-                TimeUtc      = timeUtc,
-                Longitude    = longitude,
-                Latitude     = latitude,
-                BiblicalDate = biblicalDate,
-            };
-        }, cancellationToken);
+    /// <summary>
+    /// Performs all synchronous celestial calculations for the given UTC instant and location.
+    /// </summary>
+    /// <param name="utcTime">UTC date and time of the observation.</param>
+    /// <param name="longitude">Observer longitude in degrees (East positive).</param>
+    /// <param name="latitude">Observer latitude in degrees (North positive).</param>
+    /// <returns>A fully populated <see cref="CelestialResearchData"/> record.</returns>
+    private static CelestialResearchData Compute(DateTime utcTime, double longitude, double latitude)
+    {
+        // Sun and Moon positions — pass "UTC" because utcTime is already in UTC.
+        CelestialObservation sun  = EphemerisCalculator.GetSunPosition(utcTime, "UTC", longitude, latitude);
+        CelestialObservation moon = EphemerisCalculator.GetMoonPosition(utcTime, "UTC", longitude, latitude);
+
+        // Today's rise and set times (uses the calendar date at 0h UTC).
+        RiseSetCalculator.RiseTransitSet sunRst  = RiseSetCalculator.Sun(utcTime.Date, longitude, latitude);
+        RiseSetCalculator.RiseTransitSet moonRst = RiseSetCalculator.Moon(utcTime.Date, longitude, latitude);
+
+        // Next lunar phase events after the query instant.
+        DateTime nextFullMoon = EphemerisCalculator.NextFullMoon(utcTime);
+        DateTime nextNewMoon  = EphemerisCalculator.NextNewMoon(utcTime);
+
+        // Biblical calendar data derived from Julian Day.
+        double jd = TimeZoneUtils.ToJulianDay(utcTime);
+        BiblicalCalendarHelper.BiblicalDate? biblicalDate = BiblicalCalendarHelper.GetBiblicalDate(jd, longitude, latitude);
+
+        return new CelestialResearchData(
+            Sun:          sun,
+            Moon:         moon,
+            Sunrise:      sunRst.Rise,
+            Sunset:       sunRst.Set,
+            Moonrise:     moonRst.Rise,
+            Moonset:      moonRst.Set,
+            NextFullMoon: nextFullMoon,
+            NextNewMoon:  nextNewMoon,
+            BiblicalDate: biblicalDate);
+    }
 }
