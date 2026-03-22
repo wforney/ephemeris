@@ -233,19 +233,31 @@ public static class EphemerisCalculator
     /// </summary>
     /// <param name="after">Starting UTC time.</param>
     /// <returns>Approximate UTC DateTime of the next new moon (within ~30 minutes).</returns>
+    /// <remarks>
+    /// <para>
+    /// In this library <see cref="MoonEphemeris.PhaseAngle"/> returns 0° at Full Moon and
+    /// 180° at New Moon. New Moon is therefore detected when the phase decreases through 180°
+    /// (condition: <c>prevPhase &gt; 180 &amp;&amp; phase &lt;= 180</c>).
+    /// </para>
+    /// </remarks>
     public static DateTime NextNewMoon(DateTime after)
     {
         var dt = after.AddHours(1); // skip current instant
         double prevPhase = GetPhase(dt);
-        while (true)
+
+        // Scan at most 35 days (one full lunation + margin) to avoid an infinite loop.
+        for (int i = 0; i < 35 * 24; i++)
         {
             dt = dt.AddHours(1);
             double phase = GetPhase(dt);
-            // Crossed through 0° (new moon): detect wrap 350→10 or crossing 0
-            if (prevPhase > 300 && phase < 60)
+            // New moon: phase decreasing through 180° (0°=full moon, 180°=new moon convention)
+            if (prevPhase > 180 && phase <= 180)
                 return dt.AddMinutes(-30);
             prevPhase = phase;
         }
+
+        // Fallback: should not be reached in practice
+        return after.AddDays(29.5);
     }
 
     /// <summary>
