@@ -1,0 +1,166 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Ephemeris.UI.Avalonia.Views.ComparisonWindow"
+        Title="Ephemeris — Comparison Mode"
+        Width="1100" Height="600"
+        MinWidth="800" MinHeight="480">
+
+    <Grid RowDefinitions="Auto,*,Auto,Auto">
+
+        <!-- ── Header bar ─────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Background="#1A1A2E" Padding="12,6">
+            <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+
+                <TextBlock Text="COMPARISON MODE"
+                           Foreground="White"
+                           FontWeight="Bold"
+                           FontSize="13"
+                           VerticalAlignment="Center" />
+
+                <Separator Width="1" Background="#555" Margin="4,0" />
+
+                <TextBlock Text="Date:" Foreground="#CCC" VerticalAlignment="Center" />
+                <TextBox x:Name="DatePicker"
+                         Watermark="yyyy-MM-dd"
+                         Width="110"
+                         Background="#2A2A3E"
+                         Foreground="White" />
+
+                <TextBlock Text="Time:" Foreground="#CCC" VerticalAlignment="Center" />
+                <TextBox x:Name="TimePicker"
+                         Watermark="HH:mm"
+                         Width="70"
+                         Background="#2A2A3E"
+                         Foreground="White" />
+
+                <Separator Width="1" Background="#555" Margin="4,0" />
+
+                <TextBlock Text="Lon:" Foreground="#CCC" VerticalAlignment="Center" />
+                <NumericUpDown x:Name="LonPicker"
+                               Minimum="-180" Maximum="180"
+                               Increment="1" FormatString="F2"
+                               Width="100"
+                               Background="#2A2A3E"
+                               Foreground="White" />
+
+                <TextBlock Text="Lat:" Foreground="#CCC" VerticalAlignment="Center" />
+                <NumericUpDown x:Name="LatPicker"
+                               Minimum="-90" Maximum="90"
+                               Increment="1" FormatString="F2"
+                               Width="80"
+                               Background="#2A2A3E"
+                               Foreground="White" />
+
+            </StackPanel>
+        </Border>
+
+        <!-- ── Side-by-side sky panels ───────────────────────────────── -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,*">
+
+            <!-- Left: Normal sky (Baseline) -->
+            <Grid Grid.Column="0" RowDefinitions="Auto,*">
+                <Border Grid.Row="0" Background="#0D5C2E" Padding="8,4">
+                    <TextBlock Text="NORMAL SKY"
+                               Foreground="White"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center" />
+                </Border>
+                <Grid Grid.Row="1">
+                    <ContentControl x:Name="BaselineGlHost" />
+                    <Canvas x:Name="BaselineLabelCanvas" IsHitTestVisible="False" />
+                </Grid>
+            </Grid>
+
+            <!-- Right: Modified sky (Simulation) -->
+            <Grid Grid.Column="1" RowDefinitions="Auto,*">
+                <Border Grid.Row="0" Background="#5C1B0D" Padding="8,4">
+                    <TextBlock Text="MODIFIED SKY"
+                               Foreground="White"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center" />
+                </Border>
+                <Grid Grid.Row="1">
+                    <ContentControl x:Name="SimulationGlHost" />
+                    <Canvas x:Name="SimulationLabelCanvas" IsHitTestVisible="False" />
+                </Grid>
+            </Grid>
+
+        </Grid>
+
+        <!-- ── Time controls ─────────────────────────────────────────── -->
+        <Border Grid.Row="2" Background="#111" Padding="8,6">
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Spacing="8"
+                        VerticalAlignment="Center">
+
+                <TextBlock Text="TIME CONTROLS (SYNCED):"
+                           Foreground="#AAA"
+                           VerticalAlignment="Center"
+                           FontSize="11" />
+
+                <Button x:Name="StepFirstBtn"  Content="⏮" Width="36" ToolTip.Tip="Rewind 30 days" />
+                <Button x:Name="StepBackBtn"   Content="⏪" Width="36" ToolTip.Tip="Step back 1 day" />
+                <Button x:Name="PlayBtn"       Content="▶"  Width="50" />
+                <Button x:Name="StepFwdBtn"    Content="⏩" Width="36" ToolTip.Tip="Step forward 1 day" />
+                <Button x:Name="StepLastBtn"   Content="⏭" Width="36" ToolTip.Tip="Advance 30 days" />
+                <Button x:Name="NowBtn"        Content="Now" Width="50" />
+
+            </StackPanel>
+        </Border>
+
+        <!-- ── Simulation controls ───────────────────────────────────── -->
+        <Border Grid.Row="3" Background="#1A0A0A" Padding="12,8">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+
+                <TextBlock Grid.Column="0"
+                           Text="SIMULATION CONTROLS:"
+                           Foreground="#E88"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"
+                           Margin="0,0,16,0" />
+
+                <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+
+                    <CheckBox x:Name="FreezeMotionCheck"
+                              Content="Freeze Motion"
+                              Foreground="#DDD"
+                              Margin="0,0,20,0"
+                              VerticalAlignment="Center" />
+
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,20,0">
+                        <TextBlock Text="Sun Alt Offset (°):" Foreground="#CCC" VerticalAlignment="Center" />
+                        <NumericUpDown x:Name="SunAltOffsetPicker"
+                                       Minimum="-360" Maximum="360"
+                                       Increment="1" FormatString="F1"
+                                       Width="90"
+                                       Background="#2A1A1A"
+                                       Foreground="White" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <TextBlock Text="Extend Daylight (hrs):" Foreground="#CCC" VerticalAlignment="Center" />
+                        <NumericUpDown x:Name="ExtendDaylightPicker"
+                                       Minimum="0" Maximum="12"
+                                       Increment="0.5" FormatString="F1"
+                                       Width="80"
+                                       Background="#2A1A1A"
+                                       Foreground="White" />
+                    </StackPanel>
+
+                </WrapPanel>
+
+                <Button Grid.Column="2"
+                        x:Name="ResetSimBtn"
+                        Content="Reset Simulation"
+                        Background="#8B1A1A"
+                        Foreground="White"
+                        Padding="12,4"
+                        VerticalAlignment="Center" />
+
+            </Grid>
+        </Border>
+
+    </Grid>
+
+</Window>
