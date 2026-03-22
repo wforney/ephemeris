@@ -42,6 +42,7 @@ public partial class ResearchWorkspaceWindow : Window,
     private readonly SkyViewModel _vm;
     private readonly WorkspaceViewModel _workspace;
     private readonly SkyGlControl _glControl;
+    private readonly SkyChartControl _chartControl;
 
     // Speed table: seconds of simulation time advanced per real second.
     private static readonly int[] SpeedMultipliers = [1, 60, 3600, 86400];
@@ -92,7 +93,16 @@ public partial class ResearchWorkspaceWindow : Window,
             VerticalAlignment   = VerticalAlignment.Stretch,
         };
 
-        GlHost.Content = _glControl;
+        // TODO: replace with SkyGlControl once OpenGL rendering is confirmed working on all
+        // target platforms.  The 2D chart is the reliable fallback — see SkyGlControl for
+        // the full 3D OpenGL implementation that should take over as the primary sky view.
+        _chartControl = new SkyChartControl(_vm)
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment   = VerticalAlignment.Stretch,
+        };
+
+        GlHost.Content = _chartControl;
 
         // Sync toolbar to initial VM state
         SyncToolbarFromVm();
@@ -132,10 +142,10 @@ public partial class ResearchWorkspaceWindow : Window,
         NotesBtn.Click            += OnNotesClick;
 
         // ── GL control pointer / keyboard input ───────────────────────
-        _glControl.PointerPressed      += OnPointerPressed;
-        _glControl.PointerReleased     += OnPointerReleased;
-        _glControl.PointerMoved        += OnPointerMoved;
-        _glControl.PointerWheelChanged += OnPointerWheel;
+        _chartControl.PointerPressed      += OnPointerPressed;
+        _chartControl.PointerReleased     += OnPointerReleased;
+        _chartControl.PointerMoved        += OnPointerMoved;
+        _chartControl.PointerWheelChanged += OnPointerWheel;
         KeyDown += OnKeyDown;
 
         // ── Body label overlay (same pattern as SkyViewWindow) ────────
@@ -188,32 +198,15 @@ public partial class ResearchWorkspaceWindow : Window,
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // Label overlay (identical to SkyViewWindow pattern)
+    // Label overlay
     // ─────────────────────────────────────────────────────────────────────
 
-    private void RefreshLabels()
-    {
-        LabelCanvas.Children.Clear();
-        var bounds = _glControl.Bounds;
-        foreach (var (screen, label, colorArgb) in _glControl.Labels)
-        {
-            if (screen.X < 0 || screen.Y < 0 ||
-                screen.X > bounds.Width || screen.Y > bounds.Height) continue;
-            var tb = new TextBlock
-            {
-                Text       = label,
-                FontSize   = 11,
-                Foreground = new SolidColorBrush(Color.FromArgb(
-                    (byte)(colorArgb >> 24),
-                    (byte)(colorArgb >> 16),
-                    (byte)(colorArgb >>  8),
-                    (byte) colorArgb)),
-            };
-            Canvas.SetLeft(tb, screen.X + 6);
-            Canvas.SetTop(tb,  screen.Y - 8);
-            LabelCanvas.Children.Add(tb);
-        }
-    }
+    // SkyChartControl draws its own body labels directly onto the canvas, so
+    // the LabelCanvas overlay has nothing to do here.
+    // TODO: when the 3D SkyGlControl is activated, restore the label-snapshot
+    //       logic that reads _glControl.Labels and adds TextBlock children to
+    //       LabelCanvas (see SkyViewWindow.RefreshLabels for the pattern).
+    private static void RefreshLabels() { }
 
     // ─────────────────────────────────────────────────────────────────────
     // WorkspaceViewModel change handler
@@ -356,15 +349,18 @@ public partial class ResearchWorkspaceWindow : Window,
         await new NotesPanel(_vm).ShowDialog(this);
 
     // ─────────────────────────────────────────────────────────────────────
-    // GL control input handling (same patterns as SkyViewWindow)
+    // Chart control input handling
     // ─────────────────────────────────────────────────────────────────────
+
+    // TODO: when the 3D SkyGlControl is reactivated, restore yaw/pitch/FOV
+    //       drag and wheel gestures — the 2D planisphere has no camera orientation.
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (e.GetCurrentPoint(_glControl).Properties.IsLeftButtonPressed)
+        if (e.GetCurrentPoint(_chartControl).Properties.IsLeftButtonPressed)
         {
             _dragging  = true;
-            _lastMouse = e.GetPosition(_glControl);
+            _lastMouse = e.GetPosition(_chartControl);
         }
     }
 
@@ -374,16 +370,15 @@ public partial class ResearchWorkspaceWindow : Window,
     private void OnPointerMoved(object? sender, PointerEventArgs e)
     {
         if (!_dragging) return;
-        var pos = e.GetPosition(_glControl);
-        float dx = (float)(pos.X - _lastMouse.X);
-        float dy = (float)(pos.Y - _lastMouse.Y);
-        _vm.Yaw   = (_vm.Yaw   + dx * 0.4f + 360f) % 360f;
-        _vm.Pitch = Math.Clamp(_vm.Pitch - dy * 0.3f, -10f, 90f);
+        var pos = e.GetPosition(_chartControl);
+        // TODO: map drag to zoom level or chart rotation for the 3D view.
         _lastMouse = pos;
     }
 
-    private void OnPointerWheel(object? sender, PointerWheelEventArgs e) =>
-        _vm.FovDeg = Math.Clamp(_vm.FovDeg - (float)e.Delta.Y * 2f, 10f, 170f);
+    private void OnPointerWheel(object? sender, PointerWheelEventArgs e)
+    {
+        // TODO: wire scroll wheel to chart zoom level for the 3D view.
+    }
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
