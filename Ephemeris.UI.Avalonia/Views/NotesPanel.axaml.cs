@@ -1,6 +1,7 @@
 // Updated: 2026-03-22
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
+using Ephemeris.UI;
 using Ephemeris.UI.Models;
 
 namespace Ephemeris.UI.Avalonia.Views;
@@ -89,7 +90,8 @@ public partial class NotesPanel : Window
             _session.Longitude = _vm.Longitude;
             _session.Latitude  = _vm.Latitude;
 
-            await _session.SaveAsync(file.Path.LocalPath).ConfigureAwait(true);
+            await using var stream = await file.OpenWriteAsync().ConfigureAwait(true);
+            await _session.SaveAsync(stream).ConfigureAwait(true);
             Title = $"Research Notes — saved {DateTime.UtcNow:HH:mm:ss UTC}";
         }
         catch (Exception ex)
@@ -120,7 +122,11 @@ public partial class NotesPanel : Window
         try
         {
             var text = BuildExportText();
-            await File.WriteAllTextAsync(file.Path.LocalPath, text).ConfigureAwait(true);
+            await using var stream = await file.OpenWriteAsync().ConfigureAwait(true);
+            stream.SetLength(0);
+            using var writer = new global::System.IO.StreamWriter(stream);
+            await writer.WriteAsync(text).ConfigureAwait(true);
+            await writer.FlushAsync().ConfigureAwait(true);
             Title = $"Research Notes — exported {DateTime.UtcNow:HH:mm:ss UTC}";
         }
         catch (Exception ex)
@@ -135,11 +141,17 @@ public partial class NotesPanel : Window
 
     private string BuildExportText()
     {
+        var lon = _vm.Longitude;
+        var lat = _vm.Latitude;
+
+        var lonHemisphere = lon >= 0 ? "E" : "W";
+        var latHemisphere = lat >= 0 ? "N" : "S";
+
         return $"""
             Session: {_session.Name}
             Exported: {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC
             Sim Time: {_vm.SimTime:yyyy-MM-dd HH:mm} UTC
-            Location: {_vm.Longitude:F4}° E, {_vm.Latitude:F4}° N
+            Location: {Math.Abs(lon):F4}° {lonHemisphere}, {Math.Abs(lat):F4}° {latHemisphere}
 
             Notes:
             {_session.Notes}

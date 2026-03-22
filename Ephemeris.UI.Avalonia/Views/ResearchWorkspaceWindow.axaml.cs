@@ -8,6 +8,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Messaging;
+using Ephemeris.UI;
 using Ephemeris.UI.Avalonia.Controls;
 using Ephemeris.UI.Messages;
 

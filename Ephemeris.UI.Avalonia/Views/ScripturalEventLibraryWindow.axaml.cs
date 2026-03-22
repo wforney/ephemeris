@@ -1,6 +1,7 @@
 // Updated: 2026-03-22
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Ephemeris.UI;
 using Ephemeris.UI.Models;
 
 namespace Ephemeris.UI.Avalonia.Views;
