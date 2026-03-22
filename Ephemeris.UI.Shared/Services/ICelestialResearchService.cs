@@ -19,7 +19,8 @@ public interface ICelestialResearchService
 
     /// <summary>
     /// Returns a celestial data snapshot for any Julian Day (including BCE/historical dates).
-    /// Rise/set and lunar phase data will be null for historical epochs.
+    /// Rise/set event times and next new/full moon fields will be <see langword="null"/> for
+    /// historical epochs; instantaneous positions and lunar illumination are still computed.
     /// </summary>
     Task<CelestialResearchData> GetDataForJulianDayAsync(
         double julianDay,

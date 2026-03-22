@@ -4,7 +4,8 @@ namespace Ephemeris.Chronology;
 /// <summary>
 /// Represents a date — including dates before year 1 CE — using the proleptic Julian/Gregorian
 /// calendar as defined in <em>Astronomical Algorithms</em> (Meeus, 2nd ed., Ch. 7).
-/// Stored internally as a Julian Day Number so that the full range of historical dates,
+/// Stores the calendar components (year, month, day, fractional hour) and converts to
+/// Julian Day Number on demand so that the full range of historical dates,
 /// including those in the BC/BCE era, is supported without the <see cref="DateTime"/>
 /// lower-bound restriction (year 1 CE).
 /// </summary>
@@ -70,6 +71,8 @@ public readonly struct ProlepticDate : IEquatable<ProlepticDate>, IComparable<Pr
         ArgumentOutOfRangeException.ThrowIfGreaterThan(month, 12);
         ArgumentOutOfRangeException.ThrowIfLessThan(day, 1);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(day, 31);
+        if (!double.IsFinite(hour) || hour < 0.0 || hour >= 24.0)
+            throw new ArgumentOutOfRangeException(nameof(hour), hour, "Hour must be finite and in [0, 24).");
 
         Year  = year;
         Month = month;
@@ -217,8 +220,7 @@ public readonly struct ProlepticDate : IEquatable<ProlepticDate>, IComparable<Pr
 
     /// <inheritdoc/>
     public bool Equals(ProlepticDate other) =>
-        Year == other.Year && Month == other.Month && Day == other.Day &&
-        Math.Abs(Hour - other.Hour) < 1e-9;
+        Year == other.Year && Month == other.Month && Day == other.Day && Hour == other.Hour;
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => obj is ProlepticDate pd && Equals(pd);

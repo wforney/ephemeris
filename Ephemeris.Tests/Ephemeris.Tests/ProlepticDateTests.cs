@@ -192,4 +192,25 @@ public class ProlepticDateTests
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             Task.FromResult(ProlepticDate.FromBce(0, 1, 1)));
     }
+
+    [Test]
+    public async Task Constructor_InvalidHour_OutOfRange_Throws()
+    {
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            Task.FromResult(new ProlepticDate(2000, 1, 1, 24.0)));
+    }
+
+    [Test]
+    public async Task Constructor_InvalidHour_Negative_Throws()
+    {
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            Task.FromResult(new ProlepticDate(2000, 1, 1, -0.1)));
+    }
+
+    [Test]
+    public async Task Constructor_InvalidHour_NaN_Throws()
+    {
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            Task.FromResult(new ProlepticDate(2000, 1, 1, double.NaN)));
+    }
 }

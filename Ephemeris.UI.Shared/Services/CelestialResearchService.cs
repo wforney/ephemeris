@@ -89,7 +89,8 @@ public class CelestialResearchService : ICelestialResearchService, ISingletonSer
 
         var (moonRA, moonDec, _) = MoonEphemeris.GeocentricEquatorialCoordinates(T);
         HorizontalCoordinates moonH = ObserverGeometry.EquatorialToHorizontal(moonRA, moonDec, julianDay, longitude, latitude);
-        double moonIllumination = MoonEphemeris.PhaseAngle(T) / 180.0;
+        double moonPhaseAngle   = MoonEphemeris.PhaseAngle(T);
+        double moonIllumination = MoonEphemeris.Illumination(moonPhaseAngle);
 
         return new CelestialResearchData(
             Sun:          new CelestialObservation(sunRA, sunDec, sunH.Azimuth, sunH.Altitude),

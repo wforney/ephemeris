@@ -46,7 +46,7 @@ public sealed class SkyGlControl : OpenGlControlBase
     private const int GlProgramPointSize  = 0x8642;
     private const int GlLines             = 0x0001;
     private const int GlLineLoop          = 0x0002;
-private const int GlLineStrip         = 0x0003;
+    private const int GlLineStrip         = 0x0003;
     private const int GlPoints            = 0x0000;
     private const int GlFloat             = 0x1406;
     private const int GlArrayBuffer       = 0x8892;
@@ -178,16 +178,16 @@ private const int GlLineStrip         = 0x0003;
     private int _starVao, _starVbo;
     private int _bodyVao, _bodyVbo;
     private int _horizonVao, _horizonVbo;
-private int _mazzarothVao, _mazzarothVbo;
-private int _constVao, _constVbo;   // constellation lines
+    private int _mazzarothVao, _mazzarothVbo;
+    private int _constVao, _constVbo;   // constellation lines
     private int _pathVao, _pathVbo;     // Sun/Moon path arcs
     private int _mvpLoc;
     private int _lineMvpLoc;
     private bool _glReady;
     private int _starCount;
     private int _bodyVertexCount;
-private int _mazzarothVertexCount;
-private int _constVertexCount;
+    private int _mazzarothVertexCount;
+    private int _constVertexCount;
     private int _pathVertexCount;
 
     // ── Scene data ────────────────────────────────────────────────────────
@@ -351,8 +351,9 @@ private int _constVertexCount;
         ("Alpheratz",  "Mirach"),
         // Boötes
         ("Arcturus",   "Izar"),
+    ];
 
-// ── Mazzaroth overlay toggle ──────────────────────────────────────────
+    // ── Mazzaroth overlay toggle ──────────────────────────────────────────
 
     private bool _showMazzarothOverlay;
 
@@ -368,7 +369,7 @@ private int _constVertexCount;
         {
             if (_showMazzarothOverlay == value) return;
             _showMazzarothOverlay = value;
-            RequestNextFrameRendering();
+            Dispatcher.UIThread.Post(RequestNextFrameRendering);
         }
     }
 
@@ -462,11 +463,9 @@ private int _constVertexCount;
         gl.DeleteProgram(_shaderProgram);
         gl.DeleteProgram(_lineProgram);
 
-        // Batch delete all VAOs and VBOs in two calls
-_deleteVertexArrays!(4, [_starVao, _bodyVao, _horizonVao, _mazzarothVao]);
-        _deleteBuffers!(4, [_starVbo, _bodyVbo, _horizonVbo, _mazzarothVbo]);
-_deleteVertexArrays!(5, [_starVao, _bodyVao, _horizonVao, _constVao, _pathVao]);
-        _deleteBuffers!(5, [_starVbo, _bodyVbo, _horizonVbo, _constVbo, _pathVbo]);
+        // Batch delete all VAOs and VBOs in a single call each
+        _deleteVertexArrays!(6, [_starVao, _bodyVao, _horizonVao, _mazzarothVao, _constVao, _pathVao]);
+        _deleteBuffers!(6, [_starVbo, _bodyVbo, _horizonVbo, _mazzarothVbo, _constVbo, _pathVbo]);
 
         _glReady = false;
     }

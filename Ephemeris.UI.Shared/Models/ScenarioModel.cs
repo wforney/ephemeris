@@ -6,7 +6,7 @@ namespace Ephemeris.UI.Models;
 /// <summary>
 /// Represents a predefined research scenario — a named combination of observer location,
 /// suggested modern UTC time, scripture reference, and (where applicable) a historical
-/// <see cref="ProlepticDate"/> for pre-BCE events that .NET <see cref="DateTime"/> cannot represent.
+/// <see cref="ProlepticDate"/> for BCE-era dates that .NET <see cref="DateTime"/> cannot represent.
 /// </summary>
 public sealed class ScenarioModel
 {
