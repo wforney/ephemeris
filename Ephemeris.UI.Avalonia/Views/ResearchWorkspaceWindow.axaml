@@ -1,0 +1,124 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Ephemeris.UI.Avalonia.Views.ResearchWorkspaceWindow"
+        Title="Ephemeris — Research Workspace"
+        Width="1100" Height="720"
+        MinWidth="720" MinHeight="520">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ── Toolbar ─────────────────────────────────────────────────── -->
+        <StackPanel Grid.Row="0"
+                    Orientation="Horizontal"
+                    Spacing="8"
+                    Margin="8,4"
+                    VerticalAlignment="Center">
+
+            <!-- Date display — shows historical string or normal date picker -->
+            <TextBlock x:Name="DateDisplayLabel"
+                       FontSize="14"
+                       FontWeight="SemiBold"
+                       VerticalAlignment="Center"
+                       MinWidth="220" />
+
+            <!-- Modern-mode date text box (hidden in historical mode) -->
+            <TextBox x:Name="DatePicker"
+                     Watermark="yyyy-MM-dd HH:mm"
+                     Width="150" />
+
+            <Separator Width="1" Background="Gray" Margin="4,0" />
+
+            <TextBlock Text="Lon:" VerticalAlignment="Center" />
+            <NumericUpDown x:Name="LonPicker"
+                           Minimum="-180" Maximum="180"
+                           Increment="1" FormatString="F2"
+                           Width="100" />
+
+            <TextBlock Text="Lat:" VerticalAlignment="Center" />
+            <NumericUpDown x:Name="LatPicker"
+                           Minimum="-90" Maximum="90"
+                           Increment="1" FormatString="F2"
+                           Width="80" />
+
+            <Separator Width="1" Background="Gray" Margin="4,0" />
+
+            <Button x:Name="StepBackBtn"  Content="◀ Day"  Width="70" />
+            <Button x:Name="StepFwdBtn"   Content="Day ▶"  Width="70" />
+
+            <Separator Width="1" Background="Gray" Margin="4,0" />
+
+            <!-- Scenario picker -->
+            <ComboBox x:Name="ScenarioPicker"
+                      PlaceholderText="Load scenario…"
+                      Width="200" />
+
+            <Button x:Name="ClearScenarioBtn" Content="✕ Clear" Width="70" />
+
+        </StackPanel>
+
+        <!-- ── Main content area ───────────────────────────────────────── -->
+        <ScrollViewer Grid.Row="1" Padding="8">
+            <StackPanel Spacing="12">
+
+                <!-- Sun position card -->
+                <Border BorderBrush="Gray" BorderThickness="1" CornerRadius="4" Padding="8">
+                    <StackPanel>
+                        <TextBlock Text="☀ Sun" FontWeight="Bold" FontSize="13" />
+                        <TextBlock x:Name="SunLabel" Text="—" Margin="0,4,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Moon position card -->
+                <Border BorderBrush="Gray" BorderThickness="1" CornerRadius="4" Padding="8">
+                    <StackPanel>
+                        <TextBlock Text="🌙 Moon" FontWeight="Bold" FontSize="13" />
+                        <TextBlock x:Name="MoonLabel" Text="—" Margin="0,4,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Active scenario info -->
+                <Border x:Name="ScenarioInfoBorder"
+                        BorderBrush="SteelBlue" BorderThickness="1"
+                        CornerRadius="4" Padding="8"
+                        IsVisible="False">
+                    <StackPanel>
+                        <TextBlock x:Name="ScenarioNameLabel" FontWeight="Bold" FontSize="13" />
+                        <TextBlock x:Name="ScenarioDescLabel" Margin="0,4,0,0" />
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ── Status bar ──────────────────────────────────────────────── -->
+        <Border Grid.Row="2"
+                Background="#1A1A2E"
+                Padding="8,4">
+            <Grid ColumnDefinitions="*,Auto">
+
+                <TextBlock x:Name="StatusLabel"
+                           Grid.Column="0"
+                           Text="Ready"
+                           Foreground="LightGray"
+                           FontSize="11"
+                           VerticalAlignment="Center" />
+
+                <!-- Historical mode badge — only visible in historical mode -->
+                <Border x:Name="HistoricalBadge"
+                        Grid.Column="1"
+                        Background="DarkGoldenRod"
+                        CornerRadius="3"
+                        Padding="6,2"
+                        IsVisible="False">
+                    <TextBlock Text="📜 Historical Mode"
+                               Foreground="White"
+                               FontSize="11"
+                               FontWeight="SemiBold" />
+                </Border>
+
+            </Grid>
+        </Border>
+
+    </Grid>
+
+</Window>

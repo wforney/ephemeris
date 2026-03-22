@@ -31,6 +31,7 @@ public partial class LauncherWindow : Window,
 
         SkyViewBtn.Click += OnSkyViewClick;
         PlotBtn.Click    += OnPlotClick;
+        ResearchBtn.Click += OnResearchClick;
     }
 
     private async void OnSkyViewClick(object? sender, RoutedEventArgs e)
@@ -44,6 +45,12 @@ public partial class LauncherWindow : Window,
         List<EphemerisRecord> allData = [];
         var plotWindow = new EphemerisPlotWindow(allData, "Sun");
         await plotWindow.ShowDialog(this);
+    }
+
+    private async void OnResearchClick(object? sender, RoutedEventArgs e)
+    {
+        var researchWindow = new ResearchWorkspaceWindow();
+        await researchWindow.ShowDialog(this);
     }
 
     /// <inheritdoc/>
