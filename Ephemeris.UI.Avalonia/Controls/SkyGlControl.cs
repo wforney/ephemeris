@@ -205,7 +205,7 @@ public sealed class SkyGlControl : OpenGlControlBase
     // ── View-model ────────────────────────────────────────────────────────
     private readonly SkyViewModel _vm;
 
-    // ── Display toggle properties ─────────────────────────────────────────
+// ── Display toggle properties ─────────────────────────────────────────
 
     private bool _showConstellations;
     private bool _showStarLabels;
@@ -486,7 +486,7 @@ public sealed class SkyGlControl : OpenGlControlBase
         double jd = TimeZoneUtils.ToJulianDay(_vm.SimTime);
         // UploadBodyVertices must run before UploadStarVertices because it clears the label lists
         UploadBodyVertices(gl, jd);
-        UploadStarVertices(gl, jd);
+UploadStarVertices(gl, jd);
         UploadConstellationVertices(gl, jd);
         UploadPathVertices(gl, jd);
         if (_showMazzarothOverlay)
@@ -999,7 +999,6 @@ public sealed class SkyGlControl : OpenGlControlBase
         buffer.Add(x); buffer.Add(y); buffer.Add(z);
         buffer.Add(r); buffer.Add(g); buffer.Add(b); buffer.Add(0.5f);
         buffer.Add(1f); // stride-filler (pointSize, unused for lines)
-
     }
 
     private void UploadVertexBuffer(float[] data, int usage)

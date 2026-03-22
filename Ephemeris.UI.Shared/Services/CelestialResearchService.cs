@@ -107,4 +107,32 @@ public class CelestialResearchService : ICelestialResearchService, ISingletonSer
             NextFullMoon: null,
             NextNewMoon:  null);
     }
+
+    /// <summary>
+    /// Computes celestial positions for any Julian Day (including BCE/BC dates).
+    /// Uses core ephemeris algorithms parameterised by Julian Century T so the epoch
+    /// is not limited to the range of <see cref="DateTime"/>.
+    /// </summary>
+    private static CelestialResearchData ComputeForJulianDay(double julianDay, double longitude, double latitude)
+    {
+        double T = TimeUtils.JulianCentury(julianDay);
+
+        var (sunRA, sunDec, _)   = SunEphemeris.ApparentEquatorialCoordinates(T);
+        HorizontalCoordinates sunH = ObserverGeometry.EquatorialToHorizontal(sunRA, sunDec, julianDay, longitude, latitude);
+
+        var (moonRA, moonDec, _) = MoonEphemeris.GeocentricEquatorialCoordinates(T);
+        HorizontalCoordinates moonH = ObserverGeometry.EquatorialToHorizontal(moonRA, moonDec, julianDay, longitude, latitude);
+        double moonPhaseAngle   = MoonEphemeris.PhaseAngle(T);
+        double moonIllumination = MoonEphemeris.Illumination(moonPhaseAngle);
+
+        return new CelestialResearchData(
+            Sun:          new CelestialObservation(sunRA, sunDec, sunH.Azimuth, sunH.Altitude),
+            Moon:         new CelestialObservation(moonRA, moonDec, moonH.Azimuth, moonH.Altitude, moonIllumination),
+            Sunrise:      null,
+            Sunset:       null,
+            Moonrise:     null,
+            Moonset:      null,
+            NextFullMoon: null,
+            NextNewMoon:  null);
+    }
 }
