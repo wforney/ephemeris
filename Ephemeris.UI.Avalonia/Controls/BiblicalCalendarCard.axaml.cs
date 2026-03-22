@@ -48,15 +48,12 @@ public partial class BiblicalCalendarCard : UserControl
         }
 
         HebrewYearText.Text = date.Year.ToString();
-        MonthText.Text = $"{date.MonthName} ({Ordinal(date.Month)})";
+        MonthText.Text = $"{date.MonthName} ({BiblicalCalendarHelper.Ordinal(date.Month)})";
         DayText.Text       = date.DayOfMonth.ToString();
         SeasonText.Text    = date.Season;
         SolarSignText.Text = $"{date.SolarSign} ({date.SolarSignHebrew})";
-        CrescentText.Text  = date.IsNewMoonVisibility ? "✓ Visible" : "Not visible";
+        CrescentText.Text  = date.IsNewMoonVisibility ? "Visible" : "Not visible";
     }
 
-    private static string Ordinal(int n) => n switch
-    {
-        1 => "1st", 2 => "2nd", 3 => "3rd", _ => $"{n}th",
-    };
+    // Ordinal formatting is delegated to BiblicalCalendarHelper.Ordinal(int).
 }

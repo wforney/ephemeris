@@ -230,16 +230,14 @@ public class BiblicalCalendarHelperTests
     }
 
     [Test]
-    public async Task IsCrescentVisible_TwoDaysAfterNewMoon_MoonAgeIsYoung()
+    public async Task IsCrescentVisible_TwoDaysAfterNewMoon_IsVisible()
     {
-        // 2024-Apr-10 is 2 days after the Apr-08 new moon — age check should pass (< 2.5 days).
-        // Visibility also depends on altitude; we just verify the method returns without throwing.
-        var dt   = new DateTime(2024, 4, 10, 12, 0, 0, DateTimeKind.Utc);
+        // 2024-Apr-09 18h UTC is ~1 day after the Apr-08 new moon — young crescent
+        // with moon age < 2.5 days and moon altitude > 5° at the nearest sunset.
+        var dt   = new DateTime(2024, 4, 9, 18, 0, 0, DateTimeKind.Utc);
         double jd = TimeZoneUtils.ToJulianDay(dt);
-        double T  = (jd - 2451545.0) / 36525.0;
+        bool visible = BiblicalCalendarHelper.IsCrescentVisible(jd, JerusalemLon, JerusalemLat);
 
-        // Moon's mean elongation D: at ~2 days post-new-moon, D should be roughly 20°-30°
-        double D = ((297.8501921 + (445267.1114034 * T)) % 360 + 360) % 360;
-        await Assert.That(D).IsLessThan(90.0); // still in the young-moon window (< ~4.4 days)
+        await Assert.That(visible).IsTrue();
     }
 }

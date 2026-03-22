@@ -1,7 +1,6 @@
 // Updated: 2026-03-22
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
-using Ephemeris.Heliology;
 using Ephemeris.Selenography;
 
 namespace Ephemeris.Phenomenology;
@@ -98,10 +97,10 @@ public static class BiblicalCalendarHelper
     /// <list type="number">
     ///   <item>Convert JD to a Julian Century T for celestial calculations.</item>
     ///   <item>Compute the Sun's true ecliptic longitude to determine season and Mazzaroth sign.</item>
-    ///   <item>Compute the Moon's mean elongation D to determine the day within the lunar month.</item>
-    ///   <item>Find the approximate Julian Day of the most recent new moon (mean synodic reference, Meeus Ch. 49).</item>
+    ///   <item>Compute the Moon's mean elongation D and derive an approximate lunar age (days since mean new moon).</item>
+    ///   <item>Estimate the Julian Day of the most recent mean new moon from this lunar age (no explicit Meeus Ch. 49 reference epoch is used for this step).</item>
     ///   <item>Find Nisan 1 = first new moon JD on or after the spring equinox for the current year.</item>
-    ///   <item>Count lunations from Nisan 1 to the current new moon to derive the biblical month number.</item>
+    ///   <item>Count complete lunations from Nisan 1 to the current date to derive the biblical month number.</item>
     ///   <item>Hebrew year ≈ Julian year + 3760 (the traditional anno mundi offset).</item>
     /// </list>
     /// <para>Accuracy: Month boundaries are within ±1 day of observational calendars for dates near J2000.</para>
@@ -149,8 +148,9 @@ public static class BiblicalCalendarHelper
             hebrewYear -= 1;
         }
 
-        // Number of complete lunations elapsed since Nisan 1
-        int monthsElapsed = (int)Math.Round((currentNewMoonJD - nisan1JD) / SynodicPeriod);
+        // Number of complete lunations elapsed since Nisan 1 — use floor to avoid
+        // rounding a near-complete month into the next one (e.g., 11.98 → 11, not 12).
+        int monthsElapsed = (int)Math.Floor((currentNewMoonJD - nisan1JD) / SynodicPeriod);
         if (monthsElapsed < 0) monthsElapsed = 0;
 
         // Biblical month (1-based, 1=Nisan, wraps at 13)
@@ -168,7 +168,7 @@ public static class BiblicalCalendarHelper
         // Crescent visibility
         bool crescent = IsCrescentVisible(julianDay, longitude, latitude);
 
-        string ordinal = OrdinalSuffix(month);
+        string ordinal = Ordinal(month);
 
         string description = $"Hebrew Year {hebrewYear}, Month {ordinal} ({monthName}), Day {dayOfMonth}. " +
                              $"Season: {season}. Sun in {solarSign} ({solarSignHebrew}). " +
@@ -257,15 +257,33 @@ public static class BiblicalCalendarHelper
         if (moonAgeDays >= 2.5)
             return false;
 
-        // Criterion 2: Moon altitude at sunset must exceed 5°
-        // Get sunset time for this date
-        DateTime date = TimeZoneUtils.FromJulianDay(julianDay).Date;
-        var rts = RiseSetCalculator.Sun(DateTime.SpecifyKind(date, DateTimeKind.Utc), longitude, latitude);
+        // Criterion 2: Moon altitude at closest sunset to the requested JD must exceed 5°.
+        // Evaluate three consecutive UTC dates so that near-midnight JDs (or large ± longitudes)
+        // always pick the sunset that falls nearest the requested moment.
+        DateTime baseDateUtc = TimeZoneUtils.FromJulianDay(julianDay).Date;
+        double? bestSunsetJD = null;
+        double bestDelta = double.MaxValue;
 
-        if (!rts.Set.HasValue)
-            return false; // circumpolar — no defined sunset
+        for (int offset = -1; offset <= 1; offset++)
+        {
+            DateTime testDateUtc = baseDateUtc.AddDays(offset);
+            var rtsCandidate = RiseSetCalculator.Sun(DateTime.SpecifyKind(testDateUtc, DateTimeKind.Utc), longitude, latitude);
+            if (!rtsCandidate.Set.HasValue)
+                continue;
 
-        double sunsetJD = TimeZoneUtils.ToJulianDay(rts.Set.Value);
+            double candidateSunsetJD = TimeZoneUtils.ToJulianDay(rtsCandidate.Set.Value);
+            double delta = Math.Abs(candidateSunsetJD - julianDay);
+            if (delta < bestDelta)
+            {
+                bestDelta = delta;
+                bestSunsetJD = candidateSunsetJD;
+            }
+        }
+
+        if (!bestSunsetJD.HasValue)
+            return false; // no defined sunset in the neighbourhood (e.g., circumpolar)
+
+        double sunsetJD = bestSunsetJD.Value;
 
         // Moon's equatorial coordinates at sunset
         double Tsunset = (sunsetJD - 2451545.0) / 36525.0;
@@ -293,8 +311,8 @@ public static class BiblicalCalendarHelper
         return s_mazzarothHebrew[index];
     }
 
-    /// <summary>Returns a short English ordinal suffix string for a month number (1→"1st", 2→"2nd", etc.).</summary>
-    private static string OrdinalSuffix(int n) => n switch
+    /// <summary>Returns a short English ordinal string for a month number (1→"1st", 2→"2nd", 3→"3rd", n→"nth").</summary>
+    public static string Ordinal(int n) => n switch
     {
         1 => "1st", 2 => "2nd", 3 => "3rd", _ => $"{n}th",
     };
