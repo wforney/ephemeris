@@ -1,4 +1,4 @@
-# Updated: 2026-03-11
+# Updated: 2026-03-22
 name: Release
 
 on:
@@ -10,7 +10,8 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  # ── NuGet: core library ────────────────────────────────────────────────
+  nuget:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -36,3 +37,54 @@ jobs:
         with:
           files: ./nupkg/*.nupkg
           generate_release_notes: true
+
+  # ── Single-file UI: per-platform matrix ───────────────────────────────
+  publish-ui:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+            artifact: Ephemeris.UI.Avalonia.exe
+          - os: ubuntu-latest
+            rid: linux-x64
+            artifact: Ephemeris.UI.Avalonia
+          - os: macos-latest
+            rid: osx-x64
+            artifact: Ephemeris.UI.Avalonia
+          - os: macos-latest
+            rid: osx-arm64
+            artifact: Ephemeris.UI.Avalonia
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Publish single-file (${{ matrix.rid }})
+        run: >
+          dotnet publish Ephemeris.UI.Avalonia/Ephemeris.UI.Avalonia.csproj
+          /p:PublishProfile=${{ matrix.rid }}
+
+      - name: Rename artifact for release
+        shell: bash
+        run: |
+          SRC="Ephemeris.UI.Avalonia/bin/publish/${{ matrix.rid }}/${{ matrix.artifact }}"
+          DST="Ephemeris.UI.Avalonia/bin/publish/${{ matrix.rid }}/EphemerisApp-${{ matrix.rid }}${{ matrix.rid == 'win-x64' && '.exe' || '' }}"
+          mv "$SRC" "$DST"
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Ephemeris.UI.Avalonia/bin/publish/${{ matrix.rid }}/EphemerisApp-${{ matrix.rid }}*
+          generate_release_notes: false

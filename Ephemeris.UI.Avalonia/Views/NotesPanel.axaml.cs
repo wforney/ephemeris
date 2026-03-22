@@ -19,8 +19,11 @@ namespace Ephemeris.UI.Avalonia.Views;
 /// </remarks>
 public partial class NotesPanel : Window
 {
-    private readonly SkyViewModel _vm;
-    private readonly SessionModel _session;
+    private SkyViewModel _vm = null!;
+    private SessionModel _session = null!;
+
+    /// <summary>Parameterless constructor for the Avalonia XAML runtime loader and designer.</summary>
+    public NotesPanel() => InitializeComponent();
 
     /// <summary>
     /// Initialises the notes panel.

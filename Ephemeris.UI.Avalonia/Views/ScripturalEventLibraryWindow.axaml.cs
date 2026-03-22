@@ -17,7 +17,10 @@ namespace Ephemeris.UI.Avalonia.Views;
 /// </remarks>
 public partial class ScripturalEventLibraryWindow : Window
 {
-    private readonly SkyViewModel _vm;
+    private SkyViewModel _vm = null!;
+
+    /// <summary>Parameterless constructor for the Avalonia XAML runtime loader and designer.</summary>
+    public ScripturalEventLibraryWindow() => InitializeComponent();
 
     /// <summary>
     /// Initialises the library window.
