@@ -8,6 +8,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Ephemeris.UI.Avalonia.Controls;
+using Ephemeris.UI.Services;
 
 namespace Ephemeris.UI.Avalonia.Views;
 
@@ -37,9 +38,13 @@ public partial class SkyViewWindow : Window
 
     /// <summary>
     /// Parameterless constructor required by Avalonia's runtime XAML loader.
-    /// Defaults to longitude 0° (Greenwich meridian) and latitude 51.5° N (London).
+    /// Defaults to longitude 0° (Greenwich meridian) and latitude 51.5° N (London),
+    /// then updates the observer coordinates from IP geolocation in the background.
     /// </summary>
-    public SkyViewWindow() : this(0.0, 51.5, default) { }
+    public SkyViewWindow() : this(0.0, 51.5, default)
+    {
+        _ = ApplyCurrentLocationAsync();
+    }
 
     /// <summary>
     /// Initialises the sky view window.
@@ -130,6 +135,23 @@ public partial class SkyViewWindow : Window
     // ─────────────────────────────────────────────────────────────────────
     // ViewModel sync
     // ─────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Fetches the device's approximate location from IP geolocation and, if successful,
+    /// updates the observer coordinates on the UI thread.
+    /// </summary>
+    private async Task ApplyCurrentLocationAsync()
+    {
+        var location = await LocationService.GetLocationAsync().ConfigureAwait(false);
+        if (location is not { } loc)
+            return;
+
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            _vm.Longitude = loc.Longitude;
+            _vm.Latitude  = loc.Latitude;
+        });
+    }
 
     private void SyncToolbarFromVm()
     {

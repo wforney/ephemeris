@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Ephemeris;
+using Ephemeris.UI.Services;
 
 namespace Ephemeris.UI.Avalonia.Views;
 
@@ -32,6 +33,10 @@ public partial class HomeWindow : Window
     public HomeWindow()
     {
         InitializeComponent();
+
+        // Warm up the IP geolocation cache so coordinates are ready when the user
+        // opens a sky view (typically a few seconds after the launcher appears).
+        LocationService.Prefetch();
 
         NewSessionBtn.Click       += OnNewSessionClick;
         LoadScripturalBtn.Click   += OnLoadScripturalClick;
@@ -94,23 +99,27 @@ public partial class HomeWindow : Window
 
     // ── Legacy shortcuts ─────────────────────────────────────────────────────
 
-    private void OnSkyViewClick(object? sender, RoutedEventArgs e)
+    private async void OnSkyViewClick(object? sender, RoutedEventArgs e)
     {
-        // TODO: persist and restore last-used observer coordinates instead of hard-coded defaults.
-        const double defaultLongitude = 0.0;
-        const double defaultLatitude  = 51.5;  // London
-        var skyWindow = new SkyViewWindow(defaultLongitude, defaultLatitude, default);
+        var location = await LocationService.GetLocationAsync();
+        double lon = location?.Longitude ?? 0.0;
+        double lat = location?.Latitude  ?? 51.5;
+        var skyWindow = new SkyViewWindow(lon, lat, default);
         skyWindow.Show();
     }
 
-    private void OnAltitudeChartClick(object? sender, RoutedEventArgs e)
+    private async void OnAltitudeChartClick(object? sender, RoutedEventArgs e)
     {
+        var location = await LocationService.GetLocationAsync();
+        double lon = location?.Longitude ?? 0.0;
+        double lat = location?.Latitude  ?? 51.5;
+
         var records = EphemerisBatch.GenerateSunSeries(
             startUtc: DateTime.UtcNow.Date,
             intervalMinutes: 30,
-            count: 48,          // 24-hour day in 30-minute steps
-            longitude: 0.0,
-            latitude: 51.5);    // Greenwich / London defaults
+            count: 48,
+            longitude: lon,
+            latitude: lat);
 
         var plotWindow = new EphemerisPlotWindow(records, "Sun");
         plotWindow.Show();
