@@ -347,8 +347,9 @@ public static class BiblicalCalendarHelper
         long k = (long)Math.Floor((equinoxJD - ReferenceNewMoonJD) / SynodicPeriod);
         double newMoonJD = ReferenceNewMoonJD + (k * SynodicPeriod);
 
-        // Advance to the first new moon on or after the equinox
-        while (newMoonJD < equinoxJD)
+        // Advance to the first new moon on or after the equinox (guard against floating-point edge cases)
+        const int maxIterations = 4; // the equinox can be at most ~1 synodic month before the new moon
+        for (int i = 0; i < maxIterations && newMoonJD < equinoxJD; i++)
         {
             k++;
             newMoonJD = ReferenceNewMoonJD + (k * SynodicPeriod);
