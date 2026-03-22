@@ -1,0 +1,33 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Ephemeris.UI.Avalonia.Controls.EmptyStateControl">
+
+    <!-- Shows a centred icon + message when content is not yet loaded -->
+    <StackPanel HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Spacing="8">
+
+        <TextBlock x:Name="IconText"
+                   FontSize="48"
+                   HorizontalAlignment="Center"
+                   TextAlignment="Center" />
+
+        <TextBlock x:Name="TitleText"
+                   FontSize="18"
+                   FontWeight="Bold"
+                   HorizontalAlignment="Center"
+                   TextAlignment="Center"
+                   Foreground="{DynamicResource ResearchTextPrimaryBrush}" />
+
+        <TextBlock x:Name="SubtitleText"
+                   FontSize="13"
+                   Opacity="0.7"
+                   HorizontalAlignment="Center"
+                   TextAlignment="Center"
+                   TextWrapping="Wrap"
+                   MaxWidth="280"
+                   Foreground="{DynamicResource ResearchTextSecondaryBrush}" />
+
+    </StackPanel>
+
+</UserControl>

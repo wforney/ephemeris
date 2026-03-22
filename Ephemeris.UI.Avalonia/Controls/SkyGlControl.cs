@@ -8,6 +8,8 @@ using Avalonia.OpenGL.Controls;
 using Avalonia.Threading;
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
+using Ephemeris.Heliology;
+using Ephemeris.Selenography;
 using Ephemeris.Stellarography;
 using Ephemeris.UI.Models;
 
@@ -42,8 +44,9 @@ public sealed class SkyGlControl : OpenGlControlBase
     private const int GL_COLOR_BUFFER_BIT  = 0x4000;
     private const int GL_DEPTH_BUFFER_BIT  = 0x0100;
     private const int GlProgramPointSize  = 0x8642;
-    private const int GlLineLoop          = 0x0002;
     private const int GlLines             = 0x0001;
+    private const int GlLineLoop          = 0x0002;
+private const int GlLineStrip         = 0x0003;
     private const int GlPoints            = 0x0000;
     private const int GlFloat             = 0x1406;
     private const int GlArrayBuffer       = 0x8892;
@@ -87,6 +90,37 @@ public sealed class SkyGlControl : OpenGlControlBase
             vec2 c = gl_PointCoord - vec2(0.5);
             if (dot(c, c) > 0.25)
                 discard;
+            fragColor = vColor;
+        }
+        """;
+
+    // ── Shader sources for line rendering (no point-sprite logic) ─────────
+
+    /// <summary>Vertex shader for line primitives; no gl_PointSize output.</summary>
+    private const string LineVertexShaderSource = """
+        #version 330 core
+        layout(location = 0) in vec3 aPos;
+        layout(location = 1) in vec4 aColor;
+
+        uniform mat4 uMVP;
+
+        out vec4 vColor;
+
+        void main()
+        {
+            gl_Position = uMVP * vec4(aPos, 1.0);
+            vColor      = aColor;
+        }
+        """;
+
+    /// <summary>Fragment shader for line primitives; outputs colour directly without gl_PointCoord clipping.</summary>
+    private const string LineFragmentShaderSource = """
+        #version 330 core
+        in  vec4 vColor;
+        out vec4 fragColor;
+
+        void main()
+        {
             fragColor = vColor;
         }
         """;
@@ -140,18 +174,25 @@ public sealed class SkyGlControl : OpenGlControlBase
 
     // ── GL object handles ─────────────────────────────────────────────────
     private int _shaderProgram;
+    private int _lineProgram;
     private int _starVao, _starVbo;
     private int _bodyVao, _bodyVbo;
     private int _horizonVao, _horizonVbo;
-    private int _mazzarothVao, _mazzarothVbo;
+private int _mazzarothVao, _mazzarothVbo;
+private int _constVao, _constVbo;   // constellation lines
+    private int _pathVao, _pathVbo;     // Sun/Moon path arcs
     private int _mvpLoc;
+    private int _lineMvpLoc;
     private bool _glReady;
     private int _starCount;
     private int _bodyVertexCount;
-    private int _mazzarothVertexCount;
+private int _mazzarothVertexCount;
+private int _constVertexCount;
+    private int _pathVertexCount;
 
     // ── Scene data ────────────────────────────────────────────────────────
     private IReadOnlyList<FixedStar> _stars = [];
+    private Dictionary<string, FixedStar> _starByName = [];  // cached for constellation lookup
     private readonly List<(Vector2 Screen, string Label, uint ColorArgb)> _labels = [];
     private readonly List<Vector3> _bodyWorldPos = [];
 
@@ -164,7 +205,154 @@ public sealed class SkyGlControl : OpenGlControlBase
     // ── View-model ────────────────────────────────────────────────────────
     private readonly SkyViewModel _vm;
 
-    // ── Mazzaroth overlay toggle ──────────────────────────────────────────
+// ── Display toggle properties ─────────────────────────────────────────
+
+    private bool _showConstellations;
+    private bool _showStarLabels;
+    private bool _showPlanetLabels = true;
+    private bool _showHorizonGrid = true;
+    private double _starMagnitudeLimit = 5.5;
+    private bool _showSunPath;
+    private bool _showMoonPath;
+
+    /// <summary>
+    /// When <see langword="true"/>, draws thin lines connecting the stars of prominent
+    /// constellations. Default is <see langword="false"/>.
+    /// </summary>
+    public bool ShowConstellations
+    {
+        get => _showConstellations;
+        set { _showConstellations = value; Dispatcher.UIThread.Post(RequestNextFrameRendering); }
+    }
+
+    /// <summary>
+    /// When <see langword="true"/>, overlays the common name of each star brighter than
+    /// magnitude 2.0. Default is <see langword="false"/>.
+    /// </summary>
+    public bool ShowStarLabels
+    {
+        get => _showStarLabels;
+        set { _showStarLabels = value; Dispatcher.UIThread.Post(RequestNextFrameRendering); }
+    }
+
+    /// <summary>
+    /// When <see langword="true"/>, shows name labels next to each planet and the Sun/Moon.
+    /// Default is <see langword="true"/>.
+    /// </summary>
+    public bool ShowPlanetLabels
+    {
+        get => _showPlanetLabels;
+        set { _showPlanetLabels = value; Dispatcher.UIThread.Post(RequestNextFrameRendering); }
+    }
+
+    /// <summary>
+    /// When <see langword="true"/>, draws the horizon ring. Default is <see langword="true"/>.
+    /// </summary>
+    public bool ShowHorizonGrid
+    {
+        get => _showHorizonGrid;
+        set { _showHorizonGrid = value; Dispatcher.UIThread.Post(RequestNextFrameRendering); }
+    }
+
+    /// <summary>
+    /// Stars with visual magnitude ≤ this limit are rendered.
+    /// Lower = fewer (brighter) stars; higher = more (fainter) stars.
+    /// Valid range: 0.0 – 7.0. Default is 5.5.
+    /// </summary>
+    public double StarMagnitudeLimit
+    {
+        get => _starMagnitudeLimit;
+        set { _starMagnitudeLimit = value; Dispatcher.UIThread.Post(RequestNextFrameRendering); }
+    }
+
+    /// <summary>
+    /// When <see langword="true"/>, draws the Sun's altitude arc for the current simulation day
+    /// as a sequence of yellow line segments. Default is <see langword="false"/>.
+    /// </summary>
+    public bool ShowSunPath
+    {
+        get => _showSunPath;
+        set { _showSunPath = value; Dispatcher.UIThread.Post(RequestNextFrameRendering); }
+    }
+
+    /// <summary>
+    /// When <see langword="true"/>, draws the Moon's altitude arc for the current simulation day
+    /// as a sequence of silver-blue line segments. Default is <see langword="false"/>.
+    /// </summary>
+    public bool ShowMoonPath
+    {
+        get => _showMoonPath;
+        set { _showMoonPath = value; Dispatcher.UIThread.Post(RequestNextFrameRendering); }
+    }
+
+    // ── Constellation line data ───────────────────────────────────────────
+    // Each entry is (star1CommonName, star2CommonName). Only pairs whose stars are
+    // both present in the built-in catalog will be rendered.
+    private static readonly (string S1, string S2)[] s_constellationPairs =
+    [
+        // Orion
+        ("Betelgeuse", "Bellatrix"),
+        ("Betelgeuse", "Alnilam"),
+        ("Bellatrix",  "Alnilam"),
+        ("Alnilam",    "Alnitak"),
+        ("Alnilam",    "Rigel"),
+        ("Alnitak",    "Saiph"),
+        ("Rigel",      "Saiph"),
+        // Ursa Major (Big Dipper)
+        ("Dubhe",      "Merak"),
+        ("Merak",      "Phecda"),
+        ("Phecda",     "Mizar"),
+        ("Mizar",      "Alkaid"),
+        ("Dubhe",      "Alkaid"),
+        // Cassiopeia
+        ("Caph",       "Schedar"),
+        // Scorpius
+        ("Antares",    "Acrab"),
+        ("Antares",    "Larawag"),
+        ("Shaula",     "Lesath"),
+        ("Acrab",      "Larawag"),
+        // Leo
+        ("Regulus",    "Algieba"),
+        ("Algieba",    "Zosma"),
+        // Taurus
+        ("Aldebaran",  "Elnath"),
+        ("Aldebaran",  "Alcyone"),
+        // Gemini
+        ("Castor",     "Pollux"),
+        ("Castor",     "Alhena"),
+        ("Pollux",     "Alhena"),
+        // Southern Cross (Crux)
+        ("Acrux",      "Gacrux"),
+        ("Acrux",      "Mimosa"),
+        // Perseus
+        ("Mirfak",     "Algol"),
+        // Auriga
+        ("Capella",    "Menkalinan"),
+        ("Menkalinan", "Elnath"),
+        ("Capella",    "Elnath"),
+        // Sagittarius
+        ("Kaus Australis", "Kaus Media"),
+        ("Kaus Media",     "Kaus Borealis"),
+        ("Kaus Australis", "Nunki"),
+        // Centaurus
+        ("Hadar",      "Eta Cen"),
+        ("Eta Cen",    "Muhlifain"),
+        // Pegasus (Great Square)
+        ("Markab",     "Scheat"),
+        ("Scheat",     "Alpheratz"),
+        ("Alpheratz",  "Algenib"),
+        ("Algenib",    "Markab"),
+        // Cygnus
+        ("Deneb",      "Aljanah"),
+        // Virgo
+        ("Spica",      "Porrima"),
+        ("Porrima",    "Vindemiatrix"),
+        // Andromeda
+        ("Alpheratz",  "Mirach"),
+        // Boötes
+        ("Arcturus",   "Izar"),
+
+// ── Mazzaroth overlay toggle ──────────────────────────────────────────
 
     private bool _showMazzarothOverlay;
 
@@ -260,8 +448,9 @@ public sealed class SkyGlControl : OpenGlControlBase
 
         CompileShaders(gl);
         InitBuffers(gl);
-        _stars   = StarCatalog.LoadBuiltIn();
-        _glReady = true;
+        _stars     = StarCatalog.LoadBuiltIn();
+        _starByName = _stars.ToDictionary(s => s.CommonName, StringComparer.OrdinalIgnoreCase);
+        _glReady   = true;
         RequestNextFrameRendering();
     }
 
@@ -271,10 +460,13 @@ public sealed class SkyGlControl : OpenGlControlBase
         if (!_glReady) return;
 
         gl.DeleteProgram(_shaderProgram);
+        gl.DeleteProgram(_lineProgram);
 
         // Batch delete all VAOs and VBOs in two calls
-        _deleteVertexArrays!(4, [_starVao, _bodyVao, _horizonVao, _mazzarothVao]);
+_deleteVertexArrays!(4, [_starVao, _bodyVao, _horizonVao, _mazzarothVao]);
         _deleteBuffers!(4, [_starVbo, _bodyVbo, _horizonVbo, _mazzarothVbo]);
+_deleteVertexArrays!(5, [_starVao, _bodyVao, _horizonVao, _constVao, _pathVao]);
+        _deleteBuffers!(5, [_starVbo, _bodyVbo, _horizonVbo, _constVbo, _pathVbo]);
 
         _glReady = false;
     }
@@ -293,34 +485,58 @@ public sealed class SkyGlControl : OpenGlControlBase
 
         // Upload scene vertex data for the current simulation time
         double jd = TimeZoneUtils.ToJulianDay(_vm.SimTime);
-        UploadStarVertices(gl, jd);
+        // UploadBodyVertices must run before UploadStarVertices because it clears the label lists
         UploadBodyVertices(gl, jd);
+UploadStarVertices(gl, jd);
+        UploadConstellationVertices(gl, jd);
+        UploadPathVertices(gl, jd);
         if (_showMazzarothOverlay)
             UploadMazzarothVertices(gl, jd);
 
         gl.Viewport(0, 0, w, h);
         gl.Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        gl.UseProgram(_shaderProgram);
-
         float[] mvp = BuildMvp(w, h);
+
+        // ── Point-sprite pass (stars + bodies) ────────────────────────────
+        gl.UseProgram(_shaderProgram);
         unsafe
         {
             fixed (float* p = mvp)
                 _uniformMatrix4fv!(_mvpLoc, 1, false, p);
         }
 
-        // Draw stars
         _bindVertexArray!(_starVao);
         gl.DrawArrays(GlPoints, 0, _starCount);
 
-        // Draw Sun, Moon, planets (rendered on top)
         _bindVertexArray(_bodyVao);
         gl.DrawArrays(GlPoints, 0, _bodyVertexCount);
 
-        // Draw horizon ring
-        _bindVertexArray(_horizonVao);
-        gl.DrawArrays(GlLineLoop, 0, 360);
+        // ── Line pass (constellation lines, paths, horizon ring) ──────────
+        gl.UseProgram(_lineProgram);
+        unsafe
+        {
+            fixed (float* p = mvp)
+                _uniformMatrix4fv!(_lineMvpLoc, 1, false, p);
+        }
+
+        if (_showHorizonGrid)
+        {
+            _bindVertexArray(_horizonVao);
+            gl.DrawArrays(GlLineLoop, 0, 360);
+        }
+
+        if (_showConstellations && _constVertexCount > 0)
+        {
+            _bindVertexArray(_constVao);
+            gl.DrawArrays(GlLines, 0, _constVertexCount);
+        }
+
+        if (_pathVertexCount > 0)
+        {
+            _bindVertexArray(_pathVao);
+            gl.DrawArrays(GlLines, 0, _pathVertexCount);
+        }
 
         // Draw Mazzaroth ecliptic overlay
         if (_showMazzarothOverlay && _mazzarothVertexCount > 0)
@@ -430,7 +646,10 @@ public sealed class SkyGlControl : OpenGlControlBase
     private void CompileShaders(GlInterface gl)
     {
         _shaderProgram = CreateProgram(gl, _getShaderiv!, _getProgramiv!, _detachShader!, VertexShaderSource, FragmentShaderSource);
-        _mvpLoc = GlGetUniformLocation(gl, _shaderProgram, "uMVP");
+        _mvpLoc        = GlGetUniformLocation(gl, _shaderProgram, "uMVP");
+
+        _lineProgram   = CreateProgram(gl, _getShaderiv!, _getProgramiv!, _detachShader!, LineVertexShaderSource, LineFragmentShaderSource);
+        _lineMvpLoc    = GlGetUniformLocation(gl, _lineProgram, "uMVP");
     }
 
     private static int CreateProgram(GlInterface gl,
@@ -497,7 +716,7 @@ public sealed class SkyGlControl : OpenGlControlBase
         _genBuffers!(1, arr);      _bodyVbo = arr[0];
         SetupVaoLayout(gl, _bodyVao, _bodyVbo);
 
-        // Horizon ring VAO/VBO (pos only)
+        // Horizon ring VAO/VBO (pos only, for line-loop)
         _genVertexArrays!(1, arr); _horizonVao = arr[0];
         _genBuffers!(1, arr);      _horizonVbo = arr[0];
         _bindVertexArray!(_horizonVao);
@@ -507,10 +726,19 @@ public sealed class SkyGlControl : OpenGlControlBase
         BuildHorizonRing();
         _bindVertexArray(0);
 
-        // Mazzaroth overlay VAO/VBO (same 8-float layout as stars/bodies)
+// Mazzaroth overlay VAO/VBO (same 8-float layout as stars/bodies)
         _genVertexArrays!(1, arr); _mazzarothVao = arr[0];
         _genBuffers!(1, arr);      _mazzarothVbo = arr[0];
         SetupVaoLayout(gl, _mazzarothVao, _mazzarothVbo);
+// Constellation lines VAO/VBO (pos + color, for GL_LINES)
+        _genVertexArrays!(1, arr); _constVao = arr[0];
+        _genBuffers!(1, arr);      _constVbo = arr[0];
+        SetupLineVaoLayout(gl, _constVao, _constVbo);
+
+        // Path overlay VAO/VBO (pos + color, for GL_LINES)
+        _genVertexArrays!(1, arr); _pathVao = arr[0];
+        _genBuffers!(1, arr);      _pathVbo = arr[0];
+        SetupLineVaoLayout(gl, _pathVao, _pathVbo);
     }
 
     /// <summary>
@@ -529,6 +757,23 @@ public sealed class SkyGlControl : OpenGlControlBase
         gl.EnableVertexAttribArray(1);
         gl.VertexAttribPointer(2, 1, GlFloat, 0, stride, (IntPtr)(7 * sizeof(float)));
         gl.EnableVertexAttribArray(2);
+        _bindVertexArray(0);
+    }
+
+    /// <summary>
+    /// Configures the VAO layout used by line buffers (constellation lines, path arcs):
+    /// location 0 = vec3 position, 1 = vec4 colour.
+    /// Stride = 28 bytes (7 floats).
+    /// </summary>
+    private void SetupLineVaoLayout(GlInterface gl, int vao, int vbo)
+    {
+        const int stride = (3 + 4) * sizeof(float); // 28 bytes
+        _bindVertexArray!(vao);
+        gl.BindBuffer(GlArrayBuffer, vbo);
+        gl.VertexAttribPointer(0, 3, GlFloat, 0, stride, IntPtr.Zero);
+        gl.EnableVertexAttribArray(0);
+        gl.VertexAttribPointer(1, 4, GlFloat, 0, stride, (IntPtr)(3 * sizeof(float)));
+        gl.EnableVertexAttribArray(1);
         _bindVertexArray(0);
     }
 
@@ -562,6 +807,9 @@ public sealed class SkyGlControl : OpenGlControlBase
 
         foreach (var star in _stars)
         {
+            // Apply user-configurable magnitude limit
+            if (star.Magnitude > _starMagnitudeLimit) continue;
+
             var eq = star.AtEpoch(jd);
             var hz = ObserverGeometry.EquatorialToHorizontal(
                 eq.RightAscension, eq.Declination, jd, _vm.Longitude, _vm.Latitude);
@@ -575,6 +823,14 @@ public sealed class SkyGlControl : OpenGlControlBase
             buffer.Add(x); buffer.Add(y); buffer.Add(z);
             buffer.Add(r); buffer.Add(g); buffer.Add(b); buffer.Add(1f);
             buffer.Add(size);
+
+            // Add star label for bright stars when ShowStarLabels is enabled
+            if (_showStarLabels && star.Magnitude <= 2.0 && !string.IsNullOrEmpty(star.CommonName))
+            {
+                uint argb = (255u << 24) | ((uint)(r * 200) << 16) | ((uint)(g * 200) << 8) | (uint)(b * 200);
+                _labels.Add((Vector2.Zero, star.CommonName, argb));
+                _bodyWorldPos.Add(new Vector3(x, y, z));
+            }
         }
 
         _starCount = buffer.Count / floatsPerVertex;
@@ -600,12 +856,12 @@ public sealed class SkyGlControl : OpenGlControlBase
 
         var sun = EphemerisCalculator.GetSunPosition(year, month, day, hour, _vm.Longitude, _vm.Latitude);
         double sunAltitude = sun.Altitude + (_override?.SunAltitudeOffsetDegrees ?? 0.0);
-        AddBodyVertex(buffer, sun.Azimuth, sunAltitude, 1.0f, 0.97f, 0.8f, 16f, "Sun");
+        AddBodyVertex(buffer, sun.Azimuth, sunAltitude, 1.0f, 0.97f, 0.8f, 16f, _showPlanetLabels ? "Sun" : null);
 
         var moon = EphemerisCalculator.GetMoonPosition(year, month, day, hour, _vm.Longitude, _vm.Latitude);
         float moonPhase = (float)(moon.Illumination ?? 0.5);
         AddBodyVertex(buffer, moon.Azimuth, moon.Altitude,
-            0.8f + 0.2f * moonPhase, 0.8f + 0.2f * moonPhase, 0.8f, 12f, "Moon");
+            0.8f + 0.2f * moonPhase, 0.8f + 0.2f * moonPhase, 0.8f, 12f, _showPlanetLabels ? "Moon" : null);
 
         AddPlanet(buffer, "Mercury", 0.7f, 0.7f, 0.7f, 6f);
         AddPlanet(buffer, "Venus",   1.0f, 0.95f, 0.7f, 8f);
@@ -628,7 +884,7 @@ public sealed class SkyGlControl : OpenGlControlBase
         {
             var obs = EphemerisCalculator.GetPlanetPosition(
                 name, _vm.SimTime, TimeZoneInfo.Utc.Id, _vm.Longitude, _vm.Latitude);
-            AddBodyVertex(buffer, obs.Azimuth, obs.Altitude, r, g, b, size, name);
+            AddBodyVertex(buffer, obs.Azimuth, obs.Altitude, r, g, b, size, _showPlanetLabels ? name : null);
         }
         catch
         {
@@ -638,7 +894,7 @@ public sealed class SkyGlControl : OpenGlControlBase
 
     private void AddBodyVertex(List<float> buffer,
         double azimuth, double altitude,
-        float r, float g, float b, float size, string label)
+        float r, float g, float b, float size, string? label)
     {
         var (x, y, z) = AzAltToUnitSphere(azimuth, altitude);
         buffer.Add(x); buffer.Add(y); buffer.Add(z);
@@ -647,7 +903,7 @@ public sealed class SkyGlControl : OpenGlControlBase
 
         uint argb = (255u << 24) | ((uint)(r * 255) << 16) | ((uint)(g * 255) << 8) | (uint)(b * 255);
         _bodyWorldPos.Add(new Vector3(x, y, z));
-        _labels.Add((Vector2.Zero, label, argb));
+        _labels.Add((Vector2.Zero, label ?? string.Empty, argb));
     }
 
     /// <summary>
@@ -761,6 +1017,148 @@ public sealed class SkyGlControl : OpenGlControlBase
     // ─────────────────────────────────────────────────────────────────────
 
     /// <summary>
+    /// Uploads constellation line vertices to the constellation VBO.
+    /// Each constellation line is a pair of unit-sphere positions with a dim blue-white colour.
+    /// Only lines where both endpoints are above the horizon are included.
+    /// </summary>
+    /// <remarks>
+    /// Vertex format: vec3 position + vec4 colour (stride = 28 bytes) — used by the line shader.
+    /// </remarks>
+    private void UploadConstellationVertices(GlInterface gl, double jd)
+    {
+        const int floatsPerVertex = 7; // pos(3) + color(4)
+        var buffer = new List<float>(s_constellationPairs.Length * 2 * floatsPerVertex);
+
+        foreach (var (s1Name, s2Name) in s_constellationPairs)
+        {
+            if (!_starByName.TryGetValue(s1Name, out var star1) ||
+                !_starByName.TryGetValue(s2Name, out var star2))
+                continue;
+
+            var eq1 = star1.AtEpoch(jd);
+            var hz1 = ObserverGeometry.EquatorialToHorizontal(eq1.RightAscension, eq1.Declination, jd, _vm.Longitude, _vm.Latitude);
+            if (hz1.Altitude < -5.0) continue;
+
+            var eq2 = star2.AtEpoch(jd);
+            var hz2 = ObserverGeometry.EquatorialToHorizontal(eq2.RightAscension, eq2.Declination, jd, _vm.Longitude, _vm.Latitude);
+            if (hz2.Altitude < -5.0) continue;
+
+            var (x1, y1, z1) = AzAltToUnitSphere(hz1.Azimuth, hz1.Altitude);
+            var (x2, y2, z2) = AzAltToUnitSphere(hz2.Azimuth, hz2.Altitude);
+
+            // Dim blue-white colour for constellation lines
+            buffer.Add(x1); buffer.Add(y1); buffer.Add(z1);
+            buffer.Add(0.4f); buffer.Add(0.5f); buffer.Add(0.8f); buffer.Add(0.6f);
+
+            buffer.Add(x2); buffer.Add(y2); buffer.Add(z2);
+            buffer.Add(0.4f); buffer.Add(0.5f); buffer.Add(0.8f); buffer.Add(0.6f);
+        }
+
+        _constVertexCount = buffer.Count / floatsPerVertex;
+        float[] data = [.. buffer];
+
+        _bindVertexArray!(_constVao);
+        gl.BindBuffer(GlArrayBuffer, _constVbo);
+        UploadVertexBuffer(data, GlDynamicDraw);
+        _bindVertexArray(0);
+    }
+
+    /// <summary>
+    /// Uploads Sun and/or Moon daily path arc vertices to the path VBO.
+    /// Computes 24 hourly positions for the current simulation day and connects them as line segments.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Sun path is drawn in yellow (1.0, 0.9, 0.0, 0.7).
+    /// Moon path is drawn in silver-blue (0.7, 0.8, 1.0, 0.7).
+    /// </para>
+    /// <para>
+    /// Vertex format: vec3 position + vec4 colour (stride = 28 bytes) — used by the line shader.
+    /// Adjacent points are connected using GL_LINES pairs, skipping any point below the horizon.
+    /// </para>
+    /// </remarks>
+    private void UploadPathVertices(GlInterface gl, double jd)
+    {
+        const int floatsPerVertex = 7; // pos(3) + color(4)
+        var buffer = new List<float>(48 * floatsPerVertex);
+
+        if (!_showSunPath && !_showMoonPath)
+        {
+            _pathVertexCount = 0;
+            _bindVertexArray!(_pathVao);
+            gl.BindBuffer(GlArrayBuffer, _pathVbo);
+            UploadVertexBuffer([], GlDynamicDraw);
+            _bindVertexArray(0);
+            return;
+        }
+
+        // Use start-of-day (midnight UTC) to span the full day arc
+        var dayStart = _vm.SimTime.Date;
+        int year  = dayStart.Year;
+        int month = dayStart.Month;
+        int day   = dayStart.Day;
+
+        if (_showSunPath)
+            AppendBodyPath(buffer, year, month, day, isSun: true);
+
+        if (_showMoonPath)
+            AppendBodyPath(buffer, year, month, day, isSun: false);
+
+        _pathVertexCount = buffer.Count / floatsPerVertex;
+        float[] data = [.. buffer];
+
+        _bindVertexArray!(_pathVao);
+        gl.BindBuffer(GlArrayBuffer, _pathVbo);
+        UploadVertexBuffer(data, GlDynamicDraw);
+        _bindVertexArray(0);
+    }
+
+    /// <summary>
+    /// Appends 24 hourly path vertices for the Sun or Moon to <paramref name="buffer"/>
+    /// using GL_LINES pairs (each visible consecutive segment is two vertices).
+    /// </summary>
+    /// <param name="buffer">Target vertex buffer.</param>
+    /// <param name="year">UTC year of the day being traced.</param>
+    /// <param name="month">UTC month of the day being traced.</param>
+    /// <param name="day">UTC day of the day being traced.</param>
+    /// <param name="isSun"><see langword="true"/> for the Sun (yellow), <see langword="false"/> for the Moon (silver-blue).</param>
+    private void AppendBodyPath(List<float> buffer, int year, int month, int day, bool isSun)
+    {
+        (float r, float g, float b, float a) color = isSun
+            ? (1.0f, 0.9f, 0.0f, 0.7f)
+            : (0.7f, 0.8f, 1.0f, 0.7f);
+
+        // Compute 25 positions (0h through 24h = next midnight) for the full-day arc
+        const int steps = 24;
+        var positions = new (float x, float y, float z, bool visible)[steps + 1];
+        for (int h = 0; h <= steps; h++)
+        {
+            double hour = h;
+            CelestialObservation obs = isSun
+                ? EphemerisCalculator.GetSunPosition(year, month, day, hour, _vm.Longitude, _vm.Latitude)
+                : EphemerisCalculator.GetMoonPosition(year, month, day, hour, _vm.Longitude, _vm.Latitude);
+
+            bool visible = obs.Altitude > -5.0;
+            var (x, y, z) = AzAltToUnitSphere(obs.Azimuth, obs.Altitude);
+            positions[h] = (x, y, z, visible);
+        }
+
+        // Emit GL_LINES pairs for each consecutive visible segment
+        for (int h = 0; h < steps; h++)
+        {
+            var (x1, y1, z1, v1) = positions[h];
+            var (x2, y2, z2, v2) = positions[h + 1];
+            if (!v1 || !v2) continue;
+
+            buffer.Add(x1); buffer.Add(y1); buffer.Add(z1);
+            buffer.Add(color.r); buffer.Add(color.g); buffer.Add(color.b); buffer.Add(color.a);
+
+            buffer.Add(x2); buffer.Add(y2); buffer.Add(z2);
+            buffer.Add(color.r); buffer.Add(color.g); buffer.Add(color.b); buffer.Add(color.a);
+        }
+    }
+
+    /// <summary>
     /// Builds the model-view-projection matrix as a column-major float[16] array
     /// ready for <c>glUniformMatrix4fv(…, transpose=false, …)</c>.
     /// </summary>
@@ -802,7 +1200,11 @@ public sealed class SkyGlControl : OpenGlControlBase
 
     private void UpdateLabelPositions(float[] mvp, int width, int height)
     {
-        if (_bodyVertexCount == 0 || width == 0 || height == 0) return;
+        if (_bodyWorldPos.Count == 0 || width == 0 || height == 0)
+        {
+            _labelSnapshot = [];
+            return;
+        }
 
         var m = new Matrix4x4(
             mvp[0], mvp[1], mvp[2], mvp[3],

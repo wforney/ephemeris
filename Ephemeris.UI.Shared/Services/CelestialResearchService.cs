@@ -14,7 +14,7 @@ namespace Ephemeris.UI.Services;
 /// </summary>
 /// <remarks>
 /// This class implements <see cref="ISingletonService"/> so that Scrutor assembly scanning
-/// automatically registers it as a singleton.
+/// automatically registers it as a singleton via <c>services.AddEphemerisServices()</c>.
 /// </remarks>
 public class CelestialResearchService : ICelestialResearchService, ISingletonService
 {
@@ -40,6 +40,9 @@ public class CelestialResearchService : ICelestialResearchService, ISingletonSer
     }
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// Delegates to <see cref="CelestialEventDetector.GetNext"/> on a background thread.
+    /// </remarks>
     public Task<IReadOnlyList<CelestialEventDetector.CelestialEvent>> GetUpcomingEventsAsync(
         DateTime fromUtc, int count = 5, CancellationToken ct = default)
     {
@@ -47,6 +50,9 @@ public class CelestialResearchService : ICelestialResearchService, ISingletonSer
         return Task.Run(() => CelestialEventDetector.GetNext(fromUtc, count), ct);
     }
 
+    /// <summary>
+    /// Performs all synchronous celestial calculations for the given UTC instant and location.
+    /// </summary>
     private static CelestialResearchData Compute(DateTime utcTime, double longitude, double latitude)
     {
         CelestialObservation sun  = EphemerisCalculator.GetSunPosition(utcTime, "UTC", longitude, latitude);

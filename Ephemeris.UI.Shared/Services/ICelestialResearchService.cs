@@ -28,8 +28,15 @@ public interface ICelestialResearchService
         CancellationToken ct = default);
 
     /// <summary>
-    /// Returns the next count notable celestial events after fromUtc, ordered by ascending UTC time.
+    /// Returns the next <paramref name="count"/> notable celestial events after
+    /// <paramref name="fromUtc"/>, ordered by ascending UTC time.
     /// </summary>
+    /// <param name="fromUtc">Search for events after this UTC time.</param>
+    /// <param name="count">Maximum number of events to return (default 5).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// A list of up to <paramref name="count"/> <see cref="CelestialEventDetector.CelestialEvent"/> instances.
+    /// </returns>
     Task<IReadOnlyList<CelestialEventDetector.CelestialEvent>> GetUpcomingEventsAsync(
         DateTime fromUtc, int count = 5, CancellationToken ct = default);
 }
