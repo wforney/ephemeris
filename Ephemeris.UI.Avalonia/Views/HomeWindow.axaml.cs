@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Ephemeris;
 
 namespace Ephemeris.UI.Avalonia.Views;
 
@@ -104,8 +105,14 @@ public partial class HomeWindow : Window
 
     private void OnAltitudeChartClick(object? sender, RoutedEventArgs e)
     {
-        // TODO: populate with a real EphemerisRecord dataset from the active session.
-        var plotWindow = new EphemerisPlotWindow([], "Sun");
+        var records = EphemerisBatch.GenerateSunSeries(
+            startUtc: DateTime.UtcNow.Date,
+            intervalMinutes: 30,
+            count: 48,          // 24-hour day in 30-minute steps
+            longitude: 0.0,
+            latitude: 51.5);    // Greenwich / London defaults
+
+        var plotWindow = new EphemerisPlotWindow(records, "Sun");
         plotWindow.Show();
     }
 

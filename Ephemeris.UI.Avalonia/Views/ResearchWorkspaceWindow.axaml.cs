@@ -11,6 +11,8 @@ using CommunityToolkit.Mvvm.Messaging;
 using Ephemeris.UI;
 using Ephemeris.UI.Avalonia.Controls;
 using Ephemeris.UI.Messages;
+using Ephemeris.UI.Services;
+using Ephemeris.UI.ViewModels;
 
 namespace Ephemeris.UI.Avalonia.Views;
 
@@ -36,8 +38,9 @@ namespace Ephemeris.UI.Avalonia.Views;
 public partial class ResearchWorkspaceWindow : Window,
     IRecipient<SimTimeChangedMessage>
 {
-    // TODO: replace with WorkspaceViewModel
+    // TODO: replace with WorkspaceViewModel (kept for SkyGlControl which requires SkyViewModel)
     private readonly SkyViewModel _vm;
+    private readonly WorkspaceViewModel _workspace;
     private readonly SkyGlControl _glControl;
 
     // Speed table: seconds of simulation time advanced per real second.
@@ -77,6 +80,11 @@ public partial class ResearchWorkspaceWindow : Window,
         InitializeComponent();
 
         _vm = vm;
+        _workspace = new WorkspaceViewModel(
+            new CelestialResearchService(),
+            vm.Longitude,
+            vm.Latitude,
+            vm.SimTime);
 
         _glControl = new SkyGlControl(_vm)
         {
@@ -89,6 +97,7 @@ public partial class ResearchWorkspaceWindow : Window,
         // Sync toolbar to initial VM state
         SyncToolbarFromVm();
         _vm.PropertyChanged += OnVmPropertyChanged;
+        _workspace.PropertyChanged += OnWorkspacePropertyChanged;
 
         // ── Toolbar wire-up ───────────────────────────────────────────
         DateBox.LostFocus += (_, _) => ApplyDateTimeInput();
@@ -115,6 +124,7 @@ public partial class ResearchWorkspaceWindow : Window,
         SpeedSlider.ValueChanged += (_, _) => UpdateSpeedLabel();
         UpdateSpeedLabel();
         RefreshSidebarData();
+        _workspace.LoadDataCommand.Execute(null);
 
         // ── Sidebar action buttons ────────────────────────────────────
         ScripturalEventsBtn.Click += OnScripturalEventsClick;
@@ -145,6 +155,7 @@ public partial class ResearchWorkspaceWindow : Window,
         {
             labelTimer.Stop();
             _animTimer.Stop();
+            _workspace.IsActive = false;
             WeakReferenceMessenger.Default.UnregisterAll(this);
         };
     }
@@ -205,32 +216,59 @@ public partial class ResearchWorkspaceWindow : Window,
     }
 
     // ─────────────────────────────────────────────────────────────────────
+    // WorkspaceViewModel change handler
+    // ─────────────────────────────────────────────────────────────────────
+
+    private void OnWorkspacePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(WorkspaceViewModel.CelestialData)
+                           or nameof(WorkspaceViewModel.IsLoading))
+            Dispatcher.UIThread.Post(RefreshSidebarData);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
     // Sidebar data refresh
     // ─────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Refreshes the sidebar data labels.
-    /// Values are populated as stubs (—) until WorkspaceViewModel.CelestialData
-    /// is wired in. TODO: replace with WorkspaceViewModel data bindings.
+    /// Refreshes the sidebar data labels from <see cref="WorkspaceViewModel.CelestialData"/>.
+    /// Shows "…" while loading and "—" when no data is available.
     /// </summary>
     private void RefreshSidebarData()
     {
         // Sync the current time display in the time bar
         CurrentTimeLabel.Text = $"UTC: {_vm.SimTime:yyyy-MM-dd HH:mm}";
 
-        // TODO: replace with real data from WorkspaceViewModel.CelestialData
-        // Sidebar text blocks remain at their default "Loading…" / "—" values
-        // until a CelestialDataService is wired up.
-        SunAlt.Text      = "Alt:  —";
-        SunAz.Text       = "Az:   —";
-        MoonPhase.Text   = "Phase: —";
-        MoonAlt.Text     = "Alt:   —";
-        MoonAz.Text      = "Az:    —";
-        SunriseLabel.Text  = "Sunrise:   —";
-        SunsetLabel.Text   = "Sunset:    —";
-        MoonriseLabel.Text = "Moonrise:  —";
-        MoonsetLabel.Text  = "Moonset:   —";
-        NextFullMoonLabel.Text = "Next Full Moon: —";
+        var data = _workspace.CelestialData;
+        if (data is null)
+        {
+            string ph = _workspace.IsLoading ? "…" : "—";
+            SunAlt.Text            = $"Alt:  {ph}";
+            SunAz.Text             = $"Az:   {ph}";
+            MoonPhase.Text         = $"Phase: {ph}";
+            MoonAlt.Text           = $"Alt:   {ph}";
+            MoonAz.Text            = $"Az:    {ph}";
+            SunriseLabel.Text      = $"Sunrise:   {ph}";
+            SunsetLabel.Text       = $"Sunset:    {ph}";
+            MoonriseLabel.Text     = $"Moonrise:  {ph}";
+            MoonsetLabel.Text      = $"Moonset:   {ph}";
+            NextFullMoonLabel.Text = $"Next Full Moon: {ph}";
+            return;
+        }
+
+        SunAlt.Text = $"Alt:  {data.Sun.Altitude:F1}°";
+        SunAz.Text  = $"Az:   {data.Sun.Azimuth:F1}°";
+
+        double illum   = data.Moon.Illumination ?? 0.0;
+        MoonPhase.Text = $"Phase: {illum * 100:F0}%";
+        MoonAlt.Text   = $"Alt:   {data.Moon.Altitude:F1}°";
+        MoonAz.Text    = $"Az:    {data.Moon.Azimuth:F1}°";
+
+        SunriseLabel.Text      = $"Sunrise:   {data.Sunrise?.ToString("HH:mm") ?? "—"} UTC";
+        SunsetLabel.Text       = $"Sunset:    {data.Sunset?.ToString("HH:mm") ?? "—"} UTC";
+        MoonriseLabel.Text     = $"Moonrise:  {data.Moonrise?.ToString("HH:mm") ?? "—"} UTC";
+        MoonsetLabel.Text      = $"Moonset:   {data.Moonset?.ToString("HH:mm") ?? "—"} UTC";
+        NextFullMoonLabel.Text = $"Next Full Moon: {data.NextFullMoon?.ToString("yyyy-MM-dd") ?? "—"}";
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -288,12 +326,15 @@ public partial class ResearchWorkspaceWindow : Window,
                 DateBox.Text = _vm.SimTime.ToString("yyyy-MM-dd");
                 TimeBox.Text = _vm.SimTime.ToString("HH:mm");
                 CurrentTimeLabel.Text = $"UTC: {_vm.SimTime:yyyy-MM-dd HH:mm}";
+                _workspace.SimTime = _vm.SimTime;
                 break;
             case nameof(SkyViewModel.Longitude):
                 LonPicker.Value = (decimal)_vm.Longitude;
+                _workspace.Longitude = _vm.Longitude;
                 break;
             case nameof(SkyViewModel.Latitude):
                 LatPicker.Value = (decimal)_vm.Latitude;
+                _workspace.Latitude = _vm.Latitude;
                 break;
             case nameof(SkyViewModel.Playing):
                 UpdatePlayPauseButton();
