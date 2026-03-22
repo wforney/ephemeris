@@ -137,6 +137,11 @@ public sealed partial class WorkspaceViewModel : ObservableRecipient
         _ = DebounceRefreshAsync();
     }
 
+    partial void OnHistoricalDateChanged(ProlepticDate? value)
+    {
+        _ = DebounceRefreshAsync();
+    }
+
     partial void OnLongitudeChanged(double value)
     {
         Messenger.Send(new ObserverChangedMessage(new ObserverLocation(value, Latitude)));
@@ -162,8 +167,20 @@ public sealed partial class WorkspaceViewModel : ObservableRecipient
         StatusMessage = "Loading…";
         try
         {
-            CelestialData = await _service.GetDataAsync(SimTime, Longitude, Latitude, ct).ConfigureAwait(false);
-            StatusMessage = $"{SimTime:yyyy-MM-dd HH:mm} UTC · {Latitude:F2}°N {Longitude:F2}°E";
+            if (IsHistoricalMode)
+            {
+                CelestialData = await _service
+                    .GetDataForJulianDayAsync(CurrentJulianDay, Longitude, Latitude, ct)
+                    .ConfigureAwait(false);
+                StatusMessage = $"{HistoricalDate!.Value.ToHistoricalString()} · {Latitude:F2}°N {Longitude:F2}°E";
+            }
+            else
+            {
+                CelestialData = await _service
+                    .GetDataAsync(SimTime, Longitude, Latitude, ct)
+                    .ConfigureAwait(false);
+                StatusMessage = $"{SimTime:yyyy-MM-dd HH:mm} UTC · {Latitude:F2}°N {Longitude:F2}°E";
+            }
         }
         catch (OperationCanceledException)
         {
@@ -193,14 +210,26 @@ public sealed partial class WorkspaceViewModel : ObservableRecipient
     }
 
     /// <summary>Advances the simulation time by <paramref name="step"/>.</summary>
-    /// <param name="step">The amount of time to add to <see cref="SimTime"/>.</param>
+    /// <param name="step">The amount of time to add to <see cref="SimTime"/> or <see cref="HistoricalDate"/>.</param>
     [RelayCommand]
-    private void StepForward(TimeSpan step) => SimTime = SimTime.Add(step);
+    private void StepForward(TimeSpan step)
+    {
+        if (IsHistoricalMode)
+            HistoricalDate = ProlepticDate.FromJulianDay(HistoricalDate!.Value.ToJulianDay() + step.TotalDays);
+        else
+            SimTime = SimTime.Add(step);
+    }
 
     /// <summary>Rewinds the simulation time by <paramref name="step"/>.</summary>
-    /// <param name="step">The amount of time to subtract from <see cref="SimTime"/>.</param>
+    /// <param name="step">The amount of time to subtract from <see cref="SimTime"/> or <see cref="HistoricalDate"/>.</param>
     [RelayCommand]
-    private void StepBack(TimeSpan step) => SimTime = SimTime.Add(-step);
+    private void StepBack(TimeSpan step)
+    {
+        if (IsHistoricalMode)
+            HistoricalDate = ProlepticDate.FromJulianDay(HistoricalDate!.Value.ToJulianDay() - step.TotalDays);
+        else
+            SimTime = SimTime.Add(-step);
+    }
 
     /// <summary>
     /// Applies a <see cref="ScenarioModel"/> preset: sets <see cref="SimTime"/>,
@@ -254,5 +283,11 @@ public sealed partial class WorkspaceViewModel : ObservableRecipient
     /// Advances the simulation time by one animation tick (10 minutes).
     /// Called by the animation timer when <see cref="Playing"/> is <see langword="true"/>.
     /// </summary>
-    public void AdvanceTick() => SimTime = SimTime.AddMinutes(10);
+    public void AdvanceTick()
+    {
+        if (IsHistoricalMode)
+            HistoricalDate = ProlepticDate.FromJulianDay(HistoricalDate!.Value.ToJulianDay() + (10.0 / 1440.0));
+        else
+            SimTime = SimTime.AddMinutes(10);
+    }
 }
