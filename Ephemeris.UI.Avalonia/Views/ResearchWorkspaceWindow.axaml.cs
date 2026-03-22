@@ -113,6 +113,7 @@ public partial class ResearchWorkspaceWindow : Window,
 
         SpeedSlider.ValueChanged += (_, _) => UpdateSpeedLabel();
         UpdateSpeedLabel();
+        RefreshSidebarData();
 
         // ── Sidebar action buttons ────────────────────────────────────
         ScripturalEventsBtn.Click += OnScripturalEventsClick;
