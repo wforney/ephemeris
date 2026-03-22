@@ -113,22 +113,27 @@ public partial class ComparisonWindow : Window
         NowBtn.Click       += (_, _) => _vm.Baseline.ResetToNowCommand.Execute(null);
 
         // Simulation controls — write to _vm.SimOverride; the GL control reads Override on each frame.
-        FreezeMotionCheck.IsCheckedChanged += (_, _) =>
-            _vm.SimOverride.MotionFrozen = FreezeMotionCheck.IsChecked == true;
+        FreezeTimeBtn.IsCheckedChanged += (_, _) =>
+            _vm.SimOverride.MotionFrozen = FreezeTimeBtn.IsChecked == true;
 
-        SunAltOffsetPicker.ValueChanged += (_, _) =>
+        ReverseDaylightBtn.IsCheckedChanged += (_, _) =>
+            _vm.SimOverride.ReverseDaylightDirection = ReverseDaylightBtn.IsChecked == true;
+
+        ExtendDaylightSlider.ValueChanged += (_, e) =>
         {
-            if (SunAltOffsetPicker.Value is { } v)
-                _vm.SimOverride.SunAltitudeOffsetDegrees = (double)v;
+            _vm.SimOverride.ExtendDaylightHours = e.NewValue;
+            ExtendDaylightLabel.Text = $"{e.NewValue:F1} h";
         };
 
-        ExtendDaylightPicker.ValueChanged += (_, _) =>
+        ResetSimBtn.Click += (_, _) =>
         {
-            if (ExtendDaylightPicker.Value is { } v)
-                _vm.SimOverride.ExtendDaylightHours = (double)v;
+            _vm.ResetSimulationCommand.Execute(null);
+            // Sync UI controls back to the reset state
+            FreezeTimeBtn.IsChecked       = false;
+            ReverseDaylightBtn.IsChecked  = false;
+            ExtendDaylightSlider.Value    = 0.0;
+            ExtendDaylightLabel.Text      = "0.0 h";
         };
-
-        ResetSimBtn.Click += (_, _) => _vm.ResetSimulationCommand.Execute(null);
 
         // Mouse drag and wheel on each panel
         _baselineGl.PointerPressed      += OnBaselinePointerPressed;

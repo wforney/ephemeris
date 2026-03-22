@@ -99,8 +99,14 @@ public sealed partial class SkyViewModel : ObservableRecipient
     [RelayCommand]
     private void StepBack() => SimTime = SimTime.AddDays(-1);
 
-    /// <summary>Advances the simulation time by one animation tick (10 minutes).</summary>
-    public void AdvanceTick() => SimTime = SimTime.AddMinutes(10);
+    /// <summary>Number of minutes advanced or rewound per animation tick.</summary>
+    public const double TickMinutes = 10.0;
+
+    /// <summary>Advances the simulation time by one animation tick (<see cref="TickMinutes"/> minutes).</summary>
+    public void AdvanceTick() => SimTime = SimTime.AddMinutes(TickMinutes);
+
+    /// <summary>Rewinds the simulation time by one animation tick (<see cref="TickMinutes"/> minutes).</summary>
+    public void RewindTick() => SimTime = SimTime.AddMinutes(-TickMinutes);
 
     /// <summary>
     /// Asynchronously refreshes <see cref="UpcomingEvents"/> from <see cref="SimTime"/>.

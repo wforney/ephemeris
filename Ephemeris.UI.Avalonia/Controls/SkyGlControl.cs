@@ -405,16 +405,26 @@ public sealed class SkyGlControl : OpenGlControlBase
     /// When set, <see cref="SimulationOverride.SunAltitudeOffsetDegrees"/> shifts the Sun's
     /// rendered altitude, and <see cref="SimulationOverride.MotionFrozen"/> prevents the
     /// animation timer from advancing <see cref="SkyViewModel.SimTime"/>.
+    /// Subscribes to <see cref="System.ComponentModel.INotifyPropertyChanged.PropertyChanged"/>
+    /// on the override object so that changes to override properties trigger a redraw even
+    /// when the simulation is paused.
     /// </summary>
     public SimulationOverride? Override
     {
         get => _override;
         set
         {
+            if (_override is not null)
+                _override.PropertyChanged -= OnOverridePropertyChanged;
             _override = value;
+            if (_override is not null)
+                _override.PropertyChanged += OnOverridePropertyChanged;
             RequestNextFrameRendering();
         }
     }
+
+    private void OnOverridePropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) =>
+        Dispatcher.UIThread.Post(RequestNextFrameRendering);
 
     // ─────────────────────────────────────────────────────────────────────
     // Construction
@@ -430,7 +440,14 @@ public sealed class SkyGlControl : OpenGlControlBase
         _vm.PropertyChanged += OnViewModelPropertyChanged;
 
         _animTimer          = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
-        _animTimer.Tick    += (_, _) => { if (_override?.MotionFrozen != true) _vm.AdvanceTick(); };
+        _animTimer.Tick    += (_, _) =>
+        {
+            if (_override?.MotionFrozen == true) return;
+            if (_override?.ReverseDaylightDirection == true)
+                _vm.RewindTick();
+            else
+                _vm.AdvanceTick();
+        };
     }
 
     // ─────────────────────────────────────────────────────────────────────
