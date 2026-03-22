@@ -1,6 +1,7 @@
 // Updated: 2026-03-22
 using System.ComponentModel;
 using Avalonia.Controls;
+using Avalonia.Data;
 using Avalonia.Input;
 using Ephemeris.UI.Models;
 using Ephemeris.UI.Services;
@@ -41,7 +42,7 @@ public partial class ResearchWorkspaceWindow : Window
 
         // Populate scenario picker
         ScenarioPicker.ItemsSource    = BuiltInScenarios.All;
-        ScenarioPicker.DisplayMemberBinding = new global::Avalonia.Data.Binding(nameof(ScenarioModel.Name));
+        ScenarioPicker.DisplayMemberBinding = new Binding(nameof(ScenarioModel.Name));
 
         SyncFromVm();
         _vm.PropertyChanged += OnVmPropertyChanged;

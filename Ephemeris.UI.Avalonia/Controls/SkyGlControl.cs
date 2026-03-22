@@ -192,9 +192,22 @@ public sealed class SkyGlControl : OpenGlControlBase
     // ── Mazzaroth constellation data ──────────────────────────────────────
 
     /// <summary>
-    /// The 12 Mazzaroth (zodiac) constellation boundaries, Hebrew names, and display colours.
-    /// Each entry: (startLongitude°, hebrewName, R, G, B).
+    /// The 12 Mazzaroth (zodiac) constellation band definitions used for the ecliptic overlay.
+    /// Each entry specifies the band's start ecliptic longitude (°), the Hebrew/transliterated name,
+    /// and the RGB render colour.
     /// </summary>
+    /// <remarks>
+    /// Each band covers 30° of ecliptic longitude (λ), running from
+    /// <c>StartLon</c> to <c>StartLon + 30°</c> (exclusive).
+    /// Colours are chosen for visual contrast against the night-sky background; alpha is
+    /// set to 0.5 in the vertex shader for a translucent appearance.
+    /// Hebrew names follow the traditional biblical/Mishnaic usage:
+    /// Taleh (Aries), Shor (Taurus), Teomim (Gemini), Sartan (Cancer), Aryeh (Leo),
+    /// Betulah (Virgo), Moznayim (Libra), Akrav (Scorpio), Keshet (Sagittarius),
+    /// Gedi (Capricorn), Deli (Aquarius), Dagim (Pisces).
+    /// Reference: <em>Mazzaroth; or, The Constellations</em> (Frances Rolleston, 1862);
+    /// Meeus, <em>Astronomical Algorithms</em>, 2nd ed., Ch. 13 for ecliptic→equatorial conversion.
+    /// </remarks>
     private static readonly (double StartLon, string Hebrew, float R, float G, float B)[] MazzarothBands =
     [
         (  0, "טָלֶה / Taleh (Aries)",      1.0f, 0.5f, 0.5f),

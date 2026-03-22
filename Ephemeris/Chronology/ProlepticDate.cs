@@ -200,9 +200,18 @@ public readonly struct ProlepticDate : IEquatable<ProlepticDate>, IComparable<Pr
     /// </summary>
     /// <returns>
     /// e.g. <c>"-0700-08-01"</c> (for 701 BCE, Aug 1) or <c>"2024-06-21"</c> (for 2024 CE, Jun 21).
+    /// Year 0 (1 BCE) is formatted as <c>"+0000-01-01"</c>.
     /// </returns>
-    public string ToAstronomicalString() =>
-        $"{Year:+0000;-0000;0000}-{Month:D2}-{Day:D2}";
+    public string ToAstronomicalString()
+    {
+        string yearStr = Year switch
+        {
+            > 0 => $"{Year:D4}",
+            0   => "+0000",
+            _   => $"-{Math.Abs(Year):D4}",
+        };
+        return $"{yearStr}-{Month:D2}-{Day:D2}";
+    }
 
     // ── Equality / comparison ─────────────────────────────────────────────
 
