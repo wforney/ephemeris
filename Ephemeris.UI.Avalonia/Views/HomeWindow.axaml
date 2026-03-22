@@ -1,0 +1,160 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Ephemeris.UI.Avalonia.Views.HomeWindow"
+        Classes="Research"
+        Title="Ephemeris Research App"
+        Width="500" Height="580"
+        CanResize="False"
+        WindowStartupLocation="CenterScreen">
+
+    <ScrollViewer>
+        <StackPanel Margin="24,20,24,20" Spacing="0">
+
+            <!-- ── Header ── -->
+            <StackPanel HorizontalAlignment="Center"
+                        Margin="0,0,0,20"
+                        Spacing="4">
+                <TextBlock Text="🌌  EPHEMERIS RESEARCH APP"
+                           FontSize="20"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           Foreground="{DynamicResource ResearchTextPrimaryBrush}" />
+                <TextBlock Text="Celestial Visualization &amp; Research Tool"
+                           FontSize="12"
+                           HorizontalAlignment="Center"
+                           Foreground="{DynamicResource ResearchTextSecondaryBrush}" />
+            </StackPanel>
+
+            <!-- ── Separator ── -->
+            <Separator Classes="Research" />
+
+            <!-- ── Primary action buttons ── -->
+            <StackPanel Spacing="8" Margin="0,12,0,12">
+
+                <Button x:Name="NewSessionBtn"
+                        Classes="Research"
+                        Content="🔭  New Research Session"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Left"
+                        Padding="16,12" />
+
+                <Button x:Name="LoadScripturalBtn"
+                        Classes="Research"
+                        Content="📖  Load Scriptural Event"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Left"
+                        Padding="16,12" />
+
+                <Button x:Name="ResumeSessionBtn"
+                        Classes="Research"
+                        Content="💾  Resume Previous Session"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Left"
+                        Padding="16,12" />
+
+            </StackPanel>
+
+            <!-- ── Separator ── -->
+            <Separator Classes="Research" />
+
+            <!-- ── Quick Start section ── -->
+            <StackPanel Margin="0,12,0,0" Spacing="8">
+
+                <TextBlock Text="Quick Start:"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource ResearchTextSecondaryBrush}" />
+
+                <Grid ColumnDefinitions="80,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
+
+                    <TextBlock Grid.Row="0" Grid.Column="0"
+                               Text="Date:"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource ResearchTextSecondaryBrush}" />
+                    <TextBox   Grid.Row="0" Grid.Column="1"
+                               x:Name="QuickDateInput"
+                               Classes="Research"
+                               Watermark="YYYY-MM-DD" />
+
+                    <TextBlock Grid.Row="1" Grid.Column="0"
+                               Text="Time:"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource ResearchTextSecondaryBrush}" />
+                    <TextBox   Grid.Row="1" Grid.Column="1"
+                               x:Name="QuickTimeInput"
+                               Classes="Research"
+                               Watermark="HH:MM" />
+
+                    <TextBlock Grid.Row="2" Grid.Column="0"
+                               Text="Location:"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource ResearchTextSecondaryBrush}" />
+                    <TextBox   Grid.Row="2" Grid.Column="1"
+                               x:Name="QuickLocationInput"
+                               Classes="Research"
+                               Watermark="City or lat, lon" />
+
+                </Grid>
+
+                <Button x:Name="LoadSkyBtn"
+                        Classes="Research"
+                        Content="LOAD SKY"
+                        HorizontalAlignment="Right"
+                        Padding="24,10" />
+
+            </StackPanel>
+
+            <!-- ── Also available ── -->
+            <StackPanel Margin="0,16,0,0" Spacing="8">
+
+                <TextBlock Text="── also available ──"
+                           FontSize="11"
+                           HorizontalAlignment="Center"
+                           Foreground="{DynamicResource ResearchTextSecondaryBrush}" />
+
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Spacing="12">
+                    <Button x:Name="SkyViewBtn"
+                            Classes="ResearchSecondary"
+                            Content="3D Sky View" />
+                    <Button x:Name="AltitudeChartBtn"
+                            Classes="ResearchSecondary"
+                            Content="Altitude Chart" />
+                </StackPanel>
+
+            </StackPanel>
+
+            <!-- ── Recent sessions ── -->
+            <StackPanel Margin="0,16,0,0" Spacing="6">
+
+                <TextBlock Text="Recent Sessions:"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource ResearchTextSecondaryBrush}" />
+
+                <ListBox x:Name="RecentSessionsList"
+                         Background="{DynamicResource ResearchSurfaceBrush}"
+                         MaxHeight="108"
+                         CornerRadius="4">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="4,2">
+                                <TextBlock Text="{Binding Name}"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource ResearchTextPrimaryBrush}" />
+                                <TextBlock Text="{Binding DateDisplay}"
+                                           FontSize="11"
+                                           Classes="Monospace"
+                                           Foreground="{DynamicResource ResearchTextSecondaryBrush}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+
+</Window>
