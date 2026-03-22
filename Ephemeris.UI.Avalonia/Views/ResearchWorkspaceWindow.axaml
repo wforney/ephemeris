@@ -1,0 +1,108 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:Ephemeris.UI.Avalonia.Controls"
+        x:Class="Ephemeris.UI.Avalonia.Views.ResearchWorkspaceWindow"
+        Classes="Research"
+        Title="Ephemeris — Research Workspace"
+        Width="1280" Height="800"
+        MinWidth="900" MinHeight="600"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid ColumnDefinitions="280,*">
+
+        <!-- ── Sidebar ── -->
+        <Border Grid.Column="0"
+                Classes="ResearchSidebar"
+                BorderBrush="{DynamicResource ResearchBorderBrush}"
+                BorderThickness="0,0,1,0">
+
+            <Grid RowDefinitions="Auto,*">
+
+                <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,12">
+                    <TextBlock Text="Research Session"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource ResearchTextPrimaryBrush}" />
+                    <TextBlock x:Name="SessionInfoText"
+                               FontSize="11"
+                               Foreground="{DynamicResource ResearchTextSecondaryBrush}"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+
+                <!-- Data panel: empty state shown until celestial data loads -->
+                <Panel Grid.Row="1">
+
+                    <controls:EmptyStateControl x:Name="DataEmptyState"
+                                                Icon="🌌"
+                                                Title="No Data"
+                                                Subtitle="Enter a date and location to load sky data"
+                                                IsVisible="True" />
+
+                    <!-- Celestial data list — shown once data arrives -->
+                    <ScrollViewer x:Name="DataScrollViewer"
+                                  IsVisible="False">
+                        <ItemsControl x:Name="CelestialDataList" />
+                    </ScrollViewer>
+
+                </Panel>
+
+            </Grid>
+
+        </Border>
+
+        <!-- ── Main content area ── -->
+        <Grid Grid.Column="1"
+              RowDefinitions="Auto,*"
+              Background="{DynamicResource ResearchBackgroundBrush}">
+
+            <!-- Toolbar -->
+            <Border Grid.Row="0"
+                    Background="{DynamicResource ResearchSurfaceBrush}"
+                    BorderBrush="{DynamicResource ResearchBorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    Padding="12,8">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+
+                    <TextBlock Text="Date (UTC):" VerticalAlignment="Center"
+                               Foreground="{DynamicResource ResearchTextSecondaryBrush}" />
+                    <TextBox x:Name="DateInput"
+                             Classes="Research"
+                             Watermark="YYYY-MM-DD"
+                             Width="120" />
+
+                    <TextBlock Text="Time:" VerticalAlignment="Center"
+                               Foreground="{DynamicResource ResearchTextSecondaryBrush}" />
+                    <TextBox x:Name="TimeInput"
+                             Classes="Research"
+                             Watermark="HH:MM"
+                             Width="80" />
+
+                    <TextBlock Text="Location:" VerticalAlignment="Center"
+                               Foreground="{DynamicResource ResearchTextSecondaryBrush}" />
+                    <TextBox x:Name="LocationInput"
+                             Classes="Research"
+                             Watermark="lat, lon"
+                             Width="140" />
+
+                    <Button x:Name="LoadDataBtn"
+                            Classes="Research"
+                            Content="Load Sky" />
+
+                </StackPanel>
+            </Border>
+
+            <!-- Sky canvas placeholder -->
+            <Border Grid.Row="1"
+                    Background="{DynamicResource ResearchBackgroundBrush}">
+                <TextBlock Text="Sky canvas will render here"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource ResearchTextSecondaryBrush}"
+                           FontSize="14" />
+            </Border>
+
+        </Grid>
+
+    </Grid>
+
+</Window>

@@ -1,0 +1,131 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:Ephemeris.UI.Avalonia.Controls"
+        x:Class="Ephemeris.UI.Avalonia.Views.ComparisonWindow"
+        Classes="Research"
+        Title="Ephemeris — Simulation Comparison"
+        Width="1100" Height="700"
+        MinWidth="800" MinHeight="500"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid RowDefinitions="Auto,*,Auto"
+          Background="{DynamicResource ResearchBackgroundBrush}">
+
+        <!-- Header -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource ResearchSurfaceBrush}"
+                BorderBrush="{DynamicResource ResearchBorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="16,12">
+            <StackPanel>
+                <TextBlock Text="⚖  Simulation Comparison"
+                           FontSize="16"
+                           FontWeight="Bold"
+                           Foreground="{DynamicResource ResearchTextPrimaryBrush}" />
+                <TextBlock Text="Compare normal celestial motion against a simulated override"
+                           FontSize="12"
+                           Foreground="{DynamicResource ResearchTextSecondaryBrush}" />
+            </StackPanel>
+        </Border>
+
+        <!-- Comparison panels -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,Auto,*">
+
+            <!-- Normal view -->
+            <Border Grid.Column="0"
+                    Classes="ResearchPanel"
+                    Margin="12,12,6,12">
+                <Grid RowDefinitions="Auto,*">
+                    <TextBlock Grid.Row="0"
+                               Text="Normal Motion"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource ResearchTextPrimaryBrush}"
+                               Margin="0,0,0,8" />
+                    <Border Grid.Row="1"
+                            Background="{DynamicResource ResearchBackgroundBrush}"
+                            CornerRadius="4">
+                        <TextBlock Text="Sky canvas — normal"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource ResearchTextSecondaryBrush}" />
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- Divider -->
+            <Border Grid.Column="1"
+                    Width="1"
+                    Background="{DynamicResource ResearchBorderBrush}"
+                    Margin="0,12" />
+
+            <!-- Simulated view -->
+            <Border Grid.Column="2"
+                    Classes="ResearchPanel"
+                    Margin="6,12,12,12">
+                <Grid RowDefinitions="Auto,*">
+                    <TextBlock Grid.Row="0"
+                               Text="Simulated Motion"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource ResearchTextPrimaryBrush}"
+                               Margin="0,0,0,8" />
+
+                    <!-- Empty state when no simulation overrides are active -->
+                    <controls:EmptyStateControl x:Name="SimulationEmptyState"
+                                                Grid.Row="1"
+                                                Icon="⚖"
+                                                Title="No Simulation Active"
+                                                Subtitle="Use the controls below to modify celestial motion"
+                                                IsVisible="True" />
+
+                    <Border x:Name="SimulationCanvas"
+                            Grid.Row="1"
+                            Background="{DynamicResource ResearchBackgroundBrush}"
+                            CornerRadius="4"
+                            IsVisible="False">
+                        <TextBlock Text="Sky canvas — simulated"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource ResearchTextSecondaryBrush}" />
+                    </Border>
+
+                </Grid>
+            </Border>
+
+        </Grid>
+
+        <!-- Simulation controls footer -->
+        <Border Grid.Row="2"
+                Background="{DynamicResource ResearchSurfaceBrush}"
+                BorderBrush="{DynamicResource ResearchBorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="16,10">
+            <StackPanel Orientation="Horizontal" Spacing="16">
+
+                <TextBlock Text="Simulation overrides:"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource ResearchTextSecondaryBrush}" />
+
+                <CheckBox x:Name="FreezeMotionCheck"
+                          Content="Freeze motion"
+                          Foreground="{DynamicResource ResearchTextPrimaryBrush}" />
+
+                <CheckBox x:Name="ReverseMotionCheck"
+                          Content="Reverse motion"
+                          Foreground="{DynamicResource ResearchTextPrimaryBrush}" />
+
+                <CheckBox x:Name="ExtendDaylightCheck"
+                          Content="Extend daylight"
+                          Foreground="{DynamicResource ResearchTextPrimaryBrush}" />
+
+                <Button x:Name="ApplyOverridesBtn"
+                        Classes="Research"
+                        Content="Apply" />
+
+            </StackPanel>
+        </Border>
+
+    </Grid>
+
+</Window>

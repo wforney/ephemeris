@@ -1,0 +1,107 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Styles.Resources>
+
+        <!-- ── Observatory colour palette ── -->
+        <Color x:Key="ResearchBackground">#FF0D0D1A</Color>
+        <Color x:Key="ResearchSurface">#FF1A1A2E</Color>
+        <Color x:Key="ResearchSidebar">#FF16213E</Color>
+        <Color x:Key="ResearchAccent">#FF4A9EFF</Color>
+        <Color x:Key="ResearchAccentHover">#FF6DB5FF</Color>
+        <Color x:Key="ResearchTextPrimary">#FFEEEEFF</Color>
+        <Color x:Key="ResearchTextSecondary">#FFAAAACC</Color>
+        <Color x:Key="ResearchInputBackground">#FF252540</Color>
+        <Color x:Key="ResearchBorder">#FF3A3A5C</Color>
+
+        <SolidColorBrush x:Key="ResearchBackgroundBrush"    Color="{StaticResource ResearchBackground}" />
+        <SolidColorBrush x:Key="ResearchSurfaceBrush"       Color="{StaticResource ResearchSurface}" />
+        <SolidColorBrush x:Key="ResearchSidebarBrush"       Color="{StaticResource ResearchSidebar}" />
+        <SolidColorBrush x:Key="ResearchAccentBrush"        Color="{StaticResource ResearchAccent}" />
+        <SolidColorBrush x:Key="ResearchAccentHoverBrush"   Color="{StaticResource ResearchAccentHover}" />
+        <SolidColorBrush x:Key="ResearchTextPrimaryBrush"   Color="{StaticResource ResearchTextPrimary}" />
+        <SolidColorBrush x:Key="ResearchTextSecondaryBrush" Color="{StaticResource ResearchTextSecondary}" />
+        <SolidColorBrush x:Key="ResearchInputBackgroundBrush" Color="{StaticResource ResearchInputBackground}" />
+        <SolidColorBrush x:Key="ResearchBorderBrush"        Color="{StaticResource ResearchBorder}" />
+
+    </Styles.Resources>
+
+    <!-- ── Window background ── -->
+    <Style Selector="Window.Research">
+        <Setter Property="Background" Value="{StaticResource ResearchBackgroundBrush}" />
+    </Style>
+
+    <!-- ── Primary action button ── -->
+    <Style Selector="Button.Research">
+        <Setter Property="Background"               Value="{StaticResource ResearchAccentBrush}" />
+        <Setter Property="Foreground"               Value="{StaticResource ResearchTextPrimaryBrush}" />
+        <Setter Property="BorderThickness"          Value="0" />
+        <Setter Property="CornerRadius"             Value="6" />
+        <Setter Property="Padding"                  Value="16,8" />
+        <Setter Property="Cursor"                   Value="Hand" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+    </Style>
+
+    <Style Selector="Button.Research:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{StaticResource ResearchAccentHoverBrush}" />
+    </Style>
+
+    <Style Selector="Button.Research:pressed /template/ ContentPresenter">
+        <Setter Property="Opacity" Value="0.85" />
+    </Style>
+
+    <!-- ── Secondary / ghost button ── -->
+    <Style Selector="Button.ResearchSecondary">
+        <Setter Property="Background"      Value="{StaticResource ResearchSurfaceBrush}" />
+        <Setter Property="Foreground"      Value="{StaticResource ResearchTextPrimaryBrush}" />
+        <Setter Property="BorderBrush"     Value="{StaticResource ResearchBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius"    Value="6" />
+        <Setter Property="Padding"         Value="16,8" />
+        <Setter Property="Cursor"          Value="Hand" />
+    </Style>
+
+    <Style Selector="Button.ResearchSecondary:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{StaticResource ResearchAccentBrush}" />
+    </Style>
+
+    <!-- ── Dark text input ── -->
+    <Style Selector="TextBox.Research">
+        <Setter Property="Background"      Value="{StaticResource ResearchInputBackgroundBrush}" />
+        <Setter Property="Foreground"      Value="{StaticResource ResearchTextPrimaryBrush}" />
+        <Setter Property="BorderBrush"     Value="{StaticResource ResearchBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius"    Value="4" />
+        <Setter Property="Padding"         Value="8,4" />
+        <Setter Property="CaretBrush"      Value="{StaticResource ResearchAccentBrush}" />
+    </Style>
+
+    <!-- ── Monospace style for coordinate/time display ── -->
+    <Style Selector="TextBlock.Monospace">
+        <Setter Property="FontFamily" Value="Courier New, Consolas, monospace" />
+        <Setter Property="Foreground" Value="{StaticResource ResearchTextPrimaryBrush}" />
+    </Style>
+
+    <!-- ── Panel/border surface ── -->
+    <Style Selector="Border.ResearchPanel">
+        <Setter Property="Background"      Value="{StaticResource ResearchSurfaceBrush}" />
+        <Setter Property="BorderBrush"     Value="{StaticResource ResearchBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius"    Value="6" />
+        <Setter Property="Padding"         Value="12" />
+    </Style>
+
+    <!-- ── Sidebar panel ── -->
+    <Style Selector="Border.ResearchSidebar">
+        <Setter Property="Background" Value="{StaticResource ResearchSidebarBrush}" />
+        <Setter Property="Padding"    Value="12" />
+    </Style>
+
+    <!-- ── Section separator ── -->
+    <Style Selector="Separator.Research">
+        <Setter Property="Background" Value="{StaticResource ResearchBorderBrush}" />
+        <Setter Property="Height"     Value="1" />
+        <Setter Property="Margin"     Value="0,8" />
+    </Style>
+
+</Styles>
