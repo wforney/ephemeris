@@ -52,17 +52,13 @@ public partial class HomeWindow : Window
         workspace.Show();
     }
 
-    private async void OnLoadScripturalClick(object? sender, RoutedEventArgs e)
+    private void OnLoadScripturalClick(object? sender, RoutedEventArgs e)
     {
-        var library = new ScripturalEventLibraryWindow();
-        await library.ShowDialog(this);
-
-        if (library.SelectedScenario is not null)
-        {
-            var workspace = new ResearchWorkspaceWindow();
-            // TODO: pass library.SelectedScenario into workspace session model.
-            workspace.Show();
-        }
+        // Open a workspace and let the user pick a scriptural event from within it.
+        // ResearchWorkspaceWindow's sidebar "📜 Scriptural Events" button opens the library
+        // and applies the chosen scenario directly to its SkyViewModel.
+        var workspace = new ResearchWorkspaceWindow();
+        workspace.Show();
     }
 
     private async void OnResumeSessionClick(object? sender, RoutedEventArgs e)
