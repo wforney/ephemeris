@@ -308,23 +308,8 @@ public partial class ResearchWorkspaceWindow : Window,
     private async void OnScripturalEventsClick(object? sender, RoutedEventArgs e) =>
         await new ScripturalEventLibraryWindow(_vm).ShowDialog(this);
 
-    private async void OnComparisonModeClick(object? sender, RoutedEventArgs e)
-    {
-        // TODO: open side-by-side comparison view when implemented
-        var dlg = new Window
-        {
-            Title   = "Comparison Mode",
-            Width   = 480,
-            Height  = 320,
-            Content = new TextBlock
-            {
-                Text              = "Comparison Mode — coming soon.",
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Center,
-            },
-        };
-        await dlg.ShowDialog(this);
-    }
+    private async void OnComparisonModeClick(object? sender, RoutedEventArgs e) =>
+        await new ComparisonWindow(_vm).ShowDialog(this);
 
     private async void OnNotesClick(object? sender, RoutedEventArgs e) =>
         await new NotesPanel(_vm).ShowDialog(this);

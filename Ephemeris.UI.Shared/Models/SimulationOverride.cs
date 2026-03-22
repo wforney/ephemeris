@@ -40,4 +40,15 @@ public partial class SimulationOverride : ObservableObject
     /// </summary>
     [ObservableProperty]
     private double _extendDaylightHours;
+
+    /// <summary>
+    /// Resets all overrides to their default (inactive) state.
+    /// </summary>
+    public void Reset()
+    {
+        IsActive                 = false;
+        MotionFrozen             = false;
+        SunAltitudeOffsetDegrees = 0.0;
+        ExtendDaylightHours      = 0.0;
+    }
 }

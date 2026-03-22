@@ -1,4 +1,4 @@
-// Updated: 2026-03-10
+// Updated: 2026-03-22
 using System.ComponentModel;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -9,6 +9,7 @@ using Avalonia.Threading;
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 using Ephemeris.Stellarography;
+using Ephemeris.UI.Models;
 
 namespace Ephemeris.UI.Avalonia.Controls;
 
@@ -160,6 +161,33 @@ public sealed class SkyGlControl : OpenGlControlBase
     // ── View-model ────────────────────────────────────────────────────────
     private readonly SkyViewModel _vm;
 
+    // ── Simulation override ───────────────────────────────────────────────
+    private SimulationOverride? _override;
+
+    /// <summary>
+    /// Optional simulation overrides applied during rendering.
+    /// When set, <see cref="SimulationOverride.SunAltitudeOffsetDegrees"/> shifts the Sun's
+    /// rendered altitude, and <see cref="SimulationOverride.MotionFrozen"/> prevents the
+    /// animation timer from advancing <see cref="SkyViewModel.SimTime"/>.
+    /// </summary>
+    /// <remarks>
+    /// Setting this property does not affect the underlying ephemeris calculations — overrides
+    /// are applied post-calculation in the rendering pipeline only.
+    /// <para>
+    /// <see cref="SimulationOverride.ExtendDaylightHours"/> is not yet applied at the rendering
+    /// level; it requires daylight duration post-processing upstream of the GL pipeline.
+    /// </para>
+    /// </remarks>
+    public SimulationOverride? Override
+    {
+        get => _override;
+        set
+        {
+            _override = value;
+            RequestNextFrameRendering();
+        }
+    }
+
     // ─────────────────────────────────────────────────────────────────────
     // Construction
     // ─────────────────────────────────────────────────────────────────────
@@ -174,7 +202,7 @@ public sealed class SkyGlControl : OpenGlControlBase
         _vm.PropertyChanged += OnViewModelPropertyChanged;
 
         _animTimer          = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
-        _animTimer.Tick    += (_, _) => _vm.AdvanceTick();
+        _animTimer.Tick    += (_, _) => { if (_override?.MotionFrozen != true) _vm.AdvanceTick(); };
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -524,7 +552,8 @@ public sealed class SkyGlControl : OpenGlControlBase
         double hour = _vm.SimTime.Hour + _vm.SimTime.Minute / 60.0 + _vm.SimTime.Second / 3600.0;
 
         var sun = EphemerisCalculator.GetSunPosition(year, month, day, hour, _vm.Longitude, _vm.Latitude);
-        AddBodyVertex(buffer, sun.Azimuth, sun.Altitude, 1.0f, 0.97f, 0.8f, 16f, "Sun");
+        double sunAltitude = sun.Altitude + (_override?.SunAltitudeOffsetDegrees ?? 0.0);
+        AddBodyVertex(buffer, sun.Azimuth, sunAltitude, 1.0f, 0.97f, 0.8f, 16f, "Sun");
 
         var moon = EphemerisCalculator.GetMoonPosition(year, month, day, hour, _vm.Longitude, _vm.Latitude);
         float moonPhase = (float)(moon.Illumination ?? 0.5);
