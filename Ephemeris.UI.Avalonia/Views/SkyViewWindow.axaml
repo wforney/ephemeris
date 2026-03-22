@@ -26,13 +26,13 @@
             <NumericUpDown x:Name="LonPicker"
                            Minimum="-180" Maximum="180"
                            Increment="1" FormatString="F2"
-                           Width="100" />
+                           Width="120" />
 
             <TextBlock Text="Lat:" VerticalAlignment="Center" />
             <NumericUpDown x:Name="LatPicker"
                            Minimum="-90" Maximum="90"
                            Increment="1" FormatString="F2"
-                           Width="80" />
+                           Width="100" />
 
             <Separator Width="1" Background="Gray" Margin="4,0" />
 
