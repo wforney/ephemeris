@@ -161,13 +161,17 @@ public partial class ResearchWorkspaceWindow : Window,
 
     private void OnAnimTick(object? sender, EventArgs e)
     {
-        if (!_vm.Playing) return;
+        if (!_vm.Playing)
+        {
+            return;
+        }
 
-        int idx = (int)Math.Round(SpeedSlider.Value);
-        idx = Math.Clamp(idx, 0, SpeedMultipliers.Length - 1);
-        // Timer fires every 100 ms → advance by multiplier × 0.1 real seconds
-        double secondsToAdd = SpeedMultipliers[idx] * 0.1;
-        _vm.SimTime = _vm.SimTime.AddSeconds(secondsToAdd);
+        // Simulation time progression is driven by SkyGlControl's internal
+        // timer via SkyViewModel.Playing. This window-level timer no longer
+        // mutates _vm.SimTime to avoid double-advancing time at conflicting
+        // step sizes. We can still use this tick to keep the sidebar UI in
+        // sync while the control advances time.
+        RefreshSidebarData();
     }
 
     // ─────────────────────────────────────────────────────────────────────
