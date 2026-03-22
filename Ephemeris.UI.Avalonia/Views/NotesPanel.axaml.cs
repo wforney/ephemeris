@@ -1,0 +1,160 @@
+// Updated: 2026-03-22
+using Avalonia.Controls;
+using Avalonia.Platform.Storage;
+using Ephemeris.UI.Models;
+using Ephemeris.UI.ViewModels;
+
+namespace Ephemeris.UI.Avalonia.Views;
+
+/// <summary>
+/// Research notes panel — a lightweight window for taking notes during a session.
+/// </summary>
+/// <remarks>
+/// <list type="bullet">
+///   <item><description>Session name is bound to a local <see cref="SessionModel"/>.</description></item>
+///   <item><description>"Save Time Marker" appends a UTC timestamp to the notes.</description></item>
+///   <item><description>"Save Session" serialises the session to a JSON file via <see cref="SessionModel.SaveAsync"/>.</description></item>
+///   <item><description>"Export Notes" writes a plain-text summary to a <c>.txt</c> file.</description></item>
+/// </list>
+/// </remarks>
+public partial class NotesPanel : Window
+{
+    private readonly WorkspaceViewModel _vm;
+    private readonly SessionModel _session;
+
+    /// <summary>
+    /// Initialises the notes panel.
+    /// </summary>
+    /// <param name="vm">The research workspace view-model.</param>
+    public NotesPanel(WorkspaceViewModel vm)
+    {
+        InitializeComponent();
+
+        _vm      = vm;
+        _session = SessionModel.FromWorkspace(vm);
+
+        // Wire text boxes to the session model (two-way, manual sync)
+        SessionNameBox.Text = _session.Name;
+        NotesBox.Text       = _session.Notes;
+
+        SessionNameBox.TextChanged += (_, _) => _session.Name  = SessionNameBox.Text ?? string.Empty;
+        NotesBox.TextChanged       += (_, _) => _session.Notes = NotesBox.Text       ?? string.Empty;
+
+        SaveMarkerBtn.Click   += OnSaveMarkerClick;
+        SaveSessionBtn.Click  += OnSaveSessionClick;
+        ExportNotesBtn.Click  += OnExportNotesClick;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Button handlers
+    // ─────────────────────────────────────────────────────────────────────
+
+    private void OnSaveMarkerClick(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        var timestamp = DateTime.UtcNow;
+        var marker = $"\n[Marker: {timestamp:yyyy-MM-dd HH:mm} UTC]";
+
+        NotesBox.Text = (NotesBox.Text ?? string.Empty) + marker;
+        MarkerTimestampLabel.Text = $"timestamp: {timestamp:yyyy-MM-dd HH:mm} UTC";
+    }
+
+    private async void OnSaveSessionClick(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        var topLevel = GetTopLevel(this);
+        if (topLevel is null) return;
+
+        var file = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title                    = "Save Session",
+            SuggestedFileName        = _session.Name,
+            DefaultExtension         = "json",
+            FileTypeChoices          =
+            [
+                new FilePickerFileType("Session JSON") { Patterns = ["*.json"] },
+                new FilePickerFileType("All Files")    { Patterns = ["*"] },
+            ],
+        }).ConfigureAwait(true);
+
+        if (file is null) return;
+
+        try
+        {
+            _session.SimTime   = _vm.SimTime;
+            _session.Longitude = _vm.Longitude;
+            _session.Latitude  = _vm.Latitude;
+
+            await _session.SaveAsync(file.Path.LocalPath).ConfigureAwait(true);
+            Title = $"Research Notes — saved {DateTime.UtcNow:HH:mm:ss UTC}";
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorAsync($"Failed to save session:\n{ex.Message}").ConfigureAwait(true);
+        }
+    }
+
+    private async void OnExportNotesClick(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        var topLevel = GetTopLevel(this);
+        if (topLevel is null) return;
+
+        var file = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title                    = "Export Notes",
+            SuggestedFileName        = _session.Name,
+            DefaultExtension         = "txt",
+            FileTypeChoices          =
+            [
+                new FilePickerFileType("Text Files") { Patterns = ["*.txt"] },
+                new FilePickerFileType("All Files")  { Patterns = ["*"] },
+            ],
+        }).ConfigureAwait(true);
+
+        if (file is null) return;
+
+        try
+        {
+            var text = BuildExportText();
+            await File.WriteAllTextAsync(file.Path.LocalPath, text).ConfigureAwait(true);
+            Title = $"Research Notes — exported {DateTime.UtcNow:HH:mm:ss UTC}";
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorAsync($"Failed to export notes:\n{ex.Message}").ConfigureAwait(true);
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────────────────────────────────
+
+    private string BuildExportText()
+    {
+        return $"""
+            Session: {_session.Name}
+            Exported: {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC
+            Sim Time: {_vm.SimTime:yyyy-MM-dd HH:mm} UTC
+            Location: {_vm.Longitude:F4}° E, {_vm.Latitude:F4}° N
+            Scenario: {_vm.ActiveScenarioName ?? "(none)"}
+
+            Notes:
+            {_session.Notes}
+            """;
+    }
+
+    private async Task ShowErrorAsync(string message)
+    {
+        var dialog = new Window
+        {
+            Title  = "Error",
+            Width  = 360,
+            Height = 160,
+            Content = new TextBlock
+            {
+                Text         = message,
+                Margin       = new global::Avalonia.Thickness(16),
+                TextWrapping = global::Avalonia.Media.TextWrapping.Wrap,
+            },
+        };
+        await dialog.ShowDialog(this).ConfigureAwait(true);
+    }
+}

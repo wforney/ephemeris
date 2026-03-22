@@ -2,11 +2,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="Ephemeris.UI.Avalonia.Views.LauncherWindow"
         Title="Ephemeris"
-        Width="360" Height="210"
+        Width="360" Height="260"
         CanResize="False"
         WindowStartupLocation="CenterScreen">
 
-    <Grid RowDefinitions="Auto,*,*" Margin="24,16,24,16">
+    <Grid RowDefinitions="Auto,*,*,*" Margin="24,16,24,16">
 
         <TextBlock Grid.Row="0"
                    Text="Ephemeris — Astronomical Calculator"
@@ -17,13 +17,20 @@
                    Margin="0,0,0,12" />
 
         <Button Grid.Row="1"
+                x:Name="ResearchBtn"
+                Content="🔭  Research Workspace"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Center"
+                Margin="0,4" />
+
+        <Button Grid.Row="2"
                 x:Name="SkyViewBtn"
                 Content="🌌  3D Sky View  (OpenGL)"
                 HorizontalAlignment="Stretch"
                 HorizontalContentAlignment="Center"
                 Margin="0,4" />
 
-        <Button Grid.Row="2"
+        <Button Grid.Row="3"
                 x:Name="PlotBtn"
                 Content="📈  Altitude Chart  (ScottPlot)"
                 HorizontalAlignment="Stretch"

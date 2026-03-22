@@ -1,0 +1,75 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Ephemeris.UI.Avalonia.Views.ResearchWorkspaceWindow"
+        Title="Ephemeris — Research Workspace"
+        Width="1100" Height="720"
+        MinWidth="800" MinHeight="550"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- Toolbar -->
+        <StackPanel Grid.Row="0"
+                    Orientation="Horizontal"
+                    Spacing="8"
+                    Margin="8,6"
+                    VerticalAlignment="Center">
+
+            <!-- Observer inputs -->
+            <TextBlock Text="Lon:" VerticalAlignment="Center" />
+            <NumericUpDown x:Name="LonPicker"
+                           Minimum="-180" Maximum="180"
+                           Increment="1" FormatString="F2"
+                           Width="100" />
+
+            <TextBlock Text="Lat:" VerticalAlignment="Center" />
+            <NumericUpDown x:Name="LatPicker"
+                           Minimum="-90" Maximum="90"
+                           Increment="1" FormatString="F2"
+                           Width="80" />
+
+            <!-- Date/time -->
+            <TextBlock Text="Sim Time UTC:" VerticalAlignment="Center" />
+            <TextBox x:Name="DatePicker"
+                     Watermark="yyyy-MM-dd HH:mm"
+                     Width="150" />
+
+            <Separator Width="1" Background="Gray" Margin="4,0" />
+
+            <!-- Playback controls -->
+            <Button x:Name="StepBackBtn"   Content="⏮ Back"    Width="80" />
+            <Button x:Name="PlayPauseBtn"  Content="▶ Play"     Width="90" />
+            <Button x:Name="StepFwdBtn"    Content="⏭ Forward"  Width="90" />
+
+            <!-- Playback speed -->
+            <TextBlock Text="Speed:" VerticalAlignment="Center" />
+            <NumericUpDown x:Name="SpeedPicker"
+                           Minimum="0.1" Maximum="1000"
+                           Increment="1" FormatString="F1"
+                           Value="1"
+                           Width="90" />
+
+            <Separator Width="1" Background="Gray" Margin="4,0" />
+
+            <!-- Feature buttons -->
+            <Button x:Name="ScripturalEventsBtn"
+                    Content="📖 Scriptural Events"
+                    ToolTip.Tip="Open scriptural event library" />
+            <Button x:Name="NotesBtn"
+                    Content="📝 Notes"
+                    ToolTip.Tip="Open research notes panel" />
+
+        </StackPanel>
+
+        <!-- Main content area -->
+        <Grid Grid.Row="1" ColumnDefinitions="*">
+            <TextBlock Text="Sky view and chart panels will appear here."
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Opacity="0.4"
+                       FontSize="14" />
+        </Grid>
+
+    </Grid>
+
+</Window>
