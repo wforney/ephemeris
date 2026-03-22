@@ -42,6 +42,14 @@ public partial class SimulationOverride : ObservableObject
     private double _extendDaylightHours;
 
     /// <summary>
+    /// When <see langword="true"/>, the direction of the Sun's apparent movement across the
+    /// sky is reversed — the simulation time advances backward instead of forward.
+    /// Used to model events such as Hezekiah's Sundial where the shadow retreated.
+    /// </summary>
+    [ObservableProperty]
+    private bool _reverseDaylightDirection;
+
+    /// <summary>
     /// Resets all overrides to their default (inactive) state.
     /// </summary>
     public void Reset()
@@ -50,5 +58,6 @@ public partial class SimulationOverride : ObservableObject
         MotionFrozen             = false;
         SunAltitudeOffsetDegrees = 0.0;
         ExtendDaylightHours      = 0.0;
+        ReverseDaylightDirection = false;
     }
 }

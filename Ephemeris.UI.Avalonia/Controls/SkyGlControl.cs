@@ -424,7 +424,14 @@ public sealed class SkyGlControl : OpenGlControlBase
         _vm.PropertyChanged += OnViewModelPropertyChanged;
 
         _animTimer          = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
-        _animTimer.Tick    += (_, _) => { if (_override?.MotionFrozen != true) _vm.AdvanceTick(); };
+        _animTimer.Tick    += (_, _) =>
+        {
+            if (_override?.MotionFrozen == true) return;
+            if (_override?.ReverseDaylightDirection == true)
+                _vm.RewindTick();
+            else
+                _vm.AdvanceTick();
+        };
     }
 
     // ─────────────────────────────────────────────────────────────────────

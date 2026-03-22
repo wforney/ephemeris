@@ -102,6 +102,9 @@ public sealed partial class SkyViewModel : ObservableRecipient
     /// <summary>Advances the simulation time by one animation tick (10 minutes).</summary>
     public void AdvanceTick() => SimTime = SimTime.AddMinutes(10);
 
+    /// <summary>Rewinds the simulation time by one animation tick (10 minutes).</summary>
+    public void RewindTick() => SimTime = SimTime.AddMinutes(-10);
+
     /// <summary>
     /// Asynchronously refreshes <see cref="UpcomingEvents"/> from <see cref="SimTime"/>.
     /// </summary>
