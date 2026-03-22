@@ -24,7 +24,11 @@ namespace Ephemeris.UI.Avalonia.Views;
 /// <see cref="ComparisonViewModel.SyncTime"/> is <see langword="true"/>.
 /// </para>
 /// <para>
-/// Create via <c>new ComparisonWindow(skyVm).Show()</c> from
+/// The simulation panel applies <see cref="ComparisonViewModel.SimOverride"/> post-calculation
+/// via <see cref="SkyGlControl.Override"/>, including Sun altitude offset and motion freeze.
+/// </para>
+/// <para>
+/// Create via <c>new ComparisonWindow(skyVm).ShowDialog(this)</c> from
 /// <c>ResearchWorkspaceWindow.OnComparisonModeClick</c>.
 /// </para>
 /// </remarks>
@@ -54,7 +58,8 @@ public partial class ComparisonWindow : Window
     /// </summary>
     /// <param name="sourceVm">
     /// Existing sky view-model whose time and location seed both the baseline and
-    /// simulation panels.
+    /// simulation panels.  A clone is used for each panel so each has its own independent
+    /// animation timer.
     /// </param>
     public ComparisonWindow(SkyViewModel sourceVm)
     {
@@ -62,7 +67,7 @@ public partial class ComparisonWindow : Window
 
         _vm = new ComparisonViewModel(sourceVm);
 
-        // Create the two OpenGL sky controls
+        // Create the two OpenGL sky controls — each bound to an independent SkyViewModel clone.
         _baselineGl = new SkyGlControl(_vm.Baseline)
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -72,6 +77,9 @@ public partial class ComparisonWindow : Window
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment   = VerticalAlignment.Stretch,
+            // Wire simulation overrides so changes in the controls panel are applied
+            // to Sun altitude, motion freeze, etc. during rendering.
+            Override = _vm.SimOverride,
         };
 
         BaselineGlHost.Content   = _baselineGl;
@@ -104,7 +112,7 @@ public partial class ComparisonWindow : Window
         StepLastBtn.Click  += (_, _) => _vm.Baseline.SimTime = _vm.Baseline.SimTime.AddDays(30);
         NowBtn.Click       += (_, _) => _vm.Baseline.ResetToNowCommand.Execute(null);
 
-        // Simulation controls
+        // Simulation controls — write to _vm.SimOverride; the GL control reads Override on each frame.
         FreezeMotionCheck.IsCheckedChanged += (_, _) =>
             _vm.SimOverride.MotionFrozen = FreezeMotionCheck.IsChecked == true;
 
@@ -139,7 +147,14 @@ public partial class ComparisonWindow : Window
         var labelTimer = new DispatcherTimer { Interval = LabelRefreshInterval };
         labelTimer.Tick += (_, _) => RefreshLabels();
         labelTimer.Start();
-        Closed += (_, _) => labelTimer.Stop();
+
+        // Clean up on close: stop timer, unsubscribe handlers, deactivate the VM.
+        Closed += (_, _) =>
+        {
+            labelTimer.Stop();
+            _vm.Baseline.PropertyChanged -= OnBaselinePropertyChanged;
+            _vm.IsActive = false; // triggers ComparisonViewModel.OnDeactivated → unsubscribes _source
+        };
     }
 
     // ── Label refresh ────────────────────────────────────────────────────
@@ -205,8 +220,10 @@ public partial class ComparisonWindow : Window
 
     private void ApplyDateTimePickerText()
     {
-        var dateStr = DatePicker.Text ?? string.Empty;
-        var timeStr = TimePicker.Text ?? string.Empty;
+        var dateStr = DatePicker.Text?.Trim() ?? string.Empty;
+        var timeStr = TimePicker.Text?.Trim() ?? string.Empty;
+        if (string.IsNullOrEmpty(timeStr)) timeStr = "00:00";
+
         if (DateTime.TryParseExact($"{dateStr} {timeStr}", "yyyy-MM-dd HH:mm",
             System.Globalization.CultureInfo.InvariantCulture,
             System.Globalization.DateTimeStyles.AssumeUniversal |
