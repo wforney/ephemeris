@@ -11,6 +11,7 @@ using Ephemeris.Geometry;
 using Ephemeris.Heliology;
 using Ephemeris.Selenography;
 using Ephemeris.Stellarography;
+using Ephemeris.UI.Models;
 
 namespace Ephemeris.UI.Avalonia.Controls;
 
@@ -350,6 +351,29 @@ public sealed class SkyGlControl : OpenGlControlBase
         ("Arcturus",   "Izar"),
     ];
 
+    // ── Simulation override ───────────────────────────────────────────────
+    private SimulationOverride? _override;
+
+    /// <summary>
+    /// Optional simulation overrides applied during rendering.
+    /// When set, <see cref="SimulationOverride.SunAltitudeOffsetDegrees"/> shifts the Sun's
+    /// rendered altitude, and <see cref="SimulationOverride.MotionFrozen"/> prevents the
+    /// animation timer from advancing <see cref="SkyViewModel.SimTime"/>.
+    /// </summary>
+    public SimulationOverride? Override
+    {
+        get => _override;
+        set
+        {
+            _override = value;
+            RequestNextFrameRendering();
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Construction
+    // ─────────────────────────────────────────────────────────────────────
+
     /// <summary>
     /// Initialises the sky GL control bound to the provided view-model.
     /// </summary>
@@ -360,7 +384,7 @@ public sealed class SkyGlControl : OpenGlControlBase
         _vm.PropertyChanged += OnViewModelPropertyChanged;
 
         _animTimer          = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
-        _animTimer.Tick    += (_, _) => _vm.AdvanceTick();
+        _animTimer.Tick    += (_, _) => { if (_override?.MotionFrozen != true) _vm.AdvanceTick(); };
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -777,7 +801,8 @@ public sealed class SkyGlControl : OpenGlControlBase
         double hour = _vm.SimTime.Hour + _vm.SimTime.Minute / 60.0 + _vm.SimTime.Second / 3600.0;
 
         var sun = EphemerisCalculator.GetSunPosition(year, month, day, hour, _vm.Longitude, _vm.Latitude);
-        AddBodyVertex(buffer, sun.Azimuth, sun.Altitude, 1.0f, 0.97f, 0.8f, 16f, _showPlanetLabels ? "Sun" : null);
+        double sunAltitude = sun.Altitude + (_override?.SunAltitudeOffsetDegrees ?? 0.0);
+        AddBodyVertex(buffer, sun.Azimuth, sunAltitude, 1.0f, 0.97f, 0.8f, 16f, _showPlanetLabels ? "Sun" : null);
 
         var moon = EphemerisCalculator.GetMoonPosition(year, month, day, hour, _vm.Longitude, _vm.Latitude);
         float moonPhase = (float)(moon.Illumination ?? 0.5);
