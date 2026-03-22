@@ -50,6 +50,13 @@ public partial class NotesPanel : Window
         SaveMarkerBtn.Click   += OnSaveMarkerClick;
         SaveSessionBtn.Click  += OnSaveSessionClick;
         ExportNotesBtn.Click  += OnExportNotesClick;
+
+        // TODO: Implement auto-save/restore of notes to a JSON file in the user's documents folder.
+        //       Suggested path: %USERPROFILE%\Documents\EphemerisResearch\notes\<session-name>.json
+        //       (or Environment.GetFolderPath(SpecialFolder.MyDocuments) / "EphemerisResearch" / "notes")
+        //       On open: load the most recent notes file matching the session name (or a default "scratch" file).
+        //       On close / after each keystroke (debounced): serialize _session.Notes + metadata to that file.
+        //       SessionModel.SaveAsync / LoadAsync already handle the JSON shape — re-use them here.
     }
 
     // ─────────────────────────────────────────────────────────────────────
