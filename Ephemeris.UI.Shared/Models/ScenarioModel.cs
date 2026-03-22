@@ -5,22 +5,22 @@ namespace Ephemeris.UI.Models;
 
 /// <summary>
 /// Represents a predefined research scenario — a named combination of observer location,
-/// suggested modern UTC time, and (where applicable) a historical <see cref="ProlepticDate"/>
-/// for pre-BCE events that .NET <see cref="DateTime"/> cannot represent.
+/// suggested modern UTC time, scripture reference, and (where applicable) a historical
+/// <see cref="ProlepticDate"/> for pre-BCE events that .NET <see cref="DateTime"/> cannot represent.
 /// </summary>
-/// <remarks>
-/// When <see cref="HistoricalDate"/> is set the historical Julian Day is used as the
-/// calculation epoch instead of <see cref="SuggestedUtcTime"/>.
-/// Obtain a Julian Century for the Ephemeris engine via
-/// <c>TimeUtils.JulianCentury(scenario.HistoricalDate.Value.ToJulianDay())</c>.
-/// </remarks>
 public sealed class ScenarioModel
 {
     /// <summary>Human-readable name shown in the scenario picker.</summary>
     public required string Name { get; init; }
 
-    /// <summary>Optional short description displayed below the name.</summary>
+    /// <summary>Biblical chapter/verse reference, e.g. "Isaiah 38:8".</summary>
+    public string ScriptureReference { get; init; } = string.Empty;
+
+    /// <summary>One-to-two sentence description of the event.</summary>
     public string? Description { get; init; }
+
+    /// <summary>Human-readable place name, e.g. "Jerusalem".</summary>
+    public string LocationName { get; init; } = string.Empty;
 
     /// <summary>Observer longitude in degrees (east positive).</summary>
     public double Longitude { get; init; }
@@ -29,15 +29,14 @@ public sealed class ScenarioModel
     public double Latitude { get; init; }
 
     /// <summary>
-    /// Modern UTC proxy time for <see cref="DateTime"/>-based display when
-    /// <see cref="HistoricalDate"/> is <see langword="null"/>, or as a fallback display
-    /// reference when it is set.
+    /// Modern UTC proxy time for DateTime-based display or as fallback when
+    /// <see cref="HistoricalDate"/> is not set.
     /// </summary>
     public DateTime SuggestedUtcTime { get; init; } = DateTime.UtcNow;
 
     /// <summary>
     /// Historical date in the BC/BCE era represented as a <see cref="ProlepticDate"/>.
-    /// When this is set the scenario operates in <em>historical mode</em> and
+    /// When set, the scenario operates in historical mode and
     /// <see cref="ToJulianDay"/> returns the JD of this date.
     /// </summary>
     public ProlepticDate? HistoricalDate { get; init; }
@@ -50,50 +49,46 @@ public sealed class ScenarioModel
     public double ToJulianDay() =>
         HistoricalDate.HasValue
             ? HistoricalDate.Value.ToJulianDay()
-            : Ephemeris.Chronology.TimeZoneUtils.ToJulianDay(SuggestedUtcTime);
+            : TimeZoneUtils.ToJulianDay(SuggestedUtcTime);
 }
 
 /// <summary>
-/// Provides the built-in research scenarios shipped with the application.
+/// Provides the built-in scriptural event presets for the Ephemeris Research App.
 /// </summary>
 public static class BuiltInScenarios
 {
-    /// <summary>
-    /// Hezekiah's Sundial — Isaiah 38 / 2 Kings 20.
-    /// The Sun's shadow retreated ten steps on Ahaz's sundial (~701 BCE),
-    /// observed from Jerusalem (lon 35.2°E, lat 31.8°N).
-    /// </summary>
+    /// <summary>Hezekiah's Sundial — the shadow retreated ten steps on the stairway of Ahaz.</summary>
     /// <remarks>
-    /// Historical date: 1 August 701 BCE (proleptic Gregorian), Jerusalem noon.
-    /// Reference: Meeus, <em>Astronomical Algorithms</em> (2nd ed.), Ch. 7.
+    /// Observer: Jerusalem (31.8° N, 35.2° E). Approximate date: August 701 BCE.
+    /// Reference: Meeus, Astronomical Algorithms (2nd ed.), Ch. 7.
     /// </remarks>
     public static ScenarioModel HezekiahSundial { get; } = new()
     {
-        Name           = "Hezekiah's Sundial",
-        Description    = "Isaiah 38 / 2 Kings 20 — shadow retreated ten steps (701 BCE)",
-        Longitude      = 35.2,
-        Latitude       = 31.8,
-        SuggestedUtcTime = new DateTime(2000, 8, 1, 12, 0, 0, DateTimeKind.Utc), // proxy
-        HistoricalDate = ProlepticDate.FromBce(701, 8, 1),
+        Name               = "Hezekiah's Sundial",
+        ScriptureReference = "Isaiah 38:8 / 2 Kings 20:11",
+        Description        = "The shadow on the stairway of Ahaz retreated ten steps as a sign to King Hezekiah (~701 BCE).",
+        LocationName       = "Jerusalem",
+        Longitude          = 35.2,
+        Latitude           = 31.8,
+        SuggestedUtcTime   = new DateTime(2000, 8, 1, 12, 0, 0, DateTimeKind.Utc),
+        HistoricalDate     = ProlepticDate.FromBce(701, 8, 1),
     };
 
-    /// <summary>
-    /// Joshua's Long Day — Joshua 10:12–14.
-    /// The Sun and Moon stood still over Gibeon and the Valley of Aijalon (~1406 BCE),
-    /// observed from Gibeon (lon 35.2°E, lat 31.9°N).
-    /// </summary>
+    /// <summary>Joshua's Long Day — the Sun and Moon stood still over Gibeon.</summary>
     /// <remarks>
-    /// Historical date: 21 June 1406 BCE (proleptic Gregorian), near summer solstice.
-    /// Reference: Meeus, <em>Astronomical Algorithms</em> (2nd ed.), Ch. 7.
+    /// Observer: Gibeon (31.85° N, 35.18° E). Approximate date: June 1406 BCE.
+    /// Reference: Meeus, Astronomical Algorithms (2nd ed.), Ch. 7.
     /// </remarks>
     public static ScenarioModel JoshuasLongDay { get; } = new()
     {
-        Name           = "Joshua's Long Day",
-        Description    = "Joshua 10:12–14 — Sun and Moon stood still (~1406 BCE)",
-        Longitude      = 35.2,
-        Latitude       = 31.9,
-        SuggestedUtcTime = new DateTime(2000, 6, 21, 12, 0, 0, DateTimeKind.Utc), // proxy
-        HistoricalDate = ProlepticDate.FromBce(1406, 6, 21),
+        Name               = "Joshua's Long Day",
+        ScriptureReference = "Joshua 10:12-14",
+        Description        = "The Sun and Moon stood still over Gibeon and the Valley of Aijalon (~1406 BCE).",
+        LocationName       = "Gibeon",
+        Longitude          = 35.2,
+        Latitude           = 31.9,
+        SuggestedUtcTime   = new DateTime(2000, 6, 21, 12, 0, 0, DateTimeKind.Utc),
+        HistoricalDate     = ProlepticDate.FromBce(1406, 6, 21),
     };
 
     /// <summary>Returns all built-in scenarios in display order.</summary>

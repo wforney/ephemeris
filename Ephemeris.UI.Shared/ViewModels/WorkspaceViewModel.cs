@@ -1,42 +1,42 @@
 // Updated: 2026-03-22
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using Ephemeris.Chronology;
+using Ephemeris.UI.Messages;
 using Ephemeris.UI.Models;
 using Ephemeris.UI.Services;
 
 namespace Ephemeris.UI.ViewModels;
 
 /// <summary>
-/// View-model for the Research Workspace window.
-/// Extends the basic observer/time state with support for loading named
-/// <see cref="ScenarioModel"/> presets and for operating in <em>historical mode</em>
-/// where the epoch is a <see cref="ProlepticDate"/> (BCE era) rather than a modern
-/// <see cref="DateTime"/>.
+/// Full research workspace view-model for the Ephemeris Research App.
+/// Manages observer position, simulation time, playback, scenario loading,
+/// and on-demand retrieval of celestial data from <see cref="ICelestialResearchService"/>.
 /// </summary>
 /// <remarks>
-/// When <see cref="HistoricalDate"/> is set, <see cref="IsHistoricalMode"/> is
-/// <see langword="true"/> and <see cref="DisplayDate"/> returns a historical string
-/// (e.g. "701 BCE Aug 01"). All astronomical calculations should use
-/// <see cref="CurrentJulianDay"/> as the epoch to ensure correctness for both modern
-/// and pre-Common-Era dates.
+/// Extends <see cref="ObservableRecipient"/> to participate in the
+/// <see cref="WeakReferenceMessenger"/> bus.
+/// Broadcasts <see cref="SimTimeChangedMessage"/> and <see cref="ObserverChangedMessage"/>
+/// whenever the corresponding properties change, and auto-refreshes
+/// <see cref="CelestialData"/> with a 300 ms debounce.
 /// </remarks>
-public sealed partial class WorkspaceViewModel : ObservableObject
+public sealed partial class WorkspaceViewModel : ObservableRecipient
 {
-    private readonly ICelestialResearchService _svc;
+    private readonly ICelestialResearchService _service;
+    private CancellationTokenSource _debounceCts = new();
 
-    // ── Observable properties ─────────────────────────────────────────────
+    // ── Observer & time ──────────────────────────────────────────────────────
 
-    /// <summary>Observer longitude in degrees (east positive).</summary>
-    [ObservableProperty] private double _longitude;
+    /// <summary>Observer longitude in degrees (East positive).</summary>
+    [ObservableProperty]
+    private double _longitude;
 
-    /// <summary>Observer latitude in degrees (north positive).</summary>
-    [ObservableProperty] private double _latitude;
+    /// <summary>Observer latitude in degrees (North positive).</summary>
+    [ObservableProperty]
+    private double _latitude;
 
-    /// <summary>
-    /// Current simulated UTC time. Used only when <see cref="HistoricalDate"/> is
-    /// <see langword="null"/> (i.e. not in historical mode).
-    /// </summary>
+    /// <summary>Current simulated UTC time. Used only when not in historical mode.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DisplayDate), nameof(CurrentJulianDay))]
     private DateTime _simTime;
@@ -49,23 +49,14 @@ public sealed partial class WorkspaceViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsHistoricalMode), nameof(DisplayDate), nameof(CurrentJulianDay))]
     private ProlepticDate? _historicalDate;
 
-    /// <summary>Currently loaded scenario, or <see langword="null"/> if none.</summary>
-    [ObservableProperty] private ScenarioModel? _activeScenario;
+    /// <summary>Whether the time animation is currently playing.</summary>
+    [ObservableProperty]
+    private bool _playing;
 
-    /// <summary>Latest computed research data, or <see langword="null"/> before first calculation.</summary>
-    [ObservableProperty] private CelestialResearchData? _researchData;
-
-    // ── Derived properties ────────────────────────────────────────────────
-
-    /// <summary>
-    /// <see langword="true"/> when a historical (BCE) epoch is active.
-    /// </summary>
+    /// <summary><see langword="true"/> when a BCE/historical epoch is active.</summary>
     public bool IsHistoricalMode => HistoricalDate.HasValue;
 
-    /// <summary>
-    /// Human-readable date string for display in the toolbar.
-    /// Returns the historical string when in historical mode, otherwise a UTC string.
-    /// </summary>
+    /// <summary>Human-readable date string for display in the toolbar.</summary>
     public string DisplayDate =>
         IsHistoricalMode
             ? HistoricalDate!.Value.ToHistoricalString()
@@ -73,45 +64,157 @@ public sealed partial class WorkspaceViewModel : ObservableObject
 
     /// <summary>
     /// Julian Day for the current epoch. Use this when calling Ephemeris core methods.
-    /// Returns the JD from <see cref="HistoricalDate"/> when in historical mode,
-    /// otherwise converts <see cref="SimTime"/> to JD.
     /// </summary>
     public double CurrentJulianDay =>
         IsHistoricalMode
             ? HistoricalDate!.Value.ToJulianDay()
-            : Ephemeris.Chronology.TimeZoneUtils.ToJulianDay(SimTime);
+            : TimeZoneUtils.ToJulianDay(SimTime);
 
-    // ── Construction ──────────────────────────────────────────────────────
+    // ── Workspace state ───────────────────────────────────────────────────────
 
     /// <summary>
-    /// Initialises the workspace view-model.
+    /// Animation playback speed multiplier (1 = real-time, 60 = 1 min/sec, 86400 = 1 day/sec).
     /// </summary>
-    /// <param name="service">Celestial research service for position calculations.</param>
-    /// <param name="longitude">Initial observer longitude (default 0°).</param>
-    /// <param name="latitude">Initial observer latitude (default 51.5° N).</param>
+    [ObservableProperty]
+    private double _playbackSpeed = 60.0;
+
+    /// <summary>
+    /// Latest celestial data snapshot retrieved by <see cref="LoadDataCommand"/>,
+    /// or <see langword="null"/> before the first load.
+    /// </summary>
+    [ObservableProperty]
+    private CelestialResearchData? _celestialData;
+
+    /// <summary>Human-readable status, e.g. "Loading…" or "Jerusalem, 701 BCE".</summary>
+    [ObservableProperty]
+    private string _statusMessage = "Ready";
+
+    /// <summary>
+    /// <see langword="true"/> while <see cref="LoadDataCommand"/> is executing.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isLoading;
+
+    /// <summary>
+    /// Name of the currently active scenario preset, or <see langword="null"/> if none.
+    /// </summary>
+    [ObservableProperty]
+    private string? _activeScenarioName;
+
+    /// <summary>Active simulation overrides (freeze motion, altitude offset, extended daylight).</summary>
+    public SimulationOverride Simulation { get; } = new();
+
+    // ── Constructor ────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Initialises the workspace with an observer location and an optional start time.
+    /// </summary>
+    /// <param name="service">The celestial research service used by <see cref="LoadDataCommand"/>.</param>
+    /// <param name="longitude">Initial observer longitude in degrees (East positive). Defaults to 0.</param>
+    /// <param name="latitude">Initial observer latitude in degrees (North positive). Defaults to 51.5 (London).</param>
+    /// <param name="initialTime">
+    /// Initial simulation time (UTC).  If <see cref="DateTime.MinValue"/> or <c>default</c>,
+    /// the current UTC clock is used.
+    /// </param>
     public WorkspaceViewModel(
         ICelestialResearchService service,
         double longitude = 0.0,
-        double latitude  = 51.5)
+        double latitude  = 51.5,
+        DateTime initialTime = default)
     {
-        _svc       = service;
+        _service   = service ?? throw new ArgumentNullException(nameof(service));
         _longitude = longitude;
         _latitude  = latitude;
-        _simTime   = DateTime.UtcNow;
+        _simTime   = initialTime == default ? DateTime.UtcNow : initialTime;
+        IsActive   = true; // register with WeakReferenceMessenger
     }
 
-    // ── Commands ──────────────────────────────────────────────────────────
+    // ── Property-change hooks ──────────────────────────────────────────────────
+
+    partial void OnSimTimeChanged(DateTime value)
+    {
+        Messenger.Send(new SimTimeChangedMessage(value));
+        _ = DebounceRefreshAsync();
+    }
+
+    partial void OnLongitudeChanged(double value)
+    {
+        Messenger.Send(new ObserverChangedMessage(new ObserverLocation(value, Latitude)));
+        _ = DebounceRefreshAsync();
+    }
+
+    partial void OnLatitudeChanged(double value)
+    {
+        Messenger.Send(new ObserverChangedMessage(new ObserverLocation(Longitude, value)));
+        _ = DebounceRefreshAsync();
+    }
+
+    // ── Commands ───────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Loads a <see cref="ScenarioModel"/> preset into the workspace.
-    /// Sets observer coordinates, historical date (if any), and triggers a calculation.
+    /// Loads celestial data for the current <see cref="SimTime"/>, <see cref="Longitude"/>,
+    /// and <see cref="Latitude"/> using <see cref="ICelestialResearchService.GetDataAsync"/>.
     /// </summary>
-    [RelayCommand]
-    private async Task LoadScenarioAsync(ScenarioModel scenario)
+    [RelayCommand(IncludeCancelCommand = true)]
+    private async Task LoadDataAsync(CancellationToken ct)
     {
-        ActiveScenario = scenario;
-        Longitude      = scenario.Longitude;
-        Latitude       = scenario.Latitude;
+        IsLoading     = true;
+        StatusMessage = "Loading…";
+        try
+        {
+            CelestialData = await _service.GetDataAsync(SimTime, Longitude, Latitude, ct).ConfigureAwait(false);
+            StatusMessage = $"{SimTime:yyyy-MM-dd HH:mm} UTC · {Latitude:F2}°N {Longitude:F2}°E";
+        }
+        catch (OperationCanceledException)
+        {
+            // Cancelled — do not update status; a fresh request is likely already queued.
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    /// <summary>Toggles the animation play state.</summary>
+    [RelayCommand]
+    private void PlayPause() => Playing = !Playing;
+
+    /// <summary>Resets the simulated time to the current UTC clock and clears the active scenario.</summary>
+    [RelayCommand]
+    private void ResetToNow()
+    {
+        ActiveScenarioName = null;
+        HistoricalDate = null;
+        SimTime = DateTime.UtcNow;
+    }
+
+    /// <summary>Advances the simulation time by <paramref name="step"/>.</summary>
+    /// <param name="step">The amount of time to add to <see cref="SimTime"/>.</param>
+    [RelayCommand]
+    private void StepForward(TimeSpan step) => SimTime = SimTime.Add(step);
+
+    /// <summary>Rewinds the simulation time by <paramref name="step"/>.</summary>
+    /// <param name="step">The amount of time to subtract from <see cref="SimTime"/>.</param>
+    [RelayCommand]
+    private void StepBack(TimeSpan step) => SimTime = SimTime.Add(-step);
+
+    /// <summary>
+    /// Applies a <see cref="ScenarioModel"/> preset: sets <see cref="SimTime"/>,
+    /// <see cref="Longitude"/>, <see cref="Latitude"/>, and <see cref="ActiveScenarioName"/>.
+    /// </summary>
+    /// <param name="scenario">The preset to load.</param>
+    [RelayCommand]
+    private void LoadScenario(ScenarioModel scenario)
+    {
+        ArgumentNullException.ThrowIfNull(scenario);
+        Longitude          = scenario.Longitude;
+        Latitude           = scenario.Latitude;
+        ActiveScenarioName = scenario.Name;
+        StatusMessage      = $"{scenario.LocationName} — {scenario.Name}";
 
         if (scenario.HistoricalDate.HasValue)
         {
@@ -122,57 +225,34 @@ public sealed partial class WorkspaceViewModel : ObservableObject
             HistoricalDate = null;
             SimTime        = scenario.SuggestedUtcTime;
         }
-
-        await RefreshDataAsync().ConfigureAwait(false);
     }
 
-    /// <summary>Clears the active scenario and returns to modern-era mode.</summary>
-    [RelayCommand]
-    private void ClearScenario()
-    {
-        ActiveScenario = null;
-        HistoricalDate = null;
-        SimTime        = DateTime.UtcNow;
-    }
+    // ── Auto-refresh debounce ─────────────────────────────────────────────────
 
-    /// <summary>Advances the epoch by one day (works in both modern and historical mode).</summary>
-    [RelayCommand]
-    private async Task StepForwardAsync()
+    /// <summary>
+    /// Cancels any pending refresh, waits 300 ms, then calls <see cref="LoadDataAsync"/>
+    /// with a fresh <see cref="CancellationToken"/> so rapid property changes result
+    /// in only one network/calculation round-trip.
+    /// </summary>
+    private async Task DebounceRefreshAsync()
     {
-        AdvanceByDays(1);
-        await RefreshDataAsync().ConfigureAwait(false);
-    }
-
-    /// <summary>Rewinds the epoch by one day.</summary>
-    [RelayCommand]
-    private async Task StepBackAsync()
-    {
-        AdvanceByDays(-1);
-        await RefreshDataAsync().ConfigureAwait(false);
-    }
-
-    /// <summary>Recalculates celestial positions for the current epoch.</summary>
-    [RelayCommand]
-    public async Task RefreshDataAsync()
-    {
-        var data = await _svc.GetDataForJulianDayAsync(
-            CurrentJulianDay, Longitude, Latitude).ConfigureAwait(false);
-        ResearchData = data;
-    }
-
-    // ── Helpers ───────────────────────────────────────────────────────────
-
-    /// <summary>Advances the current epoch (historical or modern) by the given number of days.</summary>
-    private void AdvanceByDays(double days)
-    {
-        if (IsHistoricalMode)
+        await _debounceCts.CancelAsync().ConfigureAwait(false);
+        _debounceCts = new CancellationTokenSource();
+        CancellationToken token = _debounceCts.Token;
+        try
         {
-            double newJd = HistoricalDate!.Value.ToJulianDay() + days;
-            HistoricalDate = ProlepticDate.FromJulianDay(newJd);
+            await Task.Delay(300, token).ConfigureAwait(false);
+            await LoadDataAsync(token).ConfigureAwait(false);
         }
-        else
+        catch (OperationCanceledException)
         {
-            SimTime = SimTime.AddDays(days);
+            // A newer property change arrived — the next debounce cycle will handle it.
         }
     }
+
+    /// <summary>
+    /// Advances the simulation time by one animation tick (10 minutes).
+    /// Called by the animation timer when <see cref="Playing"/> is <see langword="true"/>.
+    /// </summary>
+    public void AdvanceTick() => SimTime = SimTime.AddMinutes(10);
 }

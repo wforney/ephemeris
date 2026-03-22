@@ -9,6 +9,7 @@ using Avalonia.Threading;
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 using Ephemeris.Stellarography;
+using Ephemeris.UI.Models;
 
 namespace Ephemeris.UI.Avalonia.Controls;
 
@@ -172,12 +173,6 @@ public sealed class SkyGlControl : OpenGlControlBase
     /// regions as colored bands along the ecliptic with their Hebrew names.
     /// Default is <see langword="false"/>.
     /// </summary>
-    /// <remarks>
-    /// The ecliptic is computed as a series of points (λ = 0°…360°, β = 0°) converted
-    /// to equatorial (RA/Dec) using the mean obliquity ε, then to horizontal coordinates
-    /// for the current observer and time.  Each of the 12 Mazzaroth regions spans 30° of
-    /// ecliptic longitude.
-    /// </remarks>
     public bool ShowMazzarothOverlay
     {
         get => _showMazzarothOverlay;
@@ -191,23 +186,6 @@ public sealed class SkyGlControl : OpenGlControlBase
 
     // ── Mazzaroth constellation data ──────────────────────────────────────
 
-    /// <summary>
-    /// The 12 Mazzaroth (zodiac) constellation band definitions used for the ecliptic overlay.
-    /// Each entry specifies the band's start ecliptic longitude (°), the Hebrew/transliterated name,
-    /// and the RGB render colour.
-    /// </summary>
-    /// <remarks>
-    /// Each band covers 30° of ecliptic longitude (λ), running from
-    /// <c>StartLon</c> to <c>StartLon + 30°</c> (exclusive).
-    /// Colours are chosen for visual contrast against the night-sky background; alpha is
-    /// set to 0.5 in the vertex shader for a translucent appearance.
-    /// Hebrew names follow the traditional biblical/Mishnaic usage:
-    /// Taleh (Aries), Shor (Taurus), Teomim (Gemini), Sartan (Cancer), Aryeh (Leo),
-    /// Betulah (Virgo), Moznayim (Libra), Akrav (Scorpio), Keshet (Sagittarius),
-    /// Gedi (Capricorn), Deli (Aquarius), Dagim (Pisces).
-    /// Reference: <em>Mazzaroth; or, The Constellations</em> (Frances Rolleston, 1862);
-    /// Meeus, <em>Astronomical Algorithms</em>, 2nd ed., Ch. 13 for ecliptic→equatorial conversion.
-    /// </remarks>
     private static readonly (double StartLon, string Hebrew, float R, float G, float B)[] MazzarothBands =
     [
         (  0, "טָלֶה / Taleh (Aries)",      1.0f, 0.5f, 0.5f),
@@ -224,6 +202,25 @@ public sealed class SkyGlControl : OpenGlControlBase
         (330, "דָּגִים / Dagim (Pisces)",     0.6f, 0.6f, 1.0f),
     ];
 
+    // ── Simulation override ───────────────────────────────────────────────
+    private SimulationOverride? _override;
+
+    /// <summary>
+    /// Optional simulation overrides applied during rendering.
+    /// When set, <see cref="SimulationOverride.SunAltitudeOffsetDegrees"/> shifts the Sun's
+    /// rendered altitude, and <see cref="SimulationOverride.MotionFrozen"/> prevents the
+    /// animation timer from advancing <see cref="SkyViewModel.SimTime"/>.
+    /// </summary>
+    public SimulationOverride? Override
+    {
+        get => _override;
+        set
+        {
+            _override = value;
+            RequestNextFrameRendering();
+        }
+    }
+
     // ─────────────────────────────────────────────────────────────────────
     // Construction
     // ─────────────────────────────────────────────────────────────────────
@@ -238,7 +235,7 @@ public sealed class SkyGlControl : OpenGlControlBase
         _vm.PropertyChanged += OnViewModelPropertyChanged;
 
         _animTimer          = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
-        _animTimer.Tick    += (_, _) => _vm.AdvanceTick();
+        _animTimer.Tick    += (_, _) => { if (_override?.MotionFrozen != true) _vm.AdvanceTick(); };
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -602,7 +599,8 @@ public sealed class SkyGlControl : OpenGlControlBase
         double hour = _vm.SimTime.Hour + _vm.SimTime.Minute / 60.0 + _vm.SimTime.Second / 3600.0;
 
         var sun = EphemerisCalculator.GetSunPosition(year, month, day, hour, _vm.Longitude, _vm.Latitude);
-        AddBodyVertex(buffer, sun.Azimuth, sun.Altitude, 1.0f, 0.97f, 0.8f, 16f, "Sun");
+        double sunAltitude = sun.Altitude + (_override?.SunAltitudeOffsetDegrees ?? 0.0);
+        AddBodyVertex(buffer, sun.Azimuth, sunAltitude, 1.0f, 0.97f, 0.8f, 16f, "Sun");
 
         var moon = EphemerisCalculator.GetMoonPosition(year, month, day, hour, _vm.Longitude, _vm.Latitude);
         float moonPhase = (float)(moon.Illumination ?? 0.5);

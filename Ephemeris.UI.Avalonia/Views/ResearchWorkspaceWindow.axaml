@@ -2,119 +2,224 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="Ephemeris.UI.Avalonia.Views.ResearchWorkspaceWindow"
         Title="Ephemeris — Research Workspace"
-        Width="1100" Height="720"
-        MinWidth="720" MinHeight="520">
+        Width="1200" Height="750"
+        MinWidth="800" MinHeight="600"
+        WindowStartupLocation="CenterScreen">
 
     <Grid RowDefinitions="Auto,*,Auto">
 
-        <!-- ── Toolbar ─────────────────────────────────────────────────── -->
-        <StackPanel Grid.Row="0"
-                    Orientation="Horizontal"
-                    Spacing="8"
-                    Margin="8,4"
-                    VerticalAlignment="Center">
+        <!-- ── TOOLBAR ────────────────────────────────────────────────── -->
+        <Border Grid.Row="0" BorderThickness="0,0,0,1" BorderBrush="#FF444466" Padding="8,4">
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
 
-            <!-- Date display — shows historical string or normal date picker -->
-            <TextBlock x:Name="DateDisplayLabel"
-                       FontSize="14"
-                       FontWeight="SemiBold"
-                       VerticalAlignment="Center"
-                       MinWidth="220" />
+                <TextBlock Text="Date:" VerticalAlignment="Center" />
+                <TextBox x:Name="DateBox"
+                         Watermark="yyyy-MM-dd"
+                         Width="110" />
 
-            <!-- Modern-mode date text box (hidden in historical mode) -->
-            <TextBox x:Name="DatePicker"
-                     Watermark="yyyy-MM-dd HH:mm"
-                     Width="150" />
+                <TextBlock Text="Time:" VerticalAlignment="Center" />
+                <TextBox x:Name="TimeBox"
+                         Watermark="HH:mm"
+                         Width="72" />
 
-            <Separator Width="1" Background="Gray" Margin="4,0" />
+                <Rectangle Width="1" Fill="Gray" Margin="4,0" />
 
-            <TextBlock Text="Lon:" VerticalAlignment="Center" />
-            <NumericUpDown x:Name="LonPicker"
-                           Minimum="-180" Maximum="180"
-                           Increment="1" FormatString="F2"
-                           Width="100" />
+                <TextBlock Text="Lon:" VerticalAlignment="Center" />
+                <NumericUpDown x:Name="LonPicker"
+                               Minimum="-180" Maximum="180"
+                               Increment="0.01" FormatString="F2"
+                               Width="100" />
 
-            <TextBlock Text="Lat:" VerticalAlignment="Center" />
-            <NumericUpDown x:Name="LatPicker"
-                           Minimum="-90" Maximum="90"
-                           Increment="1" FormatString="F2"
-                           Width="80" />
+                <TextBlock Text="Lat:" VerticalAlignment="Center" />
+                <NumericUpDown x:Name="LatPicker"
+                               Minimum="-90" Maximum="90"
+                               Increment="0.01" FormatString="F2"
+                               Width="90" />
 
-            <Separator Width="1" Background="Gray" Margin="4,0" />
+                <Rectangle Width="1" Fill="Gray" Margin="4,0" />
 
-            <Button x:Name="StepBackBtn"  Content="◀ Day"  Width="70" />
-            <Button x:Name="StepFwdBtn"   Content="Day ▶"  Width="70" />
-
-            <Separator Width="1" Background="Gray" Margin="4,0" />
-
-            <!-- Scenario picker -->
-            <ComboBox x:Name="ScenarioPicker"
-                      PlaceholderText="Load scenario…"
-                      Width="200" />
-
-            <Button x:Name="ClearScenarioBtn" Content="✕ Clear" Width="70" />
-
-        </StackPanel>
-
-        <!-- ── Main content area ───────────────────────────────────────── -->
-        <ScrollViewer Grid.Row="1" Padding="8">
-            <StackPanel Spacing="12">
-
-                <!-- Sun position card -->
-                <Border BorderBrush="Gray" BorderThickness="1" CornerRadius="4" Padding="8">
-                    <StackPanel>
-                        <TextBlock Text="☀ Sun" FontWeight="Bold" FontSize="13" />
-                        <TextBlock x:Name="SunLabel" Text="—" Margin="0,4,0,0" />
-                    </StackPanel>
-                </Border>
-
-                <!-- Moon position card -->
-                <Border BorderBrush="Gray" BorderThickness="1" CornerRadius="4" Padding="8">
-                    <StackPanel>
-                        <TextBlock Text="🌙 Moon" FontWeight="Bold" FontSize="13" />
-                        <TextBlock x:Name="MoonLabel" Text="—" Margin="0,4,0,0" />
-                    </StackPanel>
-                </Border>
-
-                <!-- Active scenario info -->
-                <Border x:Name="ScenarioInfoBorder"
-                        BorderBrush="SteelBlue" BorderThickness="1"
-                        CornerRadius="4" Padding="8"
-                        IsVisible="False">
-                    <StackPanel>
-                        <TextBlock x:Name="ScenarioNameLabel" FontWeight="Bold" FontSize="13" />
-                        <TextBlock x:Name="ScenarioDescLabel" Margin="0,4,0,0" />
-                    </StackPanel>
-                </Border>
+                <TextBlock Text="Scenario:" VerticalAlignment="Center" Opacity="0.6" />
+                <TextBlock x:Name="ScenarioName"
+                           Text="—"
+                           VerticalAlignment="Center"
+                           FontStyle="Italic" />
 
             </StackPanel>
-        </ScrollViewer>
+        </Border>
 
-        <!-- ── Status bar ──────────────────────────────────────────────── -->
+        <!-- ── MAIN AREA: sky canvas + data sidebar ───────────────────── -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,220">
+
+            <!-- Sky canvas (OpenGL) -->
+            <Grid Grid.Column="0">
+                <ContentControl x:Name="GlHost" />
+                <Canvas x:Name="LabelCanvas" IsHitTestVisible="False" />
+            </Grid>
+
+            <!-- Data sidebar -->
+            <Border Grid.Column="1"
+                    Background="#FF1E1E2E"
+                    BorderThickness="1,0,0,0"
+                    BorderBrush="#FF444466">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="10,8" Spacing="3">
+
+                        <TextBlock Text="Celestial Data"
+                                   FontWeight="Bold"
+                                   FontSize="12"
+                                   Margin="0,0,0,6" />
+
+                        <!-- Sun -->
+                        <TextBlock Text="☀  Sun"
+                                   FontWeight="SemiBold"
+                                   Foreground="#FFFFCC44" />
+                        <TextBlock x:Name="SunAlt"
+                                   Text="Alt:  Loading…"
+                                   FontFamily="Consolas,Courier New,Monospace"
+                                   FontSize="12" />
+                        <TextBlock x:Name="SunAz"
+                                   Text="Az:   Loading…"
+                                   FontFamily="Consolas,Courier New,Monospace"
+                                   FontSize="12" />
+
+                        <Rectangle Height="1" Fill="#FF444466" Margin="0,6" />
+
+                        <!-- Moon -->
+                        <TextBlock Text="☾  Moon"
+                                   FontWeight="SemiBold"
+                                   Foreground="#FFD0D8FF" />
+                        <TextBlock x:Name="MoonPhase"
+                                   Text="Phase: Loading…"
+                                   FontFamily="Consolas,Courier New,Monospace"
+                                   FontSize="12" />
+                        <TextBlock x:Name="MoonAlt"
+                                   Text="Alt:   Loading…"
+                                   FontFamily="Consolas,Courier New,Monospace"
+                                   FontSize="12" />
+                        <TextBlock x:Name="MoonAz"
+                                   Text="Az:    Loading…"
+                                   FontFamily="Consolas,Courier New,Monospace"
+                                   FontSize="12" />
+
+                        <Rectangle Height="1" Fill="#FF444466" Margin="0,6" />
+
+                        <!-- Rise/Set -->
+                        <TextBlock Text="Rise / Set"
+                                   FontWeight="SemiBold" />
+                        <TextBlock x:Name="SunriseLabel"
+                                   Text="Sunrise:   —"
+                                   FontFamily="Consolas,Courier New,Monospace"
+                                   FontSize="12" />
+                        <TextBlock x:Name="SunsetLabel"
+                                   Text="Sunset:    —"
+                                   FontFamily="Consolas,Courier New,Monospace"
+                                   FontSize="12" />
+                        <TextBlock x:Name="MoonriseLabel"
+                                   Text="Moonrise:  —"
+                                   FontFamily="Consolas,Courier New,Monospace"
+                                   FontSize="12" />
+                        <TextBlock x:Name="MoonsetLabel"
+                                   Text="Moonset:   —"
+                                   FontFamily="Consolas,Courier New,Monospace"
+                                   FontSize="12" />
+
+                        <Rectangle Height="1" Fill="#FF444466" Margin="0,6" />
+
+                        <TextBlock x:Name="NextFullMoonLabel"
+                                   Text="Next Full Moon: —"
+                                   FontFamily="Consolas,Courier New,Monospace"
+                                   FontSize="12"
+                                   TextWrapping="Wrap" />
+
+                        <Rectangle Height="1" Fill="#FF444466" Margin="0,10" />
+
+                        <!-- Action buttons -->
+                        <Button x:Name="ScripturalEventsBtn"
+                                Content="📜  Scriptural Events"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Left"
+                                Margin="0,2" />
+                        <Button x:Name="ComparisonModeBtn"
+                                Content="⚖  Comparison Mode"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Left"
+                                Margin="0,2" />
+                        <Button x:Name="NotesBtn"
+                                Content="📝  Notes"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Left"
+                                Margin="0,2" />
+
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+        </Grid>
+
+        <!-- ── TIME BAR ───────────────────────────────────────────────── -->
         <Border Grid.Row="2"
-                Background="#1A1A2E"
+                BorderThickness="0,1,0,0"
+                BorderBrush="#FF444466"
                 Padding="8,4">
-            <Grid ColumnDefinitions="*,Auto">
+            <Grid ColumnDefinitions="Auto,*,Auto">
 
-                <TextBlock x:Name="StatusLabel"
-                           Grid.Column="0"
-                           Text="Ready"
-                           Foreground="LightGray"
-                           FontSize="11"
-                           VerticalAlignment="Center" />
+                <!-- Transport buttons -->
+                <StackPanel Grid.Column="0"
+                            Orientation="Horizontal"
+                            Spacing="4"
+                            VerticalAlignment="Center">
+                    <Button x:Name="StepBackDayBtn"
+                            Content="⏮"
+                            Width="36"
+                            ToolTip.Tip="Step Back 1 Day" />
+                    <Button x:Name="StepBackHourBtn"
+                            Content="⏪"
+                            Width="36"
+                            ToolTip.Tip="Step Back 1 Hour" />
+                    <Button x:Name="PlayPauseBtn"
+                            Content="▶"
+                            Width="36"
+                            ToolTip.Tip="Play / Pause" />
+                    <Button x:Name="StepFwdHourBtn"
+                            Content="⏩"
+                            Width="36"
+                            ToolTip.Tip="Step Forward 1 Hour" />
+                    <Button x:Name="StepFwdDayBtn"
+                            Content="⏭"
+                            Width="36"
+                            ToolTip.Tip="Step Forward 1 Day" />
+                </StackPanel>
 
-                <!-- Historical mode badge — only visible in historical mode -->
-                <Border x:Name="HistoricalBadge"
-                        Grid.Column="1"
-                        Background="DarkGoldenRod"
-                        CornerRadius="3"
-                        Padding="6,2"
-                        IsVisible="False">
-                    <TextBlock Text="📜 Historical Mode"
-                               Foreground="White"
-                               FontSize="11"
-                               FontWeight="SemiBold" />
-                </Border>
+                <!-- Speed control -->
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center"
+                            Margin="20,0">
+                    <TextBlock Text="Speed:"
+                               VerticalAlignment="Center"
+                               Opacity="0.7" />
+                    <Slider x:Name="SpeedSlider"
+                            Minimum="0" Maximum="3"
+                            TickFrequency="1"
+                            IsSnapToTickEnabled="True"
+                            Width="120"
+                            Value="0"
+                            VerticalAlignment="Center" />
+                    <TextBlock x:Name="SpeedLabel"
+                               Text="1× (real-time)"
+                               VerticalAlignment="Center"
+                               FontFamily="Consolas,Courier New,Monospace"
+                               Width="130" />
+                </StackPanel>
+
+                <!-- Current UTC time display -->
+                <TextBlock Grid.Column="2"
+                           x:Name="CurrentTimeLabel"
+                           Text="UTC: —"
+                           VerticalAlignment="Center"
+                           FontFamily="Consolas,Courier New,Monospace"
+                           Opacity="0.8" />
 
             </Grid>
         </Border>

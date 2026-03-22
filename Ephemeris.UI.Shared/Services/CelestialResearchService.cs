@@ -2,112 +2,97 @@
 using Ephemeris.Chronology;
 using Ephemeris.Geometry;
 using Ephemeris.Heliology;
+using Ephemeris.Phenomenology;
 using Ephemeris.Selenography;
 
 namespace Ephemeris.UI.Services;
 
 /// <summary>
-/// Data transfer type returned by <see cref="ICelestialResearchService"/>.
-/// Carries the computed horizontal positions for the Sun, Moon, and a formatted display string.
-/// </summary>
-/// <param name="SunAzimuth">Sun azimuth in degrees [0, 360).</param>
-/// <param name="SunAltitude">Sun altitude in degrees [−90, 90].</param>
-/// <param name="MoonAzimuth">Moon azimuth in degrees [0, 360).</param>
-/// <param name="MoonAltitude">Moon altitude in degrees [−90, 90].</param>
-/// <param name="JulianDay">Julian Day of the calculation epoch.</param>
-public readonly record struct CelestialResearchData(
-    double SunAzimuth,
-    double SunAltitude,
-    double MoonAzimuth,
-    double MoonAltitude,
-    double JulianDay);
-
-/// <summary>
-/// Service contract for high-level celestial position queries used by research view-models.
+/// Default implementation of <see cref="ICelestialResearchService"/>.
+/// Wraps the static <see cref="EphemerisCalculator"/> and <see cref="RiseSetCalculator"/>
+/// APIs and offloads computation to a thread-pool thread so that UI threads are never blocked.
 /// </summary>
 /// <remarks>
-/// Two overloads are provided:
-/// <list type="bullet">
-///   <item>Modern era: pass a <see cref="DateTime"/> (UTC) — uses <c>TimeZoneUtils.ToJulianDay</c>.</item>
-///   <item>Historical era: pass a Julian Day directly — works for any era including BC.</item>
-/// </list>
+/// This class implements <see cref="ISingletonService"/> so that Scrutor assembly scanning
+/// automatically registers it as a singleton.
 /// </remarks>
-public interface ICelestialResearchService
+public class CelestialResearchService : ICelestialResearchService, ISingletonService
 {
-    /// <summary>
-    /// Computes celestial positions for a modern UTC time.
-    /// </summary>
-    Task<CelestialResearchData> GetDataAsync(
-        DateTime utcTime,
-        double longitude,
-        double latitude,
-        CancellationToken ct = default);
-
-    /// <summary>
-    /// Computes celestial positions for an arbitrary Julian Day — supports BCE dates.
-    /// </summary>
-    Task<CelestialResearchData> GetDataForJulianDayAsync(
-        double julianDay,
-        double longitude,
-        double latitude,
-        CancellationToken ct = default);
-}
-
-/// <summary>
-/// Default implementation of <see cref="ICelestialResearchService"/> that delegates
-/// directly to the Ephemeris core library.
-/// </summary>
-/// <remarks>
-/// Uses <see cref="SunEphemeris.ApparentEquatorialCoordinates"/> and
-/// <see cref="MoonEphemeris.ApparentEquatorialCoordinates"/> with
-/// <see cref="ObserverGeometry.EquatorialToHorizontal"/> for the observer conversion.
-/// Works for any era because the core algorithms accept Julian Century <c>T</c> which
-/// is a continuous value computed from Julian Day.
-/// </remarks>
-public sealed class CelestialResearchService : ICelestialResearchService
-{
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public Task<CelestialResearchData> GetDataAsync(
         DateTime utcTime,
         double longitude,
         double latitude,
         CancellationToken ct = default)
     {
-        double jd = TimeZoneUtils.ToJulianDay(utcTime);
-        return GetDataForJulianDayAsync(jd, longitude, latitude, ct);
+        return Task.Run(() => Compute(utcTime, longitude, latitude), ct);
     }
 
     /// <inheritdoc/>
-    /// <remarks>
-    /// Algorithm:
-    /// <list type="number">
-    ///   <item>Compute Julian Century: <c>T = (JD − 2451545.0) / 36525</c>.</item>
-    ///   <item>Obtain Sun RA/Dec via <see cref="SunEphemeris.ApparentEquatorialCoordinates"/>.</item>
-    ///   <item>Obtain Moon RA/Dec via <see cref="MoonEphemeris.ApparentEquatorialCoordinates"/>.</item>
-    ///   <item>Convert to horizontal (Az/Alt) via <see cref="ObserverGeometry.EquatorialToHorizontal"/>.</item>
-    /// </list>
-    /// Because the entire pipeline is parameterised by <c>T</c> (Julian Century since J2000),
-    /// this overload works for any era — including dates thousands of years before Christ.
-    /// </remarks>
     public Task<CelestialResearchData> GetDataForJulianDayAsync(
         double julianDay,
         double longitude,
         double latitude,
         CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested();
+        return Task.Run(() => ComputeForJulianDay(julianDay, longitude, latitude), ct);
+    }
+
+    /// <inheritdoc/>
+    public Task<IReadOnlyList<CelestialEventDetector.CelestialEvent>> GetUpcomingEventsAsync(
+        DateTime fromUtc, int count = 5, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+        return Task.Run(() => CelestialEventDetector.GetNext(fromUtc, count), ct);
+    }
+
+    private static CelestialResearchData Compute(DateTime utcTime, double longitude, double latitude)
+    {
+        CelestialObservation sun  = EphemerisCalculator.GetSunPosition(utcTime, "UTC", longitude, latitude);
+        CelestialObservation moon = EphemerisCalculator.GetMoonPosition(utcTime, "UTC", longitude, latitude);
+
+        RiseSetCalculator.RiseTransitSet sunRst  = RiseSetCalculator.Sun(utcTime.Date, longitude, latitude);
+        RiseSetCalculator.RiseTransitSet moonRst = RiseSetCalculator.Moon(utcTime.Date, longitude, latitude);
+
+        DateTime nextFullMoon = EphemerisCalculator.NextFullMoon(utcTime);
+        DateTime nextNewMoon  = EphemerisCalculator.NextNewMoon(utcTime);
+
+        return new CelestialResearchData(
+            Sun:          sun,
+            Moon:         moon,
+            Sunrise:      sunRst.Rise,
+            Sunset:       sunRst.Set,
+            Moonrise:     moonRst.Rise,
+            Moonset:      moonRst.Set,
+            NextFullMoon: nextFullMoon,
+            NextNewMoon:  nextNewMoon);
+    }
+
+    /// <summary>
+    /// Computes celestial positions for any Julian Day (including BCE/BC dates).
+    /// Uses core ephemeris algorithms parameterised by Julian Century T so the epoch
+    /// is not limited to the range of <see cref="DateTime"/>.
+    /// </summary>
+    private static CelestialResearchData ComputeForJulianDay(double julianDay, double longitude, double latitude)
+    {
         double T = TimeUtils.JulianCentury(julianDay);
 
-        var (sunRA, sunDec, _) = SunEphemeris.ApparentEquatorialCoordinates(T);
-        var sunH = ObserverGeometry.EquatorialToHorizontal(sunRA, sunDec, julianDay, longitude, latitude, applyRefraction: false);
+        var (sunRA, sunDec, _)   = SunEphemeris.ApparentEquatorialCoordinates(T);
+        HorizontalCoordinates sunH = ObserverGeometry.EquatorialToHorizontal(sunRA, sunDec, julianDay, longitude, latitude);
 
         var (moonRA, moonDec, _) = MoonEphemeris.GeocentricEquatorialCoordinates(T);
-        var moonH = ObserverGeometry.EquatorialToHorizontal(moonRA, moonDec, julianDay, longitude, latitude, applyRefraction: false);
+        HorizontalCoordinates moonH = ObserverGeometry.EquatorialToHorizontal(moonRA, moonDec, julianDay, longitude, latitude);
+        double moonIllumination = MoonEphemeris.PhaseAngle(T) / 180.0;
 
-        var data = new CelestialResearchData(
-            sunH.Azimuth, sunH.Altitude,
-            moonH.Azimuth, moonH.Altitude,
-            julianDay);
-
-        return Task.FromResult(data);
+        return new CelestialResearchData(
+            Sun:          new CelestialObservation(sunRA, sunDec, sunH.Azimuth, sunH.Altitude),
+            Moon:         new CelestialObservation(moonRA, moonDec, moonH.Azimuth, moonH.Altitude, moonIllumination),
+            Sunrise:      null,
+            Sunset:       null,
+            Moonrise:     null,
+            Moonset:      null,
+            NextFullMoon: null,
+            NextNewMoon:  null);
     }
 }
