@@ -1,13 +1,14 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:Ephemeris.UI.Avalonia.Controls"
         x:Class="Ephemeris.UI.Avalonia.Views.SkyViewWindow"
         Title="Ephemeris — Sky View"
         Width="1024" Height="768"
         MinWidth="640" MinHeight="480">
 
-    <Grid RowDefinitions="Auto,*">
+    <Grid RowDefinitions="Auto,Auto,*">
 
-        <!-- Toolbar -->
+        <!-- Toolbar row 1: Date/time and observer controls -->
         <StackPanel Grid.Row="0"
                     Orientation="Horizontal"
                     Spacing="8"
@@ -40,8 +41,13 @@
 
         </StackPanel>
 
+        <!-- Toolbar row 2: Sky display toggles -->
+        <controls:SkyDisplayToggleBar x:Name="ToggleBar"
+                                      Grid.Row="1"
+                                      Background="#12FFFFFF" />
+
         <!-- Sky GL control with transparent Canvas overlay for body name labels -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <ContentControl x:Name="GlHost" />
             <Canvas x:Name="LabelCanvas" IsHitTestVisible="False" />
         </Grid>
