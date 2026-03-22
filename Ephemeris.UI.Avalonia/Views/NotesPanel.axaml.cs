@@ -2,7 +2,6 @@
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
 using Ephemeris.UI.Models;
-using Ephemeris.UI.ViewModels;
 
 namespace Ephemeris.UI.Avalonia.Views;
 
@@ -19,19 +18,26 @@ namespace Ephemeris.UI.Avalonia.Views;
 /// </remarks>
 public partial class NotesPanel : Window
 {
-    private readonly WorkspaceViewModel _vm;
+    private readonly SkyViewModel _vm;
     private readonly SessionModel _session;
 
     /// <summary>
     /// Initialises the notes panel.
     /// </summary>
-    /// <param name="vm">The research workspace view-model.</param>
-    public NotesPanel(WorkspaceViewModel vm)
+    /// <param name="vm">The sky view-model providing observer location and simulated time.</param>
+    public NotesPanel(SkyViewModel vm)
     {
         InitializeComponent();
 
-        _vm      = vm;
-        _session = SessionModel.FromWorkspace(vm);
+        _vm = vm;
+
+        // Build a session snapshot from the current VM state
+        _session = new SessionModel
+        {
+            SimTime   = vm.SimTime,
+            Longitude = vm.Longitude,
+            Latitude  = vm.Latitude,
+        };
 
         // Wire text boxes to the session model (two-way, manual sync)
         SessionNameBox.Text = _session.Name;
@@ -134,7 +140,6 @@ public partial class NotesPanel : Window
             Exported: {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC
             Sim Time: {_vm.SimTime:yyyy-MM-dd HH:mm} UTC
             Location: {_vm.Longitude:F4}° E, {_vm.Latitude:F4}° N
-            Scenario: {_vm.ActiveScenarioName ?? "(none)"}
 
             Notes:
             {_session.Notes}

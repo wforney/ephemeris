@@ -29,16 +29,9 @@ public partial class LauncherWindow : Window,
         WeakReferenceMessenger.Default.RegisterAll(this);
         Closed += (_, _) => WeakReferenceMessenger.Default.UnregisterAll(this);
 
-        ResearchBtn.Click += OnResearchClick;
-        SkyViewBtn.Click  += OnSkyViewClick;
-        PlotBtn.Click     += OnPlotClick;
-    }
-
-    private async void OnResearchClick(object? sender, RoutedEventArgs e)
-    {
-        var workspaceWindow = new ResearchWorkspaceWindow(
-            new Ephemeris.UI.ViewModels.WorkspaceViewModel(_lastLongitude, _lastLatitude, _lastSimTime));
-        await workspaceWindow.ShowDialog(this);
+        SkyViewBtn.Click            += OnSkyViewClick;
+        PlotBtn.Click               += OnPlotClick;
+        ResearchWorkspaceBtn.Click  += OnResearchWorkspaceClick;
     }
 
     private async void OnSkyViewClick(object? sender, RoutedEventArgs e)
@@ -52,6 +45,13 @@ public partial class LauncherWindow : Window,
         List<EphemerisRecord> allData = [];
         var plotWindow = new EphemerisPlotWindow(allData, "Sun");
         await plotWindow.ShowDialog(this);
+    }
+
+    private async void OnResearchWorkspaceClick(object? sender, RoutedEventArgs e)
+    {
+        var vm = new SkyViewModel(_lastLongitude, _lastLatitude, _lastSimTime);
+        var workspaceWindow = new ResearchWorkspaceWindow(vm);
+        await workspaceWindow.ShowDialog(this);
     }
 
     /// <inheritdoc/>

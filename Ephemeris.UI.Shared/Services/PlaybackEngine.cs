@@ -92,7 +92,7 @@ public sealed class PlaybackEngine : IDisposable
         // ΔT(sim) = tick_interval_ms × PlaybackSpeed / 1000
         var delta = TimeSpan.FromSeconds(TickIntervalMs * _vm.PlaybackSpeed / 1000.0);
 
-        void Advance() => _vm.AdvanceTick(delta);
+        void Advance() => _vm.SimTime = _vm.SimTime.Add(delta);
 
         if (_syncContext is not null)
             _syncContext.Post(_ => Advance(), null);

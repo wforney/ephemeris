@@ -2,33 +2,32 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Ephemeris.UI.Models;
-using Ephemeris.UI.ViewModels;
 
 namespace Ephemeris.UI.Avalonia.Views;
 
 /// <summary>
 /// Modal window that presents the built-in scriptural event library.
 /// Each card shows the event name, scripture reference, description, and location;
-/// a "Load Event" button applies the scenario to the workspace.
+/// a "Load Event" button applies the scenario to the sky view-model and closes the window.
 /// </summary>
 /// <remarks>
-/// Iterates <see cref="ScenarioModel.BuiltInScenarios.All"/> dynamically via an
+/// Iterates <see cref="BuiltInScenarios.All"/> dynamically via an
 /// <c>ItemsControl</c> so that new scenarios added to the catalog appear automatically.
 /// </remarks>
 public partial class ScripturalEventLibraryWindow : Window
 {
-    private readonly WorkspaceViewModel _vm;
+    private readonly SkyViewModel _vm;
 
     /// <summary>
     /// Initialises the library window.
     /// </summary>
-    /// <param name="vm">The research workspace view-model.</param>
-    public ScripturalEventLibraryWindow(WorkspaceViewModel vm)
+    /// <param name="vm">The sky view-model to update when a scenario is loaded.</param>
+    public ScripturalEventLibraryWindow(SkyViewModel vm)
     {
         InitializeComponent();
 
         _vm = vm;
-        ScenarioList.ItemsSource = ScenarioModel.BuiltInScenarios.All;
+        ScenarioList.ItemsSource = BuiltInScenarios.All;
         CloseBtn.Click += (_, _) => Close();
     }
 
@@ -36,7 +35,9 @@ public partial class ScripturalEventLibraryWindow : Window
     {
         if (sender is Button { Tag: ScenarioModel scenario })
         {
-            _vm.LoadScenarioCommand.Execute(scenario);
+            _vm.Longitude = scenario.Longitude;
+            _vm.Latitude  = scenario.Latitude;
+            _vm.SimTime   = scenario.SuggestedUtcTime;
             Close();
         }
     }

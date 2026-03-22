@@ -4,140 +4,218 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Ephemeris.UI.Messages;
 using Ephemeris.UI.Models;
+using Ephemeris.UI.Services;
 
 namespace Ephemeris.UI.ViewModels;
 
 /// <summary>
-/// Full-featured view-model for the research workspace.
-/// Extends <see cref="SkyViewModel"/>'s properties with playback speed, scenario
-/// management, status feedback, and celestial data access.
+/// Full research workspace view-model for the Ephemeris Research App.
+/// Manages observer position, simulation time, playback, scenario loading,
+/// and on-demand retrieval of celestial data from <see cref="ICelestialResearchService"/>.
 /// </summary>
 /// <remarks>
-/// Inherits <see cref="ObservableRecipient"/> via the CommunityToolkit.Mvvm base
-/// and participates in the <see cref="WeakReferenceMessenger"/> bus just like
-/// <see cref="SkyViewModel"/>.
+/// Extends <see cref="ObservableRecipient"/> to participate in the
+/// <see cref="WeakReferenceMessenger"/> bus.
+/// Broadcasts <see cref="SimTimeChangedMessage"/> and <see cref="ObserverChangedMessage"/>
+/// whenever the corresponding properties change, and auto-refreshes
+/// <see cref="CelestialData"/> with a 300 ms debounce.
 /// </remarks>
 public sealed partial class WorkspaceViewModel : ObservableRecipient
 {
-    // ─────────────────────────────────────────────────────────────────────
-    // Observer and time (mirrors SkyViewModel)
-    // ─────────────────────────────────────────────────────────────────────
+    private readonly ICelestialResearchService _service;
+    private CancellationTokenSource _debounceCts = new();
 
-    /// <summary>Observer longitude in degrees (east positive).</summary>
-    [ObservableProperty] private double _longitude;
+    // ── Observer & time ──────────────────────────────────────────────────────
 
-    /// <summary>Observer latitude in degrees (north positive).</summary>
-    [ObservableProperty] private double _latitude;
+    /// <summary>Observer longitude in degrees (East positive).</summary>
+    [ObservableProperty]
+    private double _longitude;
+
+    /// <summary>Observer latitude in degrees (North positive).</summary>
+    [ObservableProperty]
+    private double _latitude;
 
     /// <summary>Current simulated UTC time.</summary>
-    [ObservableProperty] private DateTime _simTime;
+    [ObservableProperty]
+    private DateTime _simTime;
 
     /// <summary>Whether the time animation is currently playing.</summary>
-    [ObservableProperty] private bool _playing;
+    [ObservableProperty]
+    private bool _playing;
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Workspace-specific state
-    // ─────────────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Playback speed multiplier relative to real time.
-    /// A value of 1.0 advances simulated time at roughly the same rate as
-    /// wall-clock time; higher values fast-forward the sky.
-    /// </summary>
-    [ObservableProperty] private double _playbackSpeed = 1.0;
-
-    /// <summary>Human-readable status message displayed in the UI status bar.</summary>
-    [ObservableProperty] private string _statusMessage = "Ready";
-
-    /// <summary>Whether a long-running background calculation is in progress.</summary>
-    [ObservableProperty] private bool _isLoading;
-
-    /// <summary>Display name of the currently loaded scenario, or <see langword="null"/>.</summary>
-    [ObservableProperty] private string? _activeScenarioName;
-
-    /// <summary>Latest computed celestial body positions for the current <see cref="SimTime"/>.</summary>
-    [ObservableProperty] private IReadOnlyList<EphemerisRecord> _celestialData = [];
-
-    // ─────────────────────────────────────────────────────────────────────
-    // Constructor
-    // ─────────────────────────────────────────────────────────────────────
+    // ── Workspace state ───────────────────────────────────────────────────────
 
     /// <summary>
-    /// Initialises the workspace view-model with optional starting coordinates and time.
+    /// Animation playback speed multiplier (1 = real-time, 60 = 1 min/sec, 86400 = 1 day/sec).
     /// </summary>
-    /// <param name="longitude">Observer longitude in degrees (east positive).</param>
-    /// <param name="latitude">Observer latitude in degrees (north positive).</param>
-    /// <param name="initialTime">Initial simulated UTC time; defaults to <see cref="DateTime.UtcNow"/>.</param>
+    [ObservableProperty]
+    private double _playbackSpeed = 60.0;
+
+    /// <summary>
+    /// Latest celestial data snapshot retrieved by <see cref="LoadDataCommand"/>,
+    /// or <see langword="null"/> before the first load.
+    /// </summary>
+    [ObservableProperty]
+    private CelestialResearchData? _celestialData;
+
+    /// <summary>Human-readable status, e.g. "Loading…" or "Jerusalem, 701 BCE".</summary>
+    [ObservableProperty]
+    private string _statusMessage = "Ready";
+
+    /// <summary>
+    /// <see langword="true"/> while <see cref="LoadDataCommand"/> is executing.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isLoading;
+
+    /// <summary>
+    /// Name of the currently active scenario preset, or <see langword="null"/> if none.
+    /// </summary>
+    [ObservableProperty]
+    private string? _activeScenarioName;
+
+    /// <summary>Active simulation overrides (freeze motion, altitude offset, extended daylight).</summary>
+    public SimulationOverride Simulation { get; } = new();
+
+    // ── Constructor ────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Initialises the workspace with an observer location and an optional start time.
+    /// </summary>
+    /// <param name="service">The celestial research service used by <see cref="LoadDataCommand"/>.</param>
+    /// <param name="longitude">Initial observer longitude in degrees (East positive). Defaults to 0.</param>
+    /// <param name="latitude">Initial observer latitude in degrees (North positive). Defaults to 51.5 (London).</param>
+    /// <param name="initialTime">
+    /// Initial simulation time (UTC).  If <see cref="DateTime.MinValue"/> or <c>default</c>,
+    /// the current UTC clock is used.
+    /// </param>
     public WorkspaceViewModel(
+        ICelestialResearchService service,
         double longitude = 0.0,
-        double latitude = 51.5,
+        double latitude  = 51.5,
         DateTime initialTime = default)
     {
+        _service   = service ?? throw new ArgumentNullException(nameof(service));
         _longitude = longitude;
         _latitude  = latitude;
         _simTime   = initialTime == default ? DateTime.UtcNow : initialTime;
         IsActive   = true; // register with WeakReferenceMessenger
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Messenger hooks (mirrors SkyViewModel behaviour)
-    // ─────────────────────────────────────────────────────────────────────
+    // ── Property-change hooks ──────────────────────────────────────────────────
 
-    partial void OnSimTimeChanged(DateTime value) =>
+    partial void OnSimTimeChanged(DateTime value)
+    {
         Messenger.Send(new SimTimeChangedMessage(value));
+        _ = DebounceRefreshAsync();
+    }
 
-    partial void OnLongitudeChanged(double value) =>
+    partial void OnLongitudeChanged(double value)
+    {
         Messenger.Send(new ObserverChangedMessage(new ObserverLocation(value, Latitude)));
+        _ = DebounceRefreshAsync();
+    }
 
-    partial void OnLatitudeChanged(double value) =>
+    partial void OnLatitudeChanged(double value)
+    {
         Messenger.Send(new ObserverChangedMessage(new ObserverLocation(Longitude, value)));
+        _ = DebounceRefreshAsync();
+    }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Commands
-    // ─────────────────────────────────────────────────────────────────────
+    // ── Commands ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Loads celestial data for the current <see cref="SimTime"/>, <see cref="Longitude"/>,
+    /// and <see cref="Latitude"/> using <see cref="ICelestialResearchService.GetDataAsync"/>.
+    /// </summary>
+    [RelayCommand(IncludeCancelCommand = true)]
+    private async Task LoadDataAsync(CancellationToken ct)
+    {
+        IsLoading     = true;
+        StatusMessage = "Loading…";
+        try
+        {
+            CelestialData = await _service.GetDataAsync(SimTime, Longitude, Latitude, ct).ConfigureAwait(false);
+            StatusMessage = $"{SimTime:yyyy-MM-dd HH:mm} UTC · {Latitude:F2}°N {Longitude:F2}°E";
+        }
+        catch (OperationCanceledException)
+        {
+            // Cancelled — do not update status; a fresh request is likely already queued.
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
 
     /// <summary>Toggles the animation play state.</summary>
     [RelayCommand]
     private void PlayPause() => Playing = !Playing;
 
-    /// <summary>Advances the simulation by one day.</summary>
+    /// <summary>Resets the simulated time to the current UTC clock and clears the active scenario.</summary>
     [RelayCommand]
-    private void StepForward() => SimTime = SimTime.AddDays(1);
+    private void ResetToNow()
+    {
+        ActiveScenarioName = null;
+        SimTime = DateTime.UtcNow;
+    }
 
-    /// <summary>Rewinds the simulation by one day.</summary>
+    /// <summary>Advances the simulation time by <paramref name="step"/>.</summary>
+    /// <param name="step">The amount of time to add to <see cref="SimTime"/>.</param>
     [RelayCommand]
-    private void StepBack() => SimTime = SimTime.AddDays(-1);
+    private void StepForward(TimeSpan step) => SimTime = SimTime.Add(step);
+
+    /// <summary>Rewinds the simulation time by <paramref name="step"/>.</summary>
+    /// <param name="step">The amount of time to subtract from <see cref="SimTime"/>.</param>
+    [RelayCommand]
+    private void StepBack(TimeSpan step) => SimTime = SimTime.Add(-step);
 
     /// <summary>
-    /// Loads a predefined scriptural event scenario into the workspace.
+    /// Applies a <see cref="ScenarioModel"/> preset: sets <see cref="SimTime"/>,
+    /// <see cref="Longitude"/>, <see cref="Latitude"/>, and <see cref="ActiveScenarioName"/>.
     /// </summary>
-    /// <param name="scenario">The scenario to load.</param>
-    /// <remarks>
-    /// Updates observer longitude, latitude, and (if the scenario provides a valid
-    /// suggested time) advances <see cref="SimTime"/> to the scenario's
-    /// <see cref="ScenarioModel.SuggestedUtcTime"/>.
-    /// Sets <see cref="ActiveScenarioName"/> and <see cref="StatusMessage"/>.
-    /// </remarks>
+    /// <param name="scenario">The preset to load.</param>
     [RelayCommand]
     private void LoadScenario(ScenarioModel scenario)
     {
         ArgumentNullException.ThrowIfNull(scenario);
-
+        SimTime            = scenario.SuggestedUtcTime;
         Longitude          = scenario.Longitude;
         Latitude           = scenario.Latitude;
         ActiveScenarioName = scenario.Name;
-        StatusMessage      = $"Loaded: {scenario.Name} — {scenario.LocationName}";
-
-        if (scenario.SuggestedUtcTime != DateTime.MinValue)
-            SimTime = scenario.SuggestedUtcTime;
+        StatusMessage      = $"{scenario.LocationName} — {scenario.Name}";
     }
 
-    /// <summary>Advances the simulation time by the given delta.</summary>
-    /// <param name="delta">Amount of simulated time to add.</param>
-    /// <remarks>
-    /// Called by <see cref="Services.PlaybackEngine"/> on each timer interval.
-    /// The <paramref name="delta"/> is computed as
-    /// <c>tickInterval × PlaybackSpeed / 1000</c> by the engine.
-    /// </remarks>
-    public void AdvanceTick(TimeSpan delta) => SimTime = SimTime.Add(delta);
+    // ── Auto-refresh debounce ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// Cancels any pending refresh, waits 300 ms, then calls <see cref="LoadDataAsync"/>
+    /// with a fresh <see cref="CancellationToken"/> so rapid property changes result
+    /// in only one network/calculation round-trip.
+    /// </summary>
+    private async Task DebounceRefreshAsync()
+    {
+        await _debounceCts.CancelAsync().ConfigureAwait(false);
+        _debounceCts = new CancellationTokenSource();
+        CancellationToken token = _debounceCts.Token;
+        try
+        {
+            await Task.Delay(300, token).ConfigureAwait(false);
+            await LoadDataAsync(token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer property change arrived — the next debounce cycle will handle it.
+        }
+    }
+
+    /// <summary>
+    /// Advances the simulation time by one animation tick (10 minutes).
+    /// Called by the animation timer when <see cref="Playing"/> is <see langword="true"/>.
+    /// </summary>
+    public void AdvanceTick() => SimTime = SimTime.AddMinutes(10);
 }
