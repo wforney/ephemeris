@@ -555,5 +555,5 @@ Four servers are available:
 - **CommunityToolkit.Mvvm** — MVVM helpers
 - **OpenTK + SkiaSharp** — OpenGL and Skia rendering in the WinForms UI (`SkyViewForm`)
 - **TUnit** — test framework (not xUnit/NUnit)
-- **Imposter** — compile-time source-generated mocks (Roslyn); declare with `[assembly: GenerateImposter(typeof(IMyInterface))]`, use `IMyInterface.Imposter()` in tests
+- **[Imposter](https://github.com/themidnightgospel/Imposter)** — compile-time source-generated mocks (Roslyn); declare with `[assembly: GenerateImposter(typeof(IMyInterface))]`, use `IMyInterface.Imposter()` in tests
 - **Verify.TUnit** — snapshot assertions for complex outputs (`EphemerisRecord` series, CSV/JSON export); `*.received.*` files are git-ignored, commit only `*.verified.*`

@@ -17,7 +17,7 @@ You are writing TUnit tests for the Ephemeris .NET 10 library.
 
 ---
 
-## Imposter — compile-time source-generated mocks
+## [Imposter](https://github.com/themidnightgospel/Imposter) — compile-time source-generated mocks
 
 Imposter generates mocks at compile time via Roslyn — no runtime proxies, no `It.IsAny<T>()`.
 
