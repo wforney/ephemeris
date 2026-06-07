@@ -10,10 +10,10 @@ public static class PlanetTools
     private static readonly string[] s_validPlanets =
         ["mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto", "earth"];
 
-    /// <summary>Get a planet's equatorial and horizontal coordinates for a UTC date/time and observer location. Supported planets: mercury, venus, mars, jupiter, saturn, uranus, neptune, pluto.</summary>
+    /// <summary>Get a planet's equatorial and horizontal coordinates for a UTC date/time and observer location. Supported planets: mercury, venus, mars, jupiter, saturn, uranus, neptune, pluto. "earth" returns heliocentric coordinates (direction from Sun to Earth), useful for orbital mechanics.</summary>
     [McpServerTool(Name = "get_planet_position")]
     public static object GetPlanetPosition(
-        [Description("Planet name (case-insensitive): mercury, venus, mars, jupiter, saturn, uranus, neptune, or pluto")] string planet,
+        [Description("Planet name (case-insensitive): mercury, venus, mars, jupiter, saturn, uranus, neptune, pluto, or earth (earth returns heliocentric coordinates)")] string planet,
         [Description("Year (e.g. 2024)")] int year,
         [Description("Month (1–12)")] int month,
         [Description("Day of month (1–31)")] int day,
