@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>Ephemeris.MCP</AssemblyName>
+    <RootNamespace>Ephemeris.MCP</RootNamespace>
+    <Description>MCP server exposing astronomical calculations from the Ephemeris library.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" Version="1.4.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ephemeris\Ephemeris.csproj" />
+  </ItemGroup>
+
+</Project>

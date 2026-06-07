@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ephemeris.UI.Shared", "Ephe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ephemeris.UI.Avalonia", "Ephemeris.UI.Avalonia\Ephemeris.UI.Avalonia.csproj", "{C4D5E6F7-A8B9-4CAD-BE3F-4A5B6C7D8E9F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ephemeris.MCP", "Ephemeris.MCP\Ephemeris.MCP.csproj", "{0A296FDF-73EE-4A1B-99CC-9ECC1357682F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -103,6 +105,18 @@ Global
 		{C4D5E6F7-A8B9-4CAD-BE3F-4A5B6C7D8E9F}.Release|x64.Build.0 = Release|Any CPU
 		{C4D5E6F7-A8B9-4CAD-BE3F-4A5B6C7D8E9F}.Release|x86.ActiveCfg = Release|Any CPU
 		{C4D5E6F7-A8B9-4CAD-BE3F-4A5B6C7D8E9F}.Release|x86.Build.0 = Release|Any CPU
+		{0A296FDF-73EE-4A1B-99CC-9ECC1357682F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A296FDF-73EE-4A1B-99CC-9ECC1357682F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A296FDF-73EE-4A1B-99CC-9ECC1357682F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0A296FDF-73EE-4A1B-99CC-9ECC1357682F}.Debug|x64.Build.0 = Debug|Any CPU
+		{0A296FDF-73EE-4A1B-99CC-9ECC1357682F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0A296FDF-73EE-4A1B-99CC-9ECC1357682F}.Debug|x86.Build.0 = Debug|Any CPU
+		{0A296FDF-73EE-4A1B-99CC-9ECC1357682F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A296FDF-73EE-4A1B-99CC-9ECC1357682F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A296FDF-73EE-4A1B-99CC-9ECC1357682F}.Release|x64.ActiveCfg = Release|Any CPU
+		{0A296FDF-73EE-4A1B-99CC-9ECC1357682F}.Release|x64.Build.0 = Release|Any CPU
+		{0A296FDF-73EE-4A1B-99CC-9ECC1357682F}.Release|x86.ActiveCfg = Release|Any CPU
+		{0A296FDF-73EE-4A1B-99CC-9ECC1357682F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
