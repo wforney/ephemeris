@@ -257,7 +257,7 @@ No planned items at this time — contributions welcome!
 - [BenchmarkDotNet](https://benchmarkdotnet.org) — performance benchmarking
 - [TUnit](https://github.com/thomhurst/TUnit) — test framework
 - [Verify.TUnit](https://github.com/VerifyTests/Verify) — snapshot testing
-- [Imposter](https://github.com/pdevito3/Imposter) — compile-time source-generated mocks
+- [Imposter](https://github.com/themidnightgospel/Imposter) — compile-time source-generated mocks
 
 ## Contributing
 
