@@ -74,7 +74,7 @@ await Verify(records).UseDirectory("Snapshots");
 - On first run a `.received.` file is created — review it, then rename to `.verified.`
 - Commit only `*.verified.*` files; `*.received.*` are git-ignored.
 
-### Mocking (Imposter)
+### Mocking ([Imposter](https://github.com/themidnightgospel/Imposter))
 
 Declare impostors at assembly level (one declaration per interface):
 
