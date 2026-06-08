@@ -140,10 +140,10 @@
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Margin="4,2">
-                                <TextBlock Text="{Binding Name}"
+                                <TextBlock Text="{ReflectionBinding Name}"
                                            FontSize="13"
                                            Foreground="{DynamicResource ResearchTextPrimaryBrush}" />
-                                <TextBlock Text="{Binding DateDisplay}"
+                                <TextBlock Text="{ReflectionBinding DateDisplay}"
                                            FontSize="11"
                                            Classes="Monospace"
                                            Foreground="{DynamicResource ResearchTextSecondaryBrush}" />
