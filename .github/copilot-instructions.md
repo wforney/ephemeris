@@ -1,4 +1,4 @@
-<!-- Updated: 2026-03-22T08:24Z -->
+<!-- Updated: 2026-06-08T08:24Z -->
 # Copilot Instructions
 
 ## Session Checkpoints and Evolution
@@ -530,7 +530,7 @@ All Avalonia `Window` subclasses that accept constructor parameters **must also 
 
 ## MCP Servers
 
-Four servers are available:
+Four servers are currently configured in `.vscode/mcp.json`:
 
 | Server | Type | Purpose |
 |--------|------|---------|
@@ -540,6 +540,14 @@ Four servers are available:
 | `fetch` | stdio (`@modelcontextprotocol/server-fetch`) | Fetch JPL Horizons data, IERS ΔT tables, SPICE documentation, or any HTTP resource |
 
 > **Note:** The `dotnet` server requires .NET 10 SDK (for the `dnx` runner). It works alongside this project's .NET 9 target — `dnx` runs the MCP server tool itself, not the project.
+
+Useful servers to consider adding when needed:
+
+| Server | Why add it |
+|--------|------------|
+| `sequential-thinking` | Structured multi-step reasoning for complex algorithm design and debugging plans |
+| `memory` | Persistent cross-session knowledge graph for durable project context |
+| `brave-search` | Web search for structured queries when `fetch` alone is less efficient |
 
 ### Typical uses in this project
 - **`github`** — open an issue for a failing lunar calculation, check CI status, search for prior SPICE integration attempts
