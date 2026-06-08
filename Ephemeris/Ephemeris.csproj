@@ -11,7 +11,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- NuGet package metadata -->
     <PackageId>WilliamForney.Ephemeris</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Authors>William Forney</Authors>
     <Description>Astronomical ephemeris library for .NET — compute positions of the Sun, Moon, and planets from any observer location on Earth.</Description>
     <PackageTags>astronomy;ephemeris;solar;lunar;planetary;coordinates</PackageTags>

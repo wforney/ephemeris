@@ -35,7 +35,7 @@ A .NET 10 library for computing positions of celestial bodies (Sun, Moon, planet
 | **Data export** — CSV and JSON serialization | ✅ |
 | **Stellar catalog** — 25-star embedded catalog + Yale BSC5 reader, proper-motion & precession | ✅ |
 | **Native BSP/SPK reader** — DAF binary parser, Type 2/3 Chebyshev, BFS segment graph traversal | ✅ |
-| **NuGet package** — `WilliamForney.Ephemeris` 0.1.0 with CI release workflow | ✅ |
+| **NuGet package** — `WilliamForney.Ephemeris` 0.1.1 with CI release workflow | ✅ |
 | **Benchmarks** — BenchmarkDotNet project for Sun/Moon/planet series | ✅ |
 | **WinForms visualizer** — altitude-vs-time ScottPlot chart | ✅ |
 | **Research App** — full Avalonia cross-platform research platform for Biblical cosmology (HomeWindow, research workspace, BCE scenarios, Mazzaroth overlay, Biblical calendar) | ✅ |
