@@ -25,15 +25,31 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          curl -sL \
+          STATUS=$(curl -sSL -w "%{http_code}" \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://models.github.ai/catalog/models \
-            -o models.json
+            -o models.json || true)
+          if [ "$STATUS" != "200" ]; then
+            echo "::warning::Failed to fetch models catalog (HTTP $STATUS); skipping update."
+            echo "valid=false" >> "$GITHUB_OUTPUT"
+            echo "count=0" >> "$GITHUB_OUTPUT"
+            echo "[]" > models.json
+            exit 0
+          fi
+          if ! jq -e 'type == "array"' models.json >/dev/null; then
+            echo "::warning::Models catalog response was not a JSON array; skipping update."
+            echo "valid=false" >> "$GITHUB_OUTPUT"
+            echo "count=0" >> "$GITHUB_OUTPUT"
+            echo "[]" > models.json
+            exit 0
+          fi
+          echo "valid=true" >> "$GITHUB_OUTPUT"
           echo "count=$(jq length models.json)" >> "$GITHUB_OUTPUT"
 
       - name: Generate updated model table
+        if: steps.fetch.outputs.valid == 'true'
         id: generate
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
