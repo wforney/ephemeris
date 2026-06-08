@@ -25,28 +25,30 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          STATUS=$(curl -sSL -w "%{http_code}" \
+          skip_update() {
+            echo "::warning::Model table update skipped: $1"
+            echo "valid=false" >> "$GITHUB_OUTPUT"
+            echo "count=0" >> "$GITHUB_OUTPUT"
+            echo "[]" > models.json
+            exit 0
+          }
+
+          if ! curl --fail-with-body -sSL \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://models.github.ai/catalog/models \
-            -o models.json || true)
-          if [ "$STATUS" != "200" ]; then
-            echo "::warning::Failed to fetch models catalog (HTTP $STATUS); skipping update."
-            echo "valid=false" >> "$GITHUB_OUTPUT"
-            echo "count=0" >> "$GITHUB_OUTPUT"
-            echo "[]" > models.json
-            exit 0
+            -o models.json; then
+            skip_update "Failed to fetch models catalog; skipping update."
           fi
           if ! jq -e 'type == "array"' models.json >/dev/null; then
-            echo "::warning::Models catalog response was not a JSON array; skipping update."
-            echo "valid=false" >> "$GITHUB_OUTPUT"
-            echo "count=0" >> "$GITHUB_OUTPUT"
-            echo "[]" > models.json
-            exit 0
+            skip_update "Models catalog response was not a JSON array; skipping update."
           fi
           echo "valid=true" >> "$GITHUB_OUTPUT"
-          echo "count=$(jq length models.json)" >> "$GITHUB_OUTPUT"
+          if ! COUNT=$(jq 'length' models.json); then
+            skip_update "Failed to read model count."
+          fi
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
 
       - name: Generate updated model table
         if: steps.fetch.outputs.valid == 'true'
