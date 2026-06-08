@@ -243,6 +243,8 @@ Reference documents in `docs/` and on the **[GitHub Wiki](https://github.com/wfo
 
 No planned items at this time — contributions welcome!
 
+This is a spare time vibe-coding project. I will be working on it when I can. I know the Avalonia UI isn't very functional right now.
+
 ---
 
 ## Dependencies
