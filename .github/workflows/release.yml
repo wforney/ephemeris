@@ -32,10 +32,26 @@ jobs:
       - name: Pack
         run: dotnet pack Ephemeris/Ephemeris.csproj -c Release --no-build -o ./nupkg
 
+      - name: Publish packages to NuGet.org
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          NUGET_SOURCE: https://api.nuget.org/v3/index.json
+        shell: bash
+        run: |
+          if [ -z "$NUGET_API_KEY" ]; then
+            echo "::error::NUGET_API_KEY secret is not configured. Add it in Settings → Secrets → Actions before tagging a release."
+            exit 1
+          fi
+
+          dotnet nuget push ./nupkg/*.nupkg --api-key "$NUGET_API_KEY" --source "$NUGET_SOURCE" --skip-duplicate
+          dotnet nuget push ./nupkg/*.snupkg --api-key "$NUGET_API_KEY" --source "$NUGET_SOURCE" --skip-duplicate
+
       - name: Upload NuGet packages as release artifacts
         uses: softprops/action-gh-release@v2
         with:
-          files: ./nupkg/*.nupkg
+          files: |
+            ./nupkg/*.nupkg
+            ./nupkg/*.snupkg
           generate_release_notes: true
 
   # ── Single-file UI: per-platform matrix ───────────────────────────────
