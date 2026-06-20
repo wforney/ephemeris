@@ -22,6 +22,35 @@
       "command": "python3",
       "args": ["-m", "mcp_server_fetch"],
       "gallery": true
+    },
+    "sequential-thinking": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "gallery": true
+    },
+    "memory": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "gallery": true
+    },
+    "brave-search": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "${input:braveApiKey}"
+      },
+      "gallery": true
     }
-  }
+  },
+  "inputs": [
+    {
+      "id": "braveApiKey",
+      "type": "promptString",
+      "description": "Brave Search API key (https://api.search.brave.com/app/keys)",
+      "password": true
+    }
+  ]
 }
