@@ -52,7 +52,7 @@ public async Task GetPosition_ValidKernel_ReturnsCartesianVector()
 | Matcher | Meaning |
 |---------|---------|
 | `Arg.Any<T>()` | Any value of type T |
-| `Arg.Validate<T>(x => x > 0)` | Predicate match |
+| `Arg.Is<T>(x => x > 0)` | Predicate match |
 | Literal value | Exact equality |
 
 ### Return values, callbacks, and exceptions
