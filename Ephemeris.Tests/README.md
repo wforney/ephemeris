@@ -74,20 +74,26 @@ await Verify(records).UseDirectory("Snapshots");
 - On first run a `.received.` file is created — review it, then rename to `.verified.`
 - Commit only `*.verified.*` files; `*.received.*` are git-ignored.
 
-### Mocking ([Imposter](https://github.com/themidnightgospel/Imposter))
+### Mocking ([Rocks](https://github.com/JasonBock/Rocks))
 
-Declare impostors at assembly level (one declaration per interface):
+Declare mocks at assembly level (one declaration per interface):
 
 ```csharp
-[assembly: GenerateImposter(typeof(IMyService))]
+[assembly: Rock(typeof(IMyService), BuildType.Create)]
 ```
 
 Use in tests:
 
 ```csharp
-var mock = IMyService.Imposter();
-mock.Setup(x => x.Calculate(Arg.Any<double>())).Returns(42.0);
+var expectations = new IMyServiceCreateExpectations();
+expectations.Setups
+    .Calculate(Arg.Any<double>())
+    .ReturnValue(42.0);
+var mock = expectations.Instance();
+expectations.Verify();
 ```
+
+Imposter remains a valid alternative when its fluent API is preferred.
 
 ---
 
@@ -107,5 +113,5 @@ Test assertions are calibrated against:
 |---------|---------|
 | `TUnit` 1.53.0 | Test framework and assertions |
 | `Verify.TUnit` 31.19.1 | Snapshot assertions |
-| `Imposter` 0.1.9 | Source-generated mocks |
+| `Rocks` 10.3.0 | Source-generated mocks |
 | `Microsoft.AspNetCore.Mvc.Testing` 10.0.8 | Integration test host |
