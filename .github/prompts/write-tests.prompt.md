@@ -38,7 +38,7 @@ public async Task GetPosition_ValidKernel_ReturnsCartesianVector()
     var expectations = new IStateVectorProviderCreateExpectations();
     expectations.Setups.GetStateVector(
         Arg.Any<string>(), Arg.Any<double>(), Arg.Any<string>(), Arg.Any<string>())
-        .Returns(new double[] { 1.0, 2.0, 3.0 });
+        .ReturnValue(new double[] { 1.0, 2.0, 3.0 });
 
     var provider = expectations.Instance();
     var result = provider.GetStateVector("Sun", 0.0, "J2000", "Earth");
@@ -58,7 +58,7 @@ public async Task GetPosition_ValidKernel_ReturnsCartesianVector()
 ### Return values, callbacks, and exceptions
 ```csharp
 // Return a value
-expectations.Setups.Method(Arg.Any<int>()).Returns(42);
+expectations.Setups.Method(Arg.Any<int>()).ReturnValue(42);
 // Callback to capture arguments or perform side effects
 expectations.Setups.Method(Arg.Any<int>()).Callback(a => captured = a);
 
