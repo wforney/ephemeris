@@ -58,8 +58,7 @@ public async Task GetPosition_ValidKernel_ReturnsCartesianVector()
 ### Return values, callbacks, and exceptions
 ```csharp
 // Return a value
-expectations.Setups.Method(Arg.Any<int>()).ReturnValue(42);
-
+expectations.Setups.Method(Arg.Any<int>()).Returns(42);
 // Callback to capture arguments or perform side effects
 expectations.Setups.Method(Arg.Any<int>()).Callback(a => captured = a);
 
