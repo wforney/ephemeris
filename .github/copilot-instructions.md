@@ -56,7 +56,7 @@ Reusable prompt files in `.github/prompts/`. Invoke via `/implement-calculation`
 | Agent | Model tier | Use for |
 |-------|------------|---------|
 | `implement-calculation` | opus | New astronomical calculations — fetches reference values, enforces static/pure pattern, verifies against JPL Horizons |
-| `write-tests` | sonnet | TUnit tests with Imposter mocks, Verify snapshots, and external reference values |
+| `write-tests` | sonnet | TUnit tests with Rocks mocks, Verify snapshots, and external reference values |
 | `add-xml-docs` | haiku | Eliminate all CS1591 warnings; consistent domain terminology |
 | `implement-spice` | opus | Implement `ISpaceKernelProvider`, `ITimeConverter`, `IStateVectorProvider` stubs via SpiceSharp-Parser |
 | `review-pr` | opus | PR review focused on astronomical correctness, algorithm accuracy, convention adherence |
@@ -562,5 +562,5 @@ Seven servers are currently configured in `.vscode/mcp.json`:
 - **CommunityToolkit.Mvvm** — MVVM helpers
 - **OpenTK + SkiaSharp** — OpenGL and Skia rendering in the WinForms UI (`SkyViewForm`)
 - **TUnit** — test framework (not xUnit/NUnit)
-- **[Imposter](https://github.com/themidnightgospel/Imposter)** — compile-time source-generated mocks (Roslyn); declare with `[assembly: GenerateImposter(typeof(IMyInterface))]`, use `IMyInterface.Imposter()` in tests
+- **[Rocks](https://github.com/JasonBock/Rocks)** — compile-time source-generated mocks (Roslyn); declare with `[assembly: Rock(typeof(IMyInterface), BuildType.Create)]`, use `new IMyInterfaceCreateExpectations()` in tests. Imposter (`[assembly: GenerateImposter(typeof(IMyInterface))]`) remains a valid alternative with a more fluent API.
 - **Verify.TUnit** — snapshot assertions for complex outputs (`EphemerisRecord` series, CSV/JSON export); `*.received.*` files are git-ignored, commit only `*.verified.*`

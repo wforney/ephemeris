@@ -259,7 +259,8 @@ This is a spare time vibe-coding project. I will be working on it when I can. I 
 - [BenchmarkDotNet](https://benchmarkdotnet.org) — performance benchmarking
 - [TUnit](https://github.com/thomhurst/TUnit) — test framework
 - [Verify.TUnit](https://github.com/VerifyTests/Verify) — snapshot testing
-- [Imposter](https://github.com/themidnightgospel/Imposter) — compile-time source-generated mocks
+- [Rocks](https://github.com/JasonBock/Rocks) — compile-time source-generated mocks
+  (Imposter remains a valid alternative)
 
 ## Contributing
 
