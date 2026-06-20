@@ -1,9 +1,9 @@
-<!-- Updated: 2026-03-09 04:10 UTC -->
+<!-- Updated: 2026-06-20 -->
 ---
 mode: agent
 model: anthropic/claude-sonnet-4-5
 tools: [codebase, editFiles, runCommands]
-description: Write TUnit tests for Ephemeris calculation methods using Imposter for mocking and Verify for snapshot assertions.
+description: Write TUnit tests for Ephemeris calculation methods using Rocks for mocking and Verify for snapshot assertions.
 ---
 
 You are writing TUnit tests for the Ephemeris .NET 10 library.
@@ -13,21 +13,21 @@ You are writing TUnit tests for the Ephemeris .NET 10 library.
 - Test files live in `Ephemeris.Tests/Ephemeris.Tests/`
 - Framework: **TUnit** — use `[Test]` attribute (not xUnit, not NUnit)
 - Namespace: `namespace Ephemeris.Tests`
-- Three libraries available: **TUnit**, **Imposter** (mocking), **Verify.TUnit** (snapshot assertions)
+- Three libraries available: **TUnit**, **Rocks** (mocking), **Verify.TUnit** (snapshot assertions)
 
 ---
 
-## [Imposter](https://github.com/themidnightgospel/Imposter) — compile-time source-generated mocks
+## [Rocks](https://github.com/JasonBock/Rocks) — compile-time source-generated mocks
 
-Imposter generates mocks at compile time via Roslyn — no runtime proxies, no `It.IsAny<T>()`.
+Rocks generates mocks at compile time via Roslyn — no runtime proxies, no `It.IsAny<T>()`.
 
 ### Setup
 Declare the mock at **assembly level** (once per interface, typically in `GlobalSetup.cs` or a dedicated `Mocks.cs`):
 
 ```csharp
-[assembly: GenerateImposter(typeof(IStateVectorProvider))]
-[assembly: GenerateImposter(typeof(ITimeConverter))]
-[assembly: GenerateImposter(typeof(ISpaceKernelProvider))]
+[assembly: Rock(typeof(IStateVectorProvider), BuildType.Create)]
+[assembly: Rock(typeof(ITimeConverter), BuildType.Create)]
+[assembly: Rock(typeof(ISpaceKernelProvider), BuildType.Create)]
 ```
 
 ### Usage pattern
@@ -35,14 +35,15 @@ Declare the mock at **assembly level** (once per interface, typically in `Global
 [Test]
 public async Task GetPosition_ValidKernel_ReturnsCartesianVector()
 {
-    var imposter = IStateVectorProvider.Imposter();
-    imposter
-        .GetStateVector(Arg<string>.Any(), Arg<double>.Any(), Arg<string>.Any(), Arg<string>.Any())
-        .Returns(new double[] { 1.0, 2.0, 3.0 });
+    var expectations = new IStateVectorProviderCreateExpectations();
+    expectations.Setups.GetStateVector(
+        Arg.Any<string>(), Arg.Any<double>(), Arg.Any<string>(), Arg.Any<string>())
+        .ReturnValue(new double[] { 1.0, 2.0, 3.0 });
 
-    var provider = imposter.Instance();
+    var provider = expectations.Instance();
     var result = provider.GetStateVector("Sun", 0.0, "J2000", "Earth");
 
+    expectations.Verify();
     await Assert.That(result).IsEquivalentTo(new double[] { 1.0, 2.0, 3.0 });
 }
 ```
@@ -50,17 +51,29 @@ public async Task GetPosition_ValidKernel_ReturnsCartesianVector()
 ### Argument matchers
 | Matcher | Meaning |
 |---------|---------|
-| `Arg<T>.Any()` | Any value of type T |
-| `Arg<T>.Is(x => x > 0)` | Predicate match |
+| `Arg.Any<T>()` | Any value of type T |
+| `Arg.Validate<T>(x => x > 0)` | Predicate match |
 | Literal value | Exact equality |
 
-### Chained returns
+### Return values, callbacks, and exceptions
 ```csharp
-imposter.Method(Arg<int>.Any())
-    .Returns(1)
-    .Then().Returns(2)   // second call returns 2
-    .Then().Throws(new InvalidOperationException());
+// Return a value
+expectations.Setups.Method(Arg.Any<int>()).ReturnValue(42);
+
+// Callback to capture arguments or perform side effects
+expectations.Setups.Method(Arg.Any<int>()).Callback(a => captured = a);
+
+// Throw an exception on invocation (10.3.0+)
+expectations.Setups.Method(Arg.Any<int>()).Throws<InvalidOperationException>();
+
+// Verify expected call count
+expectations.Setups.Method(Arg.Any<int>()).ExpectedCallCount(2);
 ```
+
+### Always call Verify()
+Rocks mocks are **strict** — all setups must be called exactly the expected number of times or `Verify()` throws a `VerificationException`. Always call `expectations.Verify()` at the end of the test (or arrange the mock in a `using` block if it implements `IDisposable`).
+
+> **Alternative:** [Imposter](https://github.com/themidnightgospel/Imposter) (`[assembly: GenerateImposter(typeof(IFoo))]`, `IFoo.Imposter()`) offers a more fluent chained API and implicit mode. Prefer it when you need `.Returns(1).Then().Returns(2)` chaining or implicit-mode fakes.
 
 ---
 
@@ -124,7 +137,7 @@ Reference sources: JPL Horizons (https://ssd.jpl.nasa.gov/horizons/), USNO Alman
 ## Coverage priorities
 
 1. Reference-value assertions at a known epoch (J2000.0 or a dated event)
-2. Mocked provider tests (use Imposter for `IStateVectorProvider`, `ITimeConverter`)
+2. Mocked provider tests (use Rocks for `IStateVectorProvider`, `ITimeConverter`)
 3. Snapshot tests for batch output and export round-trips (use Verify)
 4. Edge cases: polar observer, body below horizon, midnight sun
 5. Round-trip: `EclipticToEquatorial` → `EquatorialToEcliptic`
