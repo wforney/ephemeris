@@ -1,4 +1,4 @@
-<!-- Updated: 2026-06-08T08:24Z -->
+<!-- Updated: 2026-06-20 -->
 # Copilot Instructions
 
 ## Session Checkpoints and Evolution
@@ -530,7 +530,7 @@ All Avalonia `Window` subclasses that accept constructor parameters **must also 
 
 ## MCP Servers
 
-Four servers are currently configured in `.vscode/mcp.json`:
+Seven servers are currently configured in `.vscode/mcp.json`:
 
 | Server | Type | Purpose |
 |--------|------|---------|
@@ -538,22 +538,21 @@ Four servers are currently configured in `.vscode/mcp.json`:
 | `dotnet` | stdio (`Community.Mcp.DotNet` via `dnx`) | Build, test, add/update NuGet packages, scaffold projects, query SDK templates |
 | `filesystem` | stdio (`@modelcontextprotocol/server-filesystem`) | Extended file read/write/search within the workspace |
 | `fetch` | stdio (`@modelcontextprotocol/server-fetch`) | Fetch JPL Horizons data, IERS ΔT tables, SPICE documentation, or any HTTP resource |
+| `sequential-thinking` | stdio (`@modelcontextprotocol/server-sequential-thinking`) | Structured multi-step reasoning for complex algorithm design and debugging plans |
+| `memory` | stdio (`@modelcontextprotocol/server-memory`) | Persistent cross-session knowledge graph for durable project context |
+| `brave-search` | stdio (`@modelcontextprotocol/server-brave-search`) | Web search for structured queries when `fetch` alone is less efficient (requires `BRAVE_API_KEY`) |
 
 > **Note:** The `dotnet` server requires .NET 10 SDK (for the `dnx` runner). It works alongside this project's .NET 9 target — `dnx` runs the MCP server tool itself, not the project.
-
-Useful servers to consider adding when needed:
-
-| Server | Why add it |
-|--------|------------|
-| `sequential-thinking` | Structured multi-step reasoning for complex algorithm design and debugging plans |
-| `memory` | Persistent cross-session knowledge graph for durable project context |
-| `brave-search` | Web search for structured queries when `fetch` alone is less efficient |
+> **Note:** `brave-search` prompts for a Brave Search API key on first use. Obtain one at https://api.search.brave.com/app/keys.
 
 ### Typical uses in this project
 - **`github`** — open an issue for a failing lunar calculation, check CI status, search for prior SPICE integration attempts
 - **`dotnet`** — add a NuGet package (`dotnet add package`), run tests, scaffold a new domain class from a template, check available SDK versions
 - **`filesystem`** — bulk-read or pattern-scan source files beyond what grep provides
 - **`fetch`** — retrieve current ΔT values from IERS Bulletin A, download SPICE kernel metadata from NAIF, or pull the latest VSOP87 coefficient tables
+- **`sequential-thinking`** — plan multi-step orbital mechanics implementations, structure debugging approaches for complex calculation failures
+- **`memory`** — persist algorithm decisions, reference-value notes, and investigation findings across Copilot sessions
+- **`brave-search`** — search for SPICE kernel documentation, IAU standards, or ephemeris algorithm references when `fetch` is less effective
 
 ## Key Dependencies
 
