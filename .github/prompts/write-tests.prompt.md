@@ -43,8 +43,8 @@ public async Task GetPosition_ValidKernel_ReturnsCartesianVector()
     var provider = expectations.Instance();
     var result = provider.GetStateVector("Sun", 0.0, "J2000", "Earth");
 
-    expectations.Verify();
     await Assert.That(result).IsEquivalentTo(new double[] { 1.0, 2.0, 3.0 });
+    expectations.Verify();
 }
 ```
 
