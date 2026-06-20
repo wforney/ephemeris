@@ -71,7 +71,7 @@ expectations.Setups.Method(Arg.Any<int>()).ExpectedCallCount(2);
 ```
 
 ### Always call Verify()
-Rocks mocks are **strict** — all setups must be called exactly the expected number of times or `Verify()` throws a `VerificationException`. Always call `expectations.Verify()` at the end of the test (or arrange the mock in a `using` block if it implements `IDisposable`).
+Rocks mocks are **strict** — all setups must be called exactly the expected number of times or `Verify()` throws a `VerificationException`. Always call `expectations.Verify()` at the end of the test.
 
 > **Alternative:** [Imposter](https://github.com/themidnightgospel/Imposter) (`[assembly: GenerateImposter(typeof(IFoo))]`, `IFoo.Imposter()`) offers a more fluent chained API and implicit mode. Prefer it when you need `.Returns(1).Then().Returns(2)` chaining or implicit-mode fakes.
 
