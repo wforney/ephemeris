@@ -542,7 +542,7 @@ Seven servers are currently configured in `.vscode/mcp.json`:
 | `memory` | stdio (`@modelcontextprotocol/server-memory`) | Persistent cross-session knowledge graph for durable project context |
 | `brave-search` | stdio (`@modelcontextprotocol/server-brave-search`) | Web search for structured queries when `fetch` alone is less efficient (requires `BRAVE_API_KEY`) |
 
-> **Note:** The `dotnet` server requires .NET 10 SDK (for the `dnx` runner). It works alongside this project's .NET 9 target — `dnx` runs the MCP server tool itself, not the project.
+> **Note:** The `dotnet` server requires .NET 10 SDK (for the `dnx` runner). It works alongside this project's .NET 10 target — `dnx` runs the MCP server tool itself, not the project.
 > **Note:** `brave-search` prompts for a Brave Search API key on first use. Obtain one at https://api.search.brave.com/app/keys.
 
 ### Typical uses in this project
