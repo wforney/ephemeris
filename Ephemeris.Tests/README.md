@@ -107,5 +107,5 @@ Test assertions are calibrated against:
 |---------|---------|
 | `TUnit` 1.53.0 | Test framework and assertions |
 | `Verify.TUnit` 31.19.1 | Snapshot assertions |
-| `Imposter` 0.1.7 | Source-generated mocks |
-| `Microsoft.AspNetCore.Mvc.Testing` | Integration test host |
+| `Imposter` 0.1.9 | Source-generated mocks |
+| `Microsoft.AspNetCore.Mvc.Testing` 10.0.8 | Integration test host |
