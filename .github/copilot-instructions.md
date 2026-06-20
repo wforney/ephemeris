@@ -537,7 +537,7 @@ Seven servers are currently configured in `.vscode/mcp.json`:
 | `github` | HTTP (Copilot-hosted) | Issues, PRs, code search, workflow runs, branch management |
 | `dotnet` | stdio (`Community.Mcp.DotNet` via `dnx`) | Build, test, add/update NuGet packages, scaffold projects, query SDK templates |
 | `filesystem` | stdio (`@modelcontextprotocol/server-filesystem`) | Extended file read/write/search within the workspace |
-| `fetch` | stdio (`@modelcontextprotocol/server-fetch`) | Fetch JPL Horizons data, IERS ΔT tables, SPICE documentation, or any HTTP resource |
+| `fetch` | stdio (`python3 -m mcp_server_fetch`) | Fetch JPL Horizons data, IERS ΔT tables, SPICE documentation, or any HTTP resource |
 | `sequential-thinking` | stdio (`@modelcontextprotocol/server-sequential-thinking`) | Structured multi-step reasoning for complex algorithm design and debugging plans |
 | `memory` | stdio (`@modelcontextprotocol/server-memory`) | Persistent cross-session knowledge graph for durable project context |
 | `brave-search` | stdio (`@modelcontextprotocol/server-brave-search`) | Web search for structured queries when `fetch` alone is less efficient (requires `BRAVE_API_KEY`) |
