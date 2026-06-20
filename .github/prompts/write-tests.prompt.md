@@ -38,7 +38,7 @@ public async Task GetPosition_ValidKernel_ReturnsCartesianVector()
     var expectations = new IStateVectorProviderCreateExpectations();
     expectations.Setups.GetStateVector(
         Arg.Any<string>(), Arg.Any<double>(), Arg.Any<string>(), Arg.Any<string>())
-        .ReturnValue(new double[] { 1.0, 2.0, 3.0 });
+        .Returns(new double[] { 1.0, 2.0, 3.0 });
 
     var provider = expectations.Instance();
     var result = provider.GetStateVector("Sun", 0.0, "J2000", "Earth");
