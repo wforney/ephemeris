@@ -1,4 +1,4 @@
-<!-- Updated: 2026-06-20 -->
+<!-- Updated: 2026-07-06 (model sync) -->
 # Copilot Instructions
 
 ## Session Checkpoints and Evolution
@@ -76,27 +76,55 @@ When creating a new agent: add a row here, pick the lowest model tier sufficient
 
 | Task | Recommended model(s) |
 |------|----------------------|
-| Orbital mechanics, coordinate transforms, Kepler solvers, VSOP87 | `anthropic/claude-opus-4-5`, `openai/o4-mini` | _Reasoning tier required — verify against JPL Horizons_ |
-| Complete SPICE / DE430 provider stubs | `anthropic/claude-opus-4-5`, `openai/o4-mini` | |
-| Design new public API or multi-namespace refactor | `anthropic/claude-sonnet-4-5`, `openai/gpt-4.1` | |
-| Write or fix TUnit tests | `anthropic/claude-sonnet-4-5`, `openai/gpt-4.1` | |
-| PR diff review for astronomical correctness | `anthropic/claude-opus-4-5`, `openai/o4-mini` | |
-| Add XML doc comments or update this instructions file | `anthropic/claude-sonnet-4-5`, `openai/gpt-4.1` | |
-| Quick single-file edits, typo/style fixes | `anthropic/claude-haiku-4-5`, `openai/gpt-5-mini` | |
+| Orbital mechanics, coordinate transforms, Kepler solvers, VSOP87 | `openai/o3`, `openai/o3-mini`, `openai/o4-mini` | _Reasoning tier required — verify against JPL Horizons_
+| Complete SPICE / DE430 provider stubs | `openai/o3`, `openai/o3-mini`, `openai/o4-mini` |
+| Design new public API or multi-namespace refactor | `openai/gpt-4.1`, `openai/gpt-4o`, `openai/gpt-4.1-mini` |
+| Write or fix TUnit tests | `openai/gpt-4.1`, `openai/gpt-4o`, `openai/gpt-4.1-mini` |
+| PR diff review for astronomical correctness | `openai/o3`, `openai/o3-mini`, `openai/o4-mini` |
+| Add XML doc comments or update this instructions file | `openai/gpt-4.1`, `openai/gpt-4.1-mini`, `openai/gpt-4.1-nano` |
+| Quick single-file edits, typo/style fixes | `openai/gpt-5-mini` |
 
 ### Available models catalog
 
 | Model ID | Publisher | Tier |
 |----------|-----------|------|
-| `anthropic/claude-opus-4-5` | Anthropic | premium |
-| `anthropic/claude-sonnet-4-5` | Anthropic | standard |
-| `anthropic/claude-haiku-4-5` | Anthropic | fast/cheap |
-| `openai/o3` | OpenAI | premium |
-| `openai/o4-mini` | OpenAI | standard |
-| `openai/gpt-4.1` | OpenAI | standard |
-| `openai/gpt-4.1-mini` | OpenAI | fast/cheap |
-| `openai/gpt-5-mini` | OpenAI | fast/cheap |
-
+| `cohere/cohere-command-a` | Cohere | standard |
+| `deepseek/deepseek-v3-0324` | DeepSeek | premium |
+| `deepseek/deepseek-r1` | DeepSeek | custom |
+| `deepseek/deepseek-r1-0528` | DeepSeek | custom |
+| `meta/llama-3.2-90b-vision-instruct` | Meta | premium |
+| `meta/llama-3.3-70b-instruct` | Meta | premium |
+| `meta/llama-4-maverick-17b-128e-instruct-fp8` | Meta | premium |
+| `meta/llama-4-scout-17b-16e-instruct` | Meta | premium |
+| `meta/meta-llama-3.1-405b-instruct` | Meta | premium |
+| `meta/llama-3.2-11b-vision-instruct` | Meta | standard |
+| `meta/meta-llama-3.1-8b-instruct` | Meta | standard |
+| `microsoft/phi-4` | Microsoft | standard |
+| `microsoft/phi-4-mini-instruct` | Microsoft | standard |
+| `microsoft/phi-4-mini-reasoning` | Microsoft | standard |
+| `microsoft/phi-4-multimodal-instruct` | Microsoft | standard |
+| `microsoft/phi-4-reasoning` | Microsoft | standard |
+| `mistral-ai/codestral-2501` | Mistral AI | standard |
+| `mistral-ai/ministral-3b` | Mistral AI | standard |
+| `mistral-ai/mistral-medium-2505` | Mistral AI | standard |
+| `mistral-ai/mistral-small-2503` | Mistral AI | standard |
+| `openai/gpt-4.1` | OpenAI | premium |
+| `openai/gpt-4o` | OpenAI | premium |
+| `openai/gpt-4.1-mini` | OpenAI | standard |
+| `openai/gpt-4.1-nano` | OpenAI | standard |
+| `openai/gpt-4o-mini` | OpenAI | standard |
+| `openai/gpt-5` | OpenAI | custom |
+| `openai/gpt-5-chat` | OpenAI | custom |
+| `openai/gpt-5-mini` | OpenAI | custom |
+| `openai/gpt-5-nano` | OpenAI | custom |
+| `openai/o1` | OpenAI | custom |
+| `openai/o1-mini` | OpenAI | custom |
+| `openai/o1-preview` | OpenAI | custom |
+| `openai/o3` | OpenAI | custom |
+| `openai/o3-mini` | OpenAI | custom |
+| `openai/o4-mini` | OpenAI | custom |
+| `openai/text-embedding-3-large` | OpenAI | embeddings |
+| `openai/text-embedding-3-small` | OpenAI | embeddings |
 
 ## Project Overview
 
