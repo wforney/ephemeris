@@ -1,4 +1,4 @@
-<!-- Updated: 2026-06-20 -->
+<!-- Updated: 2026-08-12 -->
 # Copilot Instructions
 
 ## Session Checkpoints and Evolution
@@ -102,14 +102,15 @@ When creating a new agent: add a row here, pick the lowest model tier sufficient
 
 **Ephemeris** is a .NET 10.0 astronomical calculations library that computes positions of celestial bodies (Sun, Moon, planets) as seen from any observer location on Earth. It powers the **Ephemeris Research App** — a celestial visualization and simulation platform for Biblical cosmology researchers studying the Mazzaroth and scriptural events (Hezekiah's Sundial, Joshua's Long Day).
 
-The solution has six projects:
+The solution has seven top-level projects:
 
 - **Ephemeris** — Core class library (the calculation engine)
-- **Ephemeris.Tests** — Test suite using TUnit
+- **Ephemeris.Tests** — Test suite using TUnit, plus the `Ephemeris.Tests/WebApp` ASP.NET Core test host for integration scenarios
 - **Ephemeris.UI** — WinForms visualization app (Windows only, `net10.0-windows`)
 - **Ephemeris.UI.Avalonia** — Cross-platform Avalonia UI (primary research app host; OpenGL sky canvas via `OpenGlControlBase`, charts via ScottPlot.Avalonia)
 - **Ephemeris.UI.Shared** — Shared ViewModels, app state (`SkyViewModel`), and messaging used by both UI projects
 - **Ephemeris.Benchmarks** — BenchmarkDotNet performance benchmarks
+- **Ephemeris.MCP** — stdio MCP server host exposing ephemeris calculations as tools for Copilot and other MCP clients
 
 ### Research App Context
 
@@ -138,6 +139,12 @@ dotnet test --filter "FullyQualifiedName~<TestMethodName>"
 
 # Run the WinForms UI
 dotnet run --project Ephemeris.UI
+
+# Run the Avalonia UI
+dotnet run --project Ephemeris.UI.Avalonia
+
+# Run the local MCP server
+dotnet run --project Ephemeris.MCP
 ```
 
 Code style is enforced at build time via `EnforceCodeStyleInBuild` and `.editorconfig`. Overflow checking is enabled in both Debug and Release configurations.
@@ -271,7 +278,7 @@ public EphemerisPlotForm(IEnumerable<EphemerisRecord> records, string body)
 
 ## Avalonia UI (Ephemeris.UI.Avalonia) — Research App
 
-`Ephemeris.UI.Avalonia` is the **primary research application** and the main product UI. It is cross-platform (`net10.0`) and uses Avalonia 11.3.12.
+`Ephemeris.UI.Avalonia` is the **primary research application** and the main product UI. It is cross-platform (`net10.0`) and uses Avalonia 12.0.4.
 
 **Key packages:** `Avalonia`, `Avalonia.Desktop`, `ScottPlot.Avalonia`  
 **OpenGL:** sky rendering via `OpenGlControlBase` + `GlInterface.GetProcAddress`  
@@ -528,6 +535,10 @@ git tag vX.Y.Z && git push origin main && git push origin vX.Y.Z
 
 All Avalonia `Window` subclasses that accept constructor parameters **must also have a public parameterless constructor** that calls only `InitializeComponent()` — required by the Avalonia XAML runtime loader (suppresses AVLN3001). Fields initialized only in the parameterized constructor should be declared `= null!` rather than `readonly`.
 
+## Ephemeris.MCP
+
+`Ephemeris.MCP` is a console-hosted MCP server that uses `ModelContextProtocol` with stdio transport to expose astronomical calculations from the core library. Keep tool implementations in `Ephemeris.MCP/Tools/`, register them via `.WithToolsFromAssembly()`, and prefer thin adapters that delegate computation to existing `Ephemeris` domain classes instead of duplicating algorithms.
+
 ## MCP Servers
 
 Seven servers are currently configured in `.vscode/mcp.json`:
@@ -560,6 +571,7 @@ Seven servers are currently configured in `.vscode/mcp.json`:
 - **Scrutor** — assembly scanning for automatic DI registration
 - **DotNext / DotNext.Threading** — advanced .NET utilities and async threading
 - **CommunityToolkit.Mvvm** — MVVM helpers
+- **ModelContextProtocol** — stdio MCP server hosting for `Ephemeris.MCP`
 - **OpenTK + SkiaSharp** — OpenGL and Skia rendering in the WinForms UI (`SkyViewForm`)
 - **TUnit** — test framework (not xUnit/NUnit)
 - **[Rocks](https://github.com/JasonBock/Rocks)** — compile-time source-generated mocks (Roslyn); declare with `[assembly: Rock(typeof(IMyInterface), BuildType.Create)]`, use `new IMyInterfaceCreateExpectations()` in tests. Imposter (`[assembly: GenerateImposter(typeof(IMyInterface))]`) remains a valid alternative with a more fluent API.
