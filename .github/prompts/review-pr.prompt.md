@@ -1,7 +1,7 @@
-<!-- Updated: 2026-03-09 04:06 UTC -->
+<!-- Updated: 2026-08-12 -->
 ---
 mode: agent
-model: anthropic/claude-opus-4-5
+model: anthropic/claude-opus-4.5
 tools: [codebase, fetch]
 description: Review a PR for astronomical correctness, algorithm accuracy, and project convention adherence.
 ---

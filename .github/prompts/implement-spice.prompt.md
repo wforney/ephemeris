@@ -1,7 +1,7 @@
-<!-- Updated: 2026-03-09 04:06 UTC -->
+<!-- Updated: 2026-08-12 -->
 ---
 mode: agent
-model: anthropic/claude-opus-4-5
+model: anthropic/claude-opus-4.5
 tools: [codebase, editFiles, runCommands, fetch]
 description: Implement the SPICE kernel and DE430 provider stubs to enable high-precision ephemeris data loading.
 ---

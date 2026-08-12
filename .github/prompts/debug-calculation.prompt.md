@@ -1,7 +1,7 @@
 <!-- Updated: 2026-08-12 -->
 ---
 mode: agent
-model: anthropic/claude-opus-4-5
+model: anthropic/claude-opus-4.5
 tools: [codebase, editFiles, runCommands, fetch]
 description: Debug incorrect astronomical calculation results by comparing against JPL Horizons, IERS tables, or other authoritative reference sources.
 ---

@@ -1,7 +1,7 @@
-<!-- Updated: 2026-03-09 04:06 UTC -->
+<!-- Updated: 2026-08-12 -->
 ---
 mode: agent
-model: anthropic/claude-haiku-4-5
+model: anthropic/claude-haiku-4.5
 tools: [codebase, editFiles, runCommands]
 description: Add or complete missing XML doc comments on all public members in the Ephemeris library.
 ---

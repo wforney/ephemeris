@@ -1,7 +1,7 @@
-<!-- Updated: 2026-03-22 -->
+<!-- Updated: 2026-08-12 -->
 ---
 mode: agent
-model: anthropic/claude-sonnet-4-5
+model: anthropic/claude-sonnet-4.5
 tools: [codebase, editFiles, runCommands, fetch]
 description: Prepare and execute a versioned release — bumps version, validates build, tags, and confirms CI artifacts.
 ---

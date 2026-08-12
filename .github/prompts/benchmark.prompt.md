@@ -1,7 +1,7 @@
 <!-- Updated: 2026-08-12 -->
 ---
 mode: agent
-model: anthropic/claude-sonnet-4-5
+model: anthropic/claude-sonnet-4.5
 tools: [codebase, editFiles, runCommands]
 description: Run BenchmarkDotNet benchmarks, interpret results, identify bottlenecks, and propose perf-type fixes for the Ephemeris library.
 ---
