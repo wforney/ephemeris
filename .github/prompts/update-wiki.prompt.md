@@ -122,8 +122,12 @@ Check that the updated wiki entry matches the inline `<remarks>` XML doc on the 
 
 ## Step 6 — Commit
 
+Apply the wiki changes directly in the separate `wforney/ephemeris.wiki` repository (or via the GitHub wiki editor). Do **not** commit a `wiki/` directory to this repository.
+
+If the wiki update required corresponding changes to C# XML `<remarks>` doc comments in the main repo, commit those changes here using the standard convention:
+
 ```bash
-docs(wiki): update Algorithm Reference for <scope> — <brief description>
+docs(<scope>): update XML remarks to match Algorithm Reference — <brief description>
 ```
 
-Do not commit the wiki directory to the main repo; it belongs in the `.wiki` repository. Flag this in the PR description so a maintainer can sync it.
+Note this in the PR description so a maintainer can verify the wiki and inline docs are in sync.

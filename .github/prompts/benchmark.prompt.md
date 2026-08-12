@@ -52,13 +52,11 @@ Benchmark classes follow this pattern:
 
 ```csharp
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
 using Ephemeris.Chronology;
 
 namespace Ephemeris.Benchmarks;
 
 [MemoryDiagnoser]
-[SimpleJob(RuntimeMoniker.Net100)]
 public class SunEphemerisBenchmarks
 {
     private const double T = 0.0; // J2000.0
