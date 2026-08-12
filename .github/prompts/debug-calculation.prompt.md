@@ -59,9 +59,9 @@ Narrow down which stage of the pipeline is wrong. Typical failure points:
 | Equatorial → Horizontal | Wrong quadrant correction on Azimuth |
 | Angle normalization | Off by 360° or 180° |
 
-Add `Console.WriteLine` / temporary trace output in the calculation method to inspect intermediate values, then run `dotnet test` with verbose output:
+Add temporary trace output in the calculation method to inspect intermediate values, then run `dotnet test` with verbose output:
 ```bash
-dotnet test --filter "<TestName>" -- NUnit.Verbosity=Normal
+dotnet test --filter "<TestName>" -- TUnit.Core.Verbosity=Verbose
 ```
 
 ## Step 4 — Fix the code

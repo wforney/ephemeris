@@ -111,10 +111,10 @@ result = a + b*T + c*T^2
 Compose the complete updated wiki page (or the relevant section diff) and write it to:
 
 ```
-/home/runner/work/ephemeris/ephemeris/wiki/Algorithm-Reference.md
+wiki/Algorithm-Reference.md
 ```
 
-If a `wiki/` directory does not exist locally, create it. The CI does not sync this automatically — note in the commit message that the wiki file must be pushed to the `wforney/ephemeris.wiki` repository separately, or use the `fetch` tool to POST the update via the GitHub API if credentials are available.
+Create the `wiki/` directory at the workspace root if it does not exist. The CI does not sync this automatically — note in the commit message that the wiki file must be pushed to the `wforney/ephemeris.wiki` repository separately, or use the `fetch` tool to POST the update via the GitHub API if credentials are available.
 
 ## Step 5 — Verify cross-references
 
