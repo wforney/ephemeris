@@ -77,8 +77,8 @@ When creating a new agent: add a row here, pick the lowest model tier sufficient
 
 ### Task → model mapping
 
-| Task | Recommended model(s) |
-|------|----------------------|
+| Task | Recommended model(s) | Notes |
+|------|----------------------|-------|
 | Orbital mechanics, coordinate transforms, Kepler solvers, VSOP87 | `anthropic/claude-opus-5`, `anthropic/claude-opus-4.8` | _Reasoning tier required — verify against JPL Horizons_ |
 | Complete SPICE / DE430 provider stubs | `anthropic/claude-opus-5`, `anthropic/claude-opus-4.8` | |
 | Design new public API or multi-namespace refactor | `anthropic/claude-sonnet-5`, `openai/gpt-5.4` | |
