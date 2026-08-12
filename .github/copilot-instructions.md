@@ -79,26 +79,42 @@ When creating a new agent: add a row here, pick the lowest model tier sufficient
 
 | Task | Recommended model(s) |
 |------|----------------------|
-| Orbital mechanics, coordinate transforms, Kepler solvers, VSOP87 | `anthropic/claude-opus-4-5`, `openai/o4-mini` | _Reasoning tier required — verify against JPL Horizons_ |
-| Complete SPICE / DE430 provider stubs | `anthropic/claude-opus-4-5`, `openai/o4-mini` | |
-| Design new public API or multi-namespace refactor | `anthropic/claude-sonnet-4-5`, `openai/gpt-4.1` | |
-| Write or fix TUnit tests | `anthropic/claude-sonnet-4-5`, `openai/gpt-4.1` | |
-| PR diff review for astronomical correctness | `anthropic/claude-opus-4-5`, `openai/o4-mini` | |
-| Add XML doc comments or update this instructions file | `anthropic/claude-sonnet-4-5`, `openai/gpt-4.1` | |
-| Quick single-file edits, typo/style fixes | `anthropic/claude-haiku-4-5`, `openai/gpt-5-mini` | |
+| Orbital mechanics, coordinate transforms, Kepler solvers, VSOP87 | `anthropic/claude-opus-5`, `anthropic/claude-opus-4.8` | _Reasoning tier required — verify against JPL Horizons_ |
+| Complete SPICE / DE430 provider stubs | `anthropic/claude-opus-5`, `anthropic/claude-opus-4.8` | |
+| Design new public API or multi-namespace refactor | `anthropic/claude-sonnet-5`, `openai/gpt-5.4` | |
+| Write or fix TUnit tests | `anthropic/claude-sonnet-5`, `openai/gpt-5.4` | |
+| PR diff review for astronomical correctness | `anthropic/claude-opus-5`, `anthropic/claude-fable-5` | |
+| Add XML doc comments or update this instructions file | `anthropic/claude-sonnet-5`, `openai/gpt-5.4` | |
+| Quick single-file edits, typo/style fixes | `anthropic/claude-haiku-4.5`, `openai/gpt-5-mini` | |
 
 ### Available models catalog
 
-| Model ID | Publisher | Tier |
-|----------|-----------|------|
-| `anthropic/claude-opus-4-5` | Anthropic | premium |
-| `anthropic/claude-sonnet-4-5` | Anthropic | standard |
-| `anthropic/claude-haiku-4-5` | Anthropic | fast/cheap |
-| `openai/o3` | OpenAI | premium |
-| `openai/o4-mini` | OpenAI | standard |
-| `openai/gpt-4.1` | OpenAI | standard |
-| `openai/gpt-4.1-mini` | OpenAI | fast/cheap |
-| `openai/gpt-5-mini` | OpenAI | fast/cheap |
+| Model ID | Publisher | Tier | Context |
+|----------|-----------|------|---------|
+| `anthropic/claude-sonnet-5` | Anthropic | premium | default, long_context |
+| `anthropic/claude-sonnet-4.6` | Anthropic | standard | default, long_context |
+| `anthropic/claude-sonnet-4.5` | Anthropic | standard | default |
+| `anthropic/claude-haiku-4.5` | Anthropic | fast/cheap | default |
+| `anthropic/claude-fable-5` | Anthropic | premium | default, long_context |
+| `anthropic/claude-opus-5` | Anthropic | premium | default, long_context |
+| `anthropic/claude-opus-4.8` | Anthropic | premium | default, long_context |
+| `anthropic/claude-opus-4.8-fast` | Anthropic | premium | default, long_context |
+| `anthropic/claude-opus-4.7` | Anthropic | premium | default, long_context |
+| `anthropic/claude-opus-4.6` | Anthropic | premium | default, long_context |
+| `anthropic/claude-opus-4.5` | Anthropic | premium | default |
+| `openai/gpt-5.6-sol` | OpenAI | premium | default, long_context |
+| `openai/gpt-5.6-terra` | OpenAI | premium | default, long_context |
+| `openai/gpt-5.6-luna` | OpenAI | premium | default, long_context |
+| `openai/gpt-5.5` | OpenAI | premium | default, long_context |
+| `openai/gpt-5.4` | OpenAI | standard | default, long_context |
+| `openai/gpt-5.3-codex` | OpenAI | standard | default |
+| `openai/gpt-5.4-mini` | OpenAI | fast/cheap | default |
+| `openai/gpt-5-mini` | OpenAI | fast/cheap | default |
+| `mai-code-1-flash-picker` | MAI | fast/cheap | default |
+| `google/gemini-3.1-pro-preview` | Google | standard | default, long_context |
+| `google/gemini-3.6-flash` | Google | fast/cheap | default, long_context |
+| `google/gemini-3.5-flash` | Google | fast/cheap | default, long_context |
+| `moonshot/kimi-k2.7-code` | Moonshot | standard | default |
 
 
 ## Project Overview
