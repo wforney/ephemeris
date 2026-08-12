@@ -1,7 +1,7 @@
-<!-- Updated: 2026-03-09 04:06 UTC -->
+<!-- Updated: 2026-08-12 -->
 ---
 mode: agent
-model: anthropic/claude-sonnet-4-5
+model: anthropic/claude-sonnet-4.5
 tools: [codebase, editFiles, runCommands, fetch]
 description: Evolve and maintain .github/copilot-instructions.md, .vscode/mcp.json, and workflow files as the project and tooling change.
 ---

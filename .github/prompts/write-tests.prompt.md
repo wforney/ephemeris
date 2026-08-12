@@ -1,7 +1,7 @@
-<!-- Updated: 2026-06-20 -->
+<!-- Updated: 2026-08-12 -->
 ---
 mode: agent
-model: anthropic/claude-sonnet-4-5
+model: anthropic/claude-sonnet-4.5
 tools: [codebase, editFiles, runCommands]
 description: Write TUnit tests for Ephemeris calculation methods using Rocks for mocking and Verify for snapshot assertions.
 ---

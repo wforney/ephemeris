@@ -1,7 +1,7 @@
 <!-- Updated: 2026-08-12 -->
 ---
 mode: agent
-model: anthropic/claude-sonnet-4-5
+model: anthropic/claude-sonnet-4.5
 tools: [codebase, editFiles, fetch]
 description: Update the GitHub wiki Algorithm Reference page to reflect new or changed astronomical calculations.
 ---
