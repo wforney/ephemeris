@@ -56,11 +56,14 @@ Reusable prompt files in `.github/prompts/`. Invoke via `/implement-calculation`
 | Agent | Model tier | Use for |
 |-------|------------|---------|
 | `implement-calculation` | opus | New astronomical calculations — fetches reference values, enforces static/pure pattern, verifies against JPL Horizons |
+| `debug-calculation` | opus | Debug wrong numerical results — fetches JPL Horizons reference values, isolates the failing pipeline stage, and fixes root cause |
 | `write-tests` | sonnet | TUnit tests with Rocks mocks, Verify snapshots, and external reference values |
 | `add-xml-docs` | haiku | Eliminate all CS1591 warnings; consistent domain terminology |
 | `implement-spice` | opus | Implement `ISpaceKernelProvider`, `ITimeConverter`, `IStateVectorProvider` stubs via SpiceSharp-Parser |
 | `review-pr` | opus | PR review focused on astronomical correctness, algorithm accuracy, convention adherence |
 | `refactor` | sonnet | Internal restructuring — preserves all public API contracts and angle conventions |
+| `benchmark` | sonnet | Run BenchmarkDotNet, interpret results, identify bottlenecks, and commit `perf`-type fixes |
+| `update-wiki` | sonnet | Update the Algorithm Reference wiki page after new or changed calculations |
 | `evolve` | sonnet | Maintain and evolve instructions, MCP config, workflows, and prompt files over time |
 | `release` | sonnet | End-to-end release: pre-flight checks, version bump, tag, push, CI verification, rollback |
 
