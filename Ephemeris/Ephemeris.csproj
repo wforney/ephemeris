@@ -43,10 +43,10 @@
 
   <ItemGroup>
     <PackageReference Include="DotNext" Version="6.3.0" />
-    <PackageReference Include="DotNext.Threading" Version="6.3.0" />
+    <PackageReference Include="DotNext.Threading" Version="6.4.0" />
     <PackageReference Include="Generator.Equals" Version="4.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
-    <PackageReference Include="ScottPlot" Version="5.1.58" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.9" />
+    <PackageReference Include="ScottPlot" Version="5.1.59" />
     <PackageReference Include="Scrutor" Version="7.0.0" />
     <PackageReference Include="System.Linq.Async.Queryable" Version="7.0.1" />
   </ItemGroup>
