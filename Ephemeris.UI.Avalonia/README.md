@@ -1,7 +1,7 @@
 # Ephemeris.UI.Avalonia
 
 Cross-platform visualization application for the `Ephemeris` library, built with
-**[Avalonia UI 11](https://avaloniaui.net/)**.
+**[Avalonia UI 12](https://avaloniaui.net/)**.
 
 Runs on **Windows, Linux, and macOS** — the Linux-compatible counterpart to `Ephemeris.UI`
 (which targets `net10.0-windows` with WinForms).
@@ -12,7 +12,7 @@ Runs on **Windows, Linux, and macOS** — the Linux-compatible counterpart to `E
 
 ## Why Avalonia?
 
-| Requirement | Avalonia 11 |
+| Requirement | Avalonia 12 |
 |---|---|
 | Linux / macOS support | ✅ — X11, Wayland (via XDG desktop portal), Quartz |
 | SkiaSharp rendering | ✅ — Avalonia uses SkiaSharp internally; already a project dep |
@@ -196,11 +196,11 @@ view-model and messaging types shared between the WinForms and Avalonia projects
 
 | Package | Purpose |
 |---------|---------|
-| `Avalonia` 11.3.12 | Core cross-platform UI framework |
-| `Avalonia.Desktop` 11.3.12 | Desktop platform backends (X11, WGL, CGL) |
-| `Avalonia.Themes.Fluent` 11.3.12 | Fluent design theme |
+| `Avalonia` 12.1.1 | Core cross-platform UI framework |
+| `Avalonia.Desktop` 12.1.1 | Desktop platform backends (X11, WGL, CGL) |
+| `Avalonia.Themes.Fluent` 12.1.1 | Fluent design theme |
 | `CommunityToolkit.Mvvm` 8.4.0 | MVVM helpers (shared with WinForms project) |
-| `ScottPlot.Avalonia` 5.1.57 | Cross-platform `AvaPlot` chart control |
+| `ScottPlot.Avalonia` 5.1.59 | Cross-platform `AvaPlot` chart control |
 
 ---
 

@@ -1,4 +1,4 @@
-<!-- Updated: 2026-08-12 -->
+<!-- Updated: 2026-08-20 -->
 # Copilot Instructions
 
 ## Session Checkpoints and Evolution
@@ -297,7 +297,7 @@ public EphemerisPlotForm(IEnumerable<EphemerisRecord> records, string body)
 
 ## Avalonia UI (Ephemeris.UI.Avalonia) — Research App
 
-`Ephemeris.UI.Avalonia` is the **primary research application** and the main product UI. It is cross-platform (`net10.0`) and uses Avalonia 12.0.4.
+`Ephemeris.UI.Avalonia` is the **primary research application** and the main product UI. It is cross-platform (`net10.0`) and uses Avalonia 12.1.1.
 
 **Key packages:** `Avalonia`, `Avalonia.Desktop`, `ScottPlot.Avalonia`  
 **OpenGL:** sky rendering via `OpenGlControlBase` + `GlInterface.GetProcAddress`  

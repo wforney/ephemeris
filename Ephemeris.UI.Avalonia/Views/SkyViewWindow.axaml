@@ -17,7 +17,7 @@
 
             <TextBlock Text="Date/Time UTC:" VerticalAlignment="Center" />
             <TextBox x:Name="DatePicker"
-                     Watermark="yyyy-MM-dd HH:mm"
+                     PlaceholderText="yyyy-MM-dd HH:mm"
                      Width="150" />
 
             <Separator Width="1" Background="Gray" Margin="4,0" />
