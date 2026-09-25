@@ -563,7 +563,7 @@ All Avalonia `Window` subclasses that accept constructor parameters **must also 
 
 ## MCP Servers
 
-Seven servers are currently configured in `.vscode/mcp.json`:
+Seven external servers are currently configured in `.vscode/mcp.json`. The solution also includes the local `Ephemeris.MCP` stdio server described above, but it is not preconfigured in that VS Code workspace file:
 
 | Server | Type | Purpose |
 |--------|------|---------|
