@@ -1,4 +1,4 @@
-<!-- Updated: 2026-08-12 -->
+<!-- Updated: 2026-09-25 -->
 ---
 mode: agent
 model: anthropic/claude-sonnet-4.5
@@ -13,8 +13,9 @@ You are preparing a versioned release of the Ephemeris project. Follow each step
 1. Confirm `main` branch is clean (`git status` shows no uncommitted changes).
 2. Run `dotnet build -c Release` — must succeed with 0 errors and 0 warnings.
 3. Run `dotnet test` — all tests must pass.
-4. Check that the four publish profiles exist:
-   `Ephemeris.UI.Avalonia/Properties/PublishProfiles/{win-x64,linux-x64,osx-x64,osx-arm64}.pubxml`
+4. Check that `.github/workflows/release.yml` still publishes the four RIDs
+   (`win-x64`, `linux-x64`, `osx-x64`, `osx-arm64`) with explicit single-file
+   publish flags and output paths.
 
 ## Determine the version
 
