@@ -74,7 +74,7 @@
                     <TextBox   Grid.Row="0" Grid.Column="1"
                                x:Name="QuickDateInput"
                                Classes="Research"
-                               Watermark="YYYY-MM-DD" />
+                               PlaceholderText="YYYY-MM-DD" />
 
                     <TextBlock Grid.Row="1" Grid.Column="0"
                                Text="Time:"
@@ -83,7 +83,7 @@
                     <TextBox   Grid.Row="1" Grid.Column="1"
                                x:Name="QuickTimeInput"
                                Classes="Research"
-                               Watermark="HH:MM" />
+                               PlaceholderText="HH:MM" />
 
                     <TextBlock Grid.Row="2" Grid.Column="0"
                                Text="Location:"
@@ -92,7 +92,7 @@
                     <TextBox   Grid.Row="2" Grid.Column="1"
                                x:Name="QuickLocationInput"
                                Classes="Research"
-                               Watermark="City or lat, lon" />
+                               PlaceholderText="City or lat, lon" />
 
                 </Grid>
 

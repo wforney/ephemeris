@@ -75,8 +75,8 @@ Chart details:
 | `CommunityToolkit.Mvvm` 8.4.0 | MVVM helpers, `ObservableProperty`, `WeakReferenceMessenger` |
 | `OpenTK` 4.9.4 | OpenGL rendering context |
 | `OpenTK.GLControl` 4.0.2 | WinForms-hosted OpenGL control |
-| `SkiaSharp.Views.WindowsForms` 3.119.2 | 2D label overlay on sky view |
-| `ScottPlot.WinForms` 5.1.57 | Altitude-vs-time chart |
+| `SkiaSharp` (transitive) | 2D label overlay on sky view |
+| `ScottPlot.WinForms` 5.1.59 | Altitude-vs-time chart |
 
 > **Note:** `SkyViewModel` and the messaging types live in `Ephemeris.UI.Shared`
 > (a cross-platform class library) so they can be reused by `Ephemeris.UI.Avalonia`

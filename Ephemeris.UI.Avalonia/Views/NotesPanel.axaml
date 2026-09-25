@@ -17,7 +17,7 @@
                        FontWeight="Bold"
                        VerticalAlignment="Center" />
             <TextBox x:Name="SessionNameBox"
-                     Watermark="Session name…"
+                     PlaceholderText="Session name…"
                      Width="220"
                      VerticalAlignment="Center" />
         </StackPanel>
@@ -57,7 +57,7 @@
                  MinLines="6"
                  VerticalAlignment="Stretch"
                  VerticalContentAlignment="Top"
-                 Watermark="Enter research notes here…" />
+                 PlaceholderText="Enter research notes here…" />
 
     </DockPanel>
 
