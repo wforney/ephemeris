@@ -154,7 +154,8 @@ dotnet test
 dotnet test --project Ephemeris.Tests/Ephemeris.Tests/Ephemeris.Tests.csproj
 
 # Run a single named test (TUnit)
-dotnet test --filter "FullyQualifiedName~<TestMethodName>"
+dotnet test --project Ephemeris.Tests/Ephemeris.Tests/Ephemeris.Tests.csproj \
+  --filter "FullyQualifiedName~<TestMethodName>"
 
 # Run the WinForms UI
 dotnet run --project Ephemeris.UI/Ephemeris.UI.csproj
