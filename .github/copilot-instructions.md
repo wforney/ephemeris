@@ -1,4 +1,4 @@
-<!-- Updated: 2026-08-20 -->
+<!-- Updated: 2026-09-25 -->
 # Copilot Instructions
 
 ## Session Checkpoints and Evolution
@@ -151,19 +151,20 @@ dotnet build -c Release
 dotnet test
 
 # Run tests in the test project specifically
-dotnet test Ephemeris.Tests
+dotnet test --project Ephemeris.Tests/Ephemeris.Tests/Ephemeris.Tests.csproj
 
 # Run a single named test (TUnit)
-dotnet test --filter "FullyQualifiedName~<TestMethodName>"
+dotnet test --project Ephemeris.Tests/Ephemeris.Tests/Ephemeris.Tests.csproj \
+  --filter "FullyQualifiedName~<TestMethodName>"
 
 # Run the WinForms UI
-dotnet run --project Ephemeris.UI
+dotnet run --project Ephemeris.UI/Ephemeris.UI.csproj
 
 # Run the Avalonia UI
-dotnet run --project Ephemeris.UI.Avalonia
+dotnet run --project Ephemeris.UI.Avalonia/Ephemeris.UI.Avalonia.csproj
 
 # Run the local MCP server
-dotnet run --project Ephemeris.MCP
+dotnet run --project Ephemeris.MCP/Ephemeris.MCP.csproj
 ```
 
 Code style is enforced at build time via `EnforceCodeStyleInBuild` and `.editorconfig`. Overflow checking is enabled in both Debug and Release configurations.
@@ -279,7 +280,7 @@ The root `README.md` is the solution-level overview. It should always link to pe
 
 ## WinForms UI (Ephemeris.UI)
 
-`EphemerisPlotForm` is the sole form. It takes `IEnumerable<EphemerisRecord>` and a body name, then renders an altitude-vs-time scatter chart:
+`Program.cs` launches `LauncherForm`, which opens either `SkyViewForm` for the OpenTK/Skia sky view or `EphemerisPlotForm` for the ScottPlot altitude chart. `EphemerisPlotForm` takes `IEnumerable<EphemerisRecord>` and a body name, then renders an altitude-vs-time scatter chart:
 
 ```csharp
 public EphemerisPlotForm(IEnumerable<EphemerisRecord> records, string body)
@@ -291,9 +292,9 @@ public EphemerisPlotForm(IEnumerable<EphemerisRecord> records, string body)
 - Altitude axis is raw degrees
 - `plt.Axes.AutoScale()` + `formsPlot.Refresh()` to redraw
 
-**OpenTK/SkiaSharp** are referenced but not yet wired up — no `GLControl` instances exist. Do not remove those references; they are reserved for future 3D rendering.
+**OpenTK/SkiaSharp** are active dependencies in `SkyViewForm`; it owns the `GLControl` render loop and SkiaSharp label overlay. Do not remove those references unless the sky-view implementation is being replaced.
 
-`Program.cs` bootstraps with an empty dataset; replace the `List<EphemerisRecord> allData = []` with real batch output before running.
+`LauncherForm` still opens `EphemerisPlotForm` with an empty `List<EphemerisRecord> allData = []`; replace that placeholder with real batch output before relying on the chart button.
 
 ## Avalonia UI (Ephemeris.UI.Avalonia) — Research App
 
@@ -516,17 +517,20 @@ Each GitHub Release contains:
 | `EphemerisApp-osx-x64` | macOS Intel self-contained single-file |
 | `EphemerisApp-osx-arm64` | macOS Apple Silicon self-contained single-file |
 
-### Publish profiles
+### Publish configuration
 
-Four publish profiles live in `Ephemeris.UI.Avalonia/Properties/PublishProfiles/`. All set `SelfContained=true`, `PublishSingleFile=true`, `PublishReadyToRun=true`, `IncludeNativeLibrariesForSelfExtract=true`.
+The release workflow passes publish flags explicitly; no checked-in Avalonia `.pubxml` publish profiles are required. Keep local publish commands aligned with `.github/workflows/release.yml`.
 
-**Publish locally** (profiles work reliably on Windows):
+**Publish locally** (example for Windows x64):
 ```bash
-dotnet publish Ephemeris.UI.Avalonia/Ephemeris.UI.Avalonia.csproj /p:PublishProfile=win-x64
+dotnet publish Ephemeris.UI.Avalonia/Ephemeris.UI.Avalonia.csproj -c Release -r win-x64 --self-contained true \
+  -p:PublishSingleFile=true -p:PublishReadyToRun=true \
+  -p:IncludeNativeLibrariesForSelfExtract=true \
+  -o Ephemeris.UI.Avalonia/bin/publish/win-x64
 # Output: Ephemeris.UI.Avalonia/bin/publish/win-x64/Ephemeris.UI.Avalonia.exe
 ```
 
-**CI** passes flags explicitly (avoids `NETSDK1198` profile-not-found on macOS/Linux):
+**CI** uses the same explicit flags for every RID:
 ```bash
 dotnet publish ... -c Release -r <rid> --self-contained true \
   -p:PublishSingleFile=true -p:PublishReadyToRun=true \
@@ -560,7 +564,7 @@ All Avalonia `Window` subclasses that accept constructor parameters **must also 
 
 ## MCP Servers
 
-Seven servers are currently configured in `.vscode/mcp.json`:
+Seven external servers are currently configured in `.vscode/mcp.json`. The solution also includes the local `Ephemeris.MCP` stdio server described above, but it is not preconfigured in that VS Code workspace file:
 
 | Server | Type | Purpose |
 |--------|------|---------|
