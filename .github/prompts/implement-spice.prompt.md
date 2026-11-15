@@ -1,4 +1,4 @@
-<!-- Updated: 2026-08-12 -->
+<!-- Updated: 2026-11-14 -->
 ---
 mode: agent
 model: anthropic/claude-opus-4.5
@@ -6,7 +6,7 @@ tools: [codebase, editFiles, runCommands, fetch]
 description: Implement the SPICE kernel and DE430 provider stubs to enable high-precision ephemeris data loading.
 ---
 
-You are implementing the SPICE / DE430 import pipeline in the Ephemeris .NET 10 library.
+You are implementing the SPICE / DE430 import pipeline in the Ephemeris .NET 11 library.
 
 ## Current state
 

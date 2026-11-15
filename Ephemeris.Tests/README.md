@@ -2,7 +2,7 @@
 
 Test suite for the `Ephemeris` core library. **420 tests** covering all calculation domains.
 
-**Framework:** [TUnit](https://github.com/thomhurst/TUnit) · **Target:** `net10.0`
+**Framework:** [TUnit](https://github.com/thomhurst/TUnit) · **Target:** `net11.0`
 
 ---
 
@@ -114,4 +114,4 @@ Test assertions are calibrated against:
 | `TUnit` 1.53.0 | Test framework and assertions |
 | `Verify.TUnit` 31.19.1 | Snapshot assertions |
 | `Rocks` 10.3.0 | Source-generated mocks |
-| `Microsoft.AspNetCore.Mvc.Testing` 10.0.8 | Integration test host |
+| `Microsoft.AspNetCore.Mvc.Testing` 11.0.0 | Integration test host |

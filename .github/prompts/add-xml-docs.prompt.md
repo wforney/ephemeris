@@ -1,4 +1,4 @@
-<!-- Updated: 2026-08-12 -->
+<!-- Updated: 2026-11-14 -->
 ---
 mode: agent
 model: anthropic/claude-haiku-4.5
@@ -6,7 +6,7 @@ tools: [codebase, editFiles, runCommands]
 description: Add or complete missing XML doc comments on all public members in the Ephemeris library.
 ---
 
-You are adding XML documentation comments to public members in the Ephemeris .NET 10 library.
+You are adding XML documentation comments to public members in the Ephemeris .NET 11 library.
 
 ## Find members missing docs
 

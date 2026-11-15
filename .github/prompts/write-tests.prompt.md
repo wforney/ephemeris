@@ -1,4 +1,4 @@
-<!-- Updated: 2026-08-12 -->
+<!-- Updated: 2026-11-14 -->
 ---
 mode: agent
 model: anthropic/claude-sonnet-4.5
@@ -6,7 +6,7 @@ tools: [codebase, editFiles, runCommands]
 description: Write TUnit tests for Ephemeris calculation methods using Rocks for mocking and Verify for snapshot assertions.
 ---
 
-You are writing TUnit tests for the Ephemeris .NET 10 library.
+You are writing TUnit tests for the Ephemeris .NET 11 library.
 
 ## Test project layout
 

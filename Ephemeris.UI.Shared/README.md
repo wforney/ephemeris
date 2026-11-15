@@ -3,7 +3,7 @@
 Cross-platform class library holding view-models, services, models, and messaging
 types shared between `Ephemeris.UI` (WinForms) and `Ephemeris.UI.Avalonia`.
 
-**Target:** `net10.0` · **No UI framework dependency**
+**Target:** `net11.0` · **No UI framework dependency**
 
 ---
 
