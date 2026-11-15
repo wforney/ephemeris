@@ -63,16 +63,10 @@ Tests that require local ephemeris kernel files (`.bsp`, `.se1`) are automatical
 2. Annotate test methods with TUnit's `[Test]` attribute.
 3. Use `Assert.*` from TUnit (not xUnit/NUnit).
 
-### Snapshot Testing (Verify)
-
-For complex output (export files, multi-record series), use Verify snapshots:
-
-```csharp
-await Verify(records).UseDirectory("Snapshots");
-```
-
-- On first run a `.received.` file is created — review it, then rename to `.verified.`
-- Commit only `*.verified.*` files; `*.received.*` are git-ignored.
+For complex output such as exported files or multi-record series, assert
+important values and serialized content directly with TUnit's `Assert.*`
+methods. Prefer checks on stable fields and meaningful output over large
+snapshots.
 
 ### Mocking ([Rocks](https://github.com/JasonBock/Rocks))
 
@@ -112,6 +106,5 @@ Test assertions are calibrated against:
 | Package | Purpose |
 |---------|---------|
 | `TUnit` 1.53.0 | Test framework and assertions |
-| `Verify.TUnit` 31.19.1 | Snapshot assertions |
 | `Rocks` 10.3.0 | Source-generated mocks |
 | `Microsoft.AspNetCore.Mvc.Testing` 11.0.0 | Integration test host |
