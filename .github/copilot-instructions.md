@@ -1,4 +1,4 @@
-<!-- Updated: 2026-11-14 -->
+<!-- Updated: 2026-11-15 -->
 # Copilot Instructions
 
 ## Session Checkpoints and Evolution
@@ -79,18 +79,22 @@ When creating a new agent: add a row here, pick the lowest model tier sufficient
 
 | Task | Recommended model(s) | Notes |
 |------|----------------------|-------|
-| Orbital mechanics, coordinate transforms, Kepler solvers, VSOP87 | `anthropic/claude-opus-5`, `anthropic/claude-opus-4.8` | _Reasoning tier required — verify against JPL Horizons_ |
-| Complete SPICE / DE430 provider stubs | `anthropic/claude-opus-5`, `anthropic/claude-opus-4.8` | |
-| Design new public API or multi-namespace refactor | `anthropic/claude-sonnet-5`, `openai/gpt-5.4` | |
-| Write or fix TUnit tests | `anthropic/claude-sonnet-5`, `openai/gpt-5.4` | |
-| PR diff review for astronomical correctness | `anthropic/claude-opus-5`, `anthropic/claude-fable-5` | |
-| Add XML doc comments or update this instructions file | `anthropic/claude-sonnet-5`, `openai/gpt-5.4` | |
-| Quick single-file edits, typo/style fixes | `anthropic/claude-haiku-4.5`, `openai/gpt-5-mini` | |
+| Orbital mechanics, coordinate transforms, Kepler solvers, VSOP87 | `anthropic/claude-opus-5.5`, `openai/gpt-6.1-sol` | _Reasoning tier required — verify against JPL Horizons_ |
+| Complete SPICE / DE430 provider stubs | `anthropic/claude-opus-5.5`, `openai/gpt-6.1-sol` | |
+| Design new public API or multi-namespace refactor | `anthropic/claude-sonnet-5.5`, `openai/gpt-6.1-sol` | |
+| Write or fix TUnit tests | `anthropic/claude-sonnet-5.5`, `openai/gpt-6.1-sol` | |
+| PR diff review for astronomical correctness | `anthropic/claude-opus-5.5`, `anthropic/claude-fable-5.1` | |
+| Add XML doc comments or update this instructions file | `anthropic/claude-sonnet-5.5`, `openai/gpt-6.1-sol` | |
+| Quick single-file edits, typo/style fixes | `anthropic/claude-haiku-5.5`, `openai/gpt-5-mini` | |
 
 ### Available models catalog
 
 | Model ID | Publisher | Tier | Context |
 |----------|-----------|------|---------|
+| `anthropic/claude-sonnet-5.5` | Anthropic | premium | default, long_context |
+| `anthropic/claude-haiku-5.5` | Anthropic | fast/cheap | default, long_context |
+| `anthropic/claude-fable-5.1` | Anthropic | premium | default, long_context |
+| `anthropic/claude-opus-5.5` | Anthropic | premium | default, long_context |
 | `anthropic/claude-sonnet-5` | Anthropic | premium | default, long_context |
 | `anthropic/claude-sonnet-4.6` | Anthropic | standard | default, long_context |
 | `anthropic/claude-sonnet-4.5` | Anthropic | standard | default |
@@ -102,6 +106,11 @@ When creating a new agent: add a row here, pick the lowest model tier sufficient
 | `anthropic/claude-opus-4.7` | Anthropic | premium | default, long_context |
 | `anthropic/claude-opus-4.6` | Anthropic | premium | default, long_context |
 | `anthropic/claude-opus-4.5` | Anthropic | premium | default |
+| `openai/gpt-6.1-sol` | OpenAI | premium | default, long_context |
+| `openai/gpt-6.1-terra` | OpenAI | premium | default, long_context |
+| `openai/gpt-6-astra` | OpenAI | premium | default, long_context |
+| `openai/gpt-6-luna` | OpenAI | premium | default, long_context |
+| `openai/gpt-6-sol` | OpenAI | premium | default, long_context |
 | `openai/gpt-5.6-sol` | OpenAI | premium | default, long_context |
 | `openai/gpt-5.6-terra` | OpenAI | premium | default, long_context |
 | `openai/gpt-5.6-luna` | OpenAI | premium | default, long_context |
@@ -114,7 +123,14 @@ When creating a new agent: add a row here, pick the lowest model tier sufficient
 | `google/gemini-3.1-pro-preview` | Google | standard | default, long_context |
 | `google/gemini-3.6-flash` | Google | fast/cheap | default, long_context |
 | `google/gemini-3.5-flash` | Google | fast/cheap | default, long_context |
+| `google/gemini-3.8-flash` | Google | fast/cheap | default, long_context |
+| `google/gemini-4-argon` | Google | premium | default, long_context |
+| `google/gemini-4-carbon` | Google | premium | default, long_context |
+| `google/gemini-4-hydrogen` | Google | standard | default |
 | `moonshot/kimi-k2.7-code` | Moonshot | standard | default |
+| `xai/grok-4.6` | xAI | premium | default, long_context |
+| `xai/grok-4.7` | xAI | premium | default, long_context |
+| `mai-code-1.1-flash` | MAI | fast/cheap | default |
 
 
 ## Project Overview
@@ -298,9 +314,9 @@ public EphemerisPlotForm(IEnumerable<EphemerisRecord> records, string body)
 
 ## Avalonia UI (Ephemeris.UI.Avalonia) — Research App
 
-`Ephemeris.UI.Avalonia` is the **primary research application** and the main product UI. It is cross-platform (`net11.0`) and uses Avalonia 12.1.1.
+`Ephemeris.UI.Avalonia` is the **primary research application** and the main product UI. It is cross-platform (`net11.0`) and uses Avalonia 12.1.3.
 
-**Key packages:** `Avalonia`, `Avalonia.Desktop`, `ScottPlot.Avalonia`  
+**Key packages:** `Avalonia` 12.1.3, `Avalonia.Desktop`, `ScottPlot.Avalonia`
 **OpenGL:** sky rendering via `OpenGlControlBase` + `GlInterface.GetProcAddress`  
 **Shared code:** ViewModels and messaging live in `Ephemeris.UI.Shared` (`SkyViewModel`, `Messages`)
 
@@ -483,7 +499,7 @@ gh pr create --fill --base main
 # Merge when checks pass
 ```
 
-**CI:** `.github/workflows/ci.yml` runs `dotnet build` + `dotnet test` on every push to `main` and on every PR. A PR must be green before merging.
+**CI:** `.github/workflows/ci.yml` runs a Release build, tests with coverage, and publishes test/coverage reports on every push to `main` and on every PR. A PR must be green before merging.
 
 ### GitHub operations via MCP
 Use the **GitHub MCP server** (configured in `.vscode/mcp.json`) for:
@@ -498,12 +514,12 @@ When creating a commit that modifies scripts, workflows, or prompt files, refres
 
 ## Release Procedures
 
-Releases are triggered by pushing a **`v*` tag** to `main`. The `.github/workflows/release.yml` workflow runs two parallel jobs:
+Releases are triggered by pushing a **`v*` tag**. The `.github/workflows/release.yml` workflow runs two parallel jobs:
 
 | Job | Runner | What it does |
 |-----|--------|-------------|
-| `nuget` | ubuntu-latest | Packs `Ephemeris.csproj` → uploads `.nupkg` to the GitHub Release |
-| `publish-ui` (matrix × 4) | win/linux/macos | Publishes single-file UI executable per RID → uploads to GitHub Release |
+| `nuget` | ubuntu-latest | Packs `Ephemeris.csproj`, publishes `.nupkg` and `.snupkg` to NuGet.org, and uploads them to the GitHub Release |
+| `publish-ui` (matrix × 4) | win/linux/macos | Publishes single-file UI executable for four RIDs and uploads it to the GitHub Release; platform failures do not fail the release |
 
 ### Release artifacts
 
