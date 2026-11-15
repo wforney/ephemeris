@@ -4,9 +4,9 @@ Cross-platform visualization application for the `Ephemeris` library, built with
 **[Avalonia UI 12](https://avaloniaui.net/)**.
 
 Runs on **Windows, Linux, and macOS** — the Linux-compatible counterpart to `Ephemeris.UI`
-(which targets `net10.0-windows` with WinForms).
+(which targets `net11.0-windows` with WinForms).
 
-**Target:** `net10.0` · **Cross-platform** (Windows / Linux / macOS)
+**Target:** `net11.0` · **Cross-platform** (Windows / Linux / macOS)
 
 ---
 

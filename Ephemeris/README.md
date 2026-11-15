@@ -2,7 +2,7 @@
 
 The `Ephemeris` class library is the astronomical calculation engine. It computes positions of the Sun, Moon, planets, and fixed stars for any observer location on Earth.
 
-**NuGet package:** `WilliamForney.Ephemeris` · **Target:** `net10.0` · **License:** MIT
+**NuGet package:** `WilliamForney.Ephemeris` · **Target:** `net11.0` · **License:** MIT
 
 ---
 

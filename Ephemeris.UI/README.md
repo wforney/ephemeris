@@ -2,7 +2,7 @@
 
 Windows Forms visualization application for the `Ephemeris` library.
 
-**Target:** `net10.0-windows` · **Windows only**
+**Target:** `net11.0-windows` · **Windows only**
 
 > **Linux / macOS users:** See [`Ephemeris.UI.Avalonia`](../Ephemeris.UI.Avalonia/README.md) for
 > the cross-platform Avalonia version that runs on Windows, Linux, and macOS.

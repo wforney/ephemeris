@@ -1,4 +1,4 @@
-<!-- Updated: 2026-09-25 -->
+<!-- Updated: 2026-11-14 -->
 # Copilot Instructions
 
 ## Session Checkpoints and Evolution
@@ -119,13 +119,13 @@ When creating a new agent: add a row here, pick the lowest model tier sufficient
 
 ## Project Overview
 
-**Ephemeris** is a .NET 10.0 astronomical calculations library that computes positions of celestial bodies (Sun, Moon, planets) as seen from any observer location on Earth. It powers the **Ephemeris Research App** — a celestial visualization and simulation platform for Biblical cosmology researchers studying the Mazzaroth and scriptural events (Hezekiah's Sundial, Joshua's Long Day).
+**Ephemeris** is a .NET 11.0 astronomical calculations library that computes positions of celestial bodies (Sun, Moon, planets) as seen from any observer location on Earth. It powers the **Ephemeris Research App** — a celestial visualization and simulation platform for Biblical cosmology researchers studying the Mazzaroth and scriptural events (Hezekiah's Sundial, Joshua's Long Day).
 
 The solution has seven top-level projects:
 
 - **Ephemeris** — Core class library (the calculation engine)
 - **Ephemeris.Tests** — Test suite using TUnit, plus the `Ephemeris.Tests/WebApp` ASP.NET Core test host for integration scenarios
-- **Ephemeris.UI** — WinForms visualization app (Windows only, `net10.0-windows`)
+- **Ephemeris.UI** — WinForms visualization app (Windows only, `net11.0-windows`)
 - **Ephemeris.UI.Avalonia** — Cross-platform Avalonia UI (primary research app host; OpenGL sky canvas via `OpenGlControlBase`, charts via ScottPlot.Avalonia)
 - **Ephemeris.UI.Shared** — Shared ViewModels, app state (`SkyViewModel`), and messaging used by both UI projects
 - **Ephemeris.Benchmarks** — BenchmarkDotNet performance benchmarks
@@ -298,7 +298,7 @@ public EphemerisPlotForm(IEnumerable<EphemerisRecord> records, string body)
 
 ## Avalonia UI (Ephemeris.UI.Avalonia) — Research App
 
-`Ephemeris.UI.Avalonia` is the **primary research application** and the main product UI. It is cross-platform (`net10.0`) and uses Avalonia 12.1.1.
+`Ephemeris.UI.Avalonia` is the **primary research application** and the main product UI. It is cross-platform (`net11.0`) and uses Avalonia 12.1.1.
 
 **Key packages:** `Avalonia`, `Avalonia.Desktop`, `ScottPlot.Avalonia`  
 **OpenGL:** sky rendering via `OpenGlControlBase` + `GlInterface.GetProcAddress`  
@@ -576,7 +576,7 @@ Seven external servers are currently configured in `.vscode/mcp.json`. The solut
 | `memory` | stdio (`@modelcontextprotocol/server-memory`) | Persistent cross-session knowledge graph for durable project context |
 | `brave-search` | stdio (`@modelcontextprotocol/server-brave-search`) | Web search for structured queries when `fetch` alone is less efficient (requires `BRAVE_API_KEY`) |
 
-> **Note:** The `dotnet` server requires .NET 10 SDK (for the `dnx` runner). It works alongside this project's .NET 10 target — `dnx` runs the MCP server tool itself, not the project.
+> **Note:** The `dotnet` server requires .NET 10 SDK or later (for the `dnx` runner). It works alongside this project's .NET 11 target — `dnx` runs the MCP server tool itself, not the project.
 > **Note:** `brave-search` prompts for a Brave Search API key on first use. Obtain one at https://api.search.brave.com/app/keys.
 
 ### Typical uses in this project

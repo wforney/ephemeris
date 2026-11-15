@@ -1,4 +1,4 @@
-<!-- Updated: 2026-08-12 -->
+<!-- Updated: 2026-11-14 -->
 ---
 mode: agent
 model: anthropic/claude-sonnet-4.5
@@ -25,7 +25,7 @@ When an issue opened by `evolve-instructions.yml` or `dependency-drift.yml` is a
 
 1. Read the issue body carefully.
 2. For each suggestion:
-   - **.NET version drift**: update all `net10.0` references to the new version. Run `dotnet build` to confirm.
+   - **.NET version drift**: update all `net11.0` references to the new version. Run `dotnet build` to confirm.
    - **Unconfigured MCP server**: evaluate if it genuinely helps this project. If yes, add to `.vscode/mcp.json` and the MCP Servers table. If no, skip.
    - **Stale instruction file**: review every section against the current codebase. Update any section where the code has diverged.
    - **Outdated NuGet packages**: update `<PackageReference>` versions, run `dotnet build` + `dotnet test`.

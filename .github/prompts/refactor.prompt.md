@@ -1,4 +1,4 @@
-<!-- Updated: 2026-08-12 -->
+<!-- Updated: 2026-11-14 -->
 ---
 mode: agent
 model: anthropic/claude-sonnet-4.5
@@ -6,7 +6,7 @@ tools: [codebase, editFiles, runCommands]
 description: Refactor Ephemeris code while preserving all astronomical behaviour and project conventions.
 ---
 
-You are refactoring code in the Ephemeris .NET 10 library. Your goal is to improve internal structure **without changing observable behaviour**.
+You are refactoring code in the Ephemeris .NET 11 library. Your goal is to improve internal structure **without changing observable behaviour**.
 
 ## Non-negotiable constraints
 

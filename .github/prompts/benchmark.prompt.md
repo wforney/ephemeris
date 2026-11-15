@@ -1,4 +1,4 @@
-<!-- Updated: 2026-08-12 -->
+<!-- Updated: 2026-11-14 -->
 ---
 mode: agent
 model: anthropic/claude-sonnet-4.5
@@ -6,7 +6,7 @@ tools: [codebase, editFiles, runCommands]
 description: Run BenchmarkDotNet benchmarks, interpret results, identify bottlenecks, and propose perf-type fixes for the Ephemeris library.
 ---
 
-You are profiling and optimizing the Ephemeris .NET 10 library using BenchmarkDotNet.
+You are profiling and optimizing the Ephemeris .NET 11 library using BenchmarkDotNet.
 
 ## Important: always run in Release configuration
 

@@ -1,4 +1,4 @@
-<!-- Updated: 2026-08-12 -->
+<!-- Updated: 2026-11-14 -->
 ---
 mode: agent
 model: anthropic/claude-opus-4.5
@@ -6,7 +6,7 @@ tools: [codebase, fetch]
 description: Review a PR for astronomical correctness, algorithm accuracy, and project convention adherence.
 ---
 
-You are reviewing a pull request in the Ephemeris .NET 10 library. Your job is to catch **bugs and correctness issues** — not style or formatting (the build enforces those).
+You are reviewing a pull request in the Ephemeris .NET 11 library. Your job is to catch **bugs and correctness issues** — not style or formatting (the build enforces those).
 
 ## Review checklist
 

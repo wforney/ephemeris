@@ -1,4 +1,4 @@
-<!-- Updated: 2026-08-12 -->
+<!-- Updated: 2026-11-14 -->
 ---
 mode: agent
 model: anthropic/claude-opus-4.5
@@ -6,7 +6,7 @@ tools: [codebase, editFiles, runCommands, fetch]
 description: Implement a new astronomical calculation in the correct domain namespace following all project conventions.
 ---
 
-You are implementing a new astronomical calculation for the Ephemeris .NET 10 library.
+You are implementing a new astronomical calculation for the Ephemeris .NET 11 library.
 
 ## Before writing any code
 

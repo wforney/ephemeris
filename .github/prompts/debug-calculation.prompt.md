@@ -1,4 +1,4 @@
-<!-- Updated: 2026-08-12 -->
+<!-- Updated: 2026-11-14 -->
 ---
 mode: agent
 model: anthropic/claude-opus-4.5
@@ -6,7 +6,7 @@ tools: [codebase, editFiles, runCommands, fetch]
 description: Debug incorrect astronomical calculation results by comparing against JPL Horizons, IERS tables, or other authoritative reference sources.
 ---
 
-You are debugging an incorrect astronomical calculation in the Ephemeris .NET 10 library.
+You are debugging an incorrect astronomical calculation in the Ephemeris .NET 11 library.
 
 ## Goal
 

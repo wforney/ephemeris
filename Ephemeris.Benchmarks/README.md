@@ -2,7 +2,7 @@
 
 Performance benchmarks for the `Ephemeris` core library using [BenchmarkDotNet](https://benchmarkdotnet.org).
 
-**Framework:** BenchmarkDotNet 0.15.8 · **Target:** `net10.0`
+**Framework:** BenchmarkDotNet 0.15.8 · **Target:** `net11.0`
 
 ---
 

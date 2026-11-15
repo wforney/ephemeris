@@ -1,13 +1,13 @@
 # Ephemeris
 
-A .NET 10 library for computing positions of celestial bodies (Sun, Moon, planets, and stars) as seen from any observer location on Earth.
+A .NET 11 library for computing positions of celestial bodies (Sun, Moon, planets, and stars) as seen from any observer location on Earth.
 
 [![CI](https://github.com/wforney/ephemeris/actions/workflows/ci.yml/badge.svg)](https://github.com/wforney/ephemeris/actions/workflows/ci.yml)
 [![NuGet](https://img.shields.io/nuget/v/WilliamForney.Ephemeris.svg)](https://www.nuget.org/packages/WilliamForney.Ephemeris/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/WilliamForney.Ephemeris.svg)](https://www.nuget.org/packages/WilliamForney.Ephemeris/)
 [![GitHub Release](https://img.shields.io/github/v/release/wforney/ephemeris)](https://github.com/wforney/ephemeris/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![.NET](https://img.shields.io/badge/.NET-10.0-blue)](https://dotnet.microsoft.com/download/dotnet/10.0)
+[![.NET](https://img.shields.io/badge/.NET-11.0-blue)](https://dotnet.microsoft.com/download/dotnet/11.0)
 
 ## Features
 
@@ -75,6 +75,9 @@ Public entry points are in the root `Ephemeris` namespace:
 - **`EphemerisPlotter`** — ASCII console visualization
 
 ## Build & Test
+
+Requires the .NET 11 SDK. Running on x64 requires an x86-64-v2-compatible CPU;
+Windows ARM64 requires LSE support.
 
 ```bash
 dotnet restore
