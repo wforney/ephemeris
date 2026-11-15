@@ -261,7 +261,6 @@ This is a spare time vibe-coding project. I will be working on it when I can. I 
 - [OpenTK + SkiaSharp](https://opentk.net) — OpenGL and Skia rendering (used in `SkyViewForm`)
 - [BenchmarkDotNet](https://benchmarkdotnet.org) — performance benchmarking
 - [TUnit](https://github.com/thomhurst/TUnit) — test framework
-- [Verify.TUnit](https://github.com/VerifyTests/Verify) — snapshot testing
 - [Rocks](https://github.com/JasonBock/Rocks) — compile-time source-generated mocks
   (Imposter remains a valid alternative)
 

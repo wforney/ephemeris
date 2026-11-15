@@ -1,9 +1,9 @@
-<!-- Updated: 2026-11-14 -->
+<!-- Updated: 2026-11-15 -->
 ---
 mode: agent
 model: anthropic/claude-sonnet-4.5
 tools: [codebase, editFiles, runCommands]
-description: Write TUnit tests for Ephemeris calculation methods using Rocks for mocking and Verify for snapshot assertions.
+description: Write TUnit tests for Ephemeris calculation methods using Rocks for mocking and external reference values.
 ---
 
 You are writing TUnit tests for the Ephemeris .NET 11 library.
@@ -13,7 +13,7 @@ You are writing TUnit tests for the Ephemeris .NET 11 library.
 - Test files live in `Ephemeris.Tests/Ephemeris.Tests/`
 - Framework: **TUnit** — use `[Test]` attribute (not xUnit, not NUnit)
 - Namespace: `namespace Ephemeris.Tests`
-- Three libraries available: **TUnit**, **Rocks** (mocking), **Verify.TUnit** (snapshot assertions)
+- Two libraries available: **TUnit** (tests and assertions) and **Rocks** (mocking)
 
 ---
 
@@ -76,39 +76,6 @@ Rocks mocks are **strict** — all setups must be called exactly the expected nu
 
 ---
 
-## Verify.TUnit — snapshot assertions
-
-Use Verify for complex outputs (series of `EphemerisRecord`, plot data, exported CSV/JSON) where a precise numeric assertion would be brittle.
-
-### First run flow
-1. Run the test — it **fails** and writes `*.received.txt` next to the test file.
-2. Inspect `received` file; if correct, copy/rename to `*.verified.txt`.
-3. Subsequent runs diff against the `verified` file.
-
-`*.received.*` files are in `.gitignore`. Commit only `*.verified.*` files.
-
-### Pattern
-```csharp
-[Test]
-public async Task GenerateSunSeries_TwentyFourHours_MatchesSnapshot()
-{
-    var start = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-    var records = EphemerisBatch.GenerateSunSeries(start, 60, 24, -122.4, 37.8);
-
-    await Verify(records);
-}
-```
-
-### Scrub volatile data before verifying
-```csharp
-var settings = new VerifySettings();
-settings.ScrubMember<EphemerisRecord>(r => r.TimeUtc);  // remove wall-clock timestamps
-
-await Verify(records, settings);
-```
-
----
-
 ## Assertion style (non-snapshot tests)
 
 Astronomical calculations must be verified against **external reference values**. Always cite the source:
@@ -137,11 +104,11 @@ Reference sources: JPL Horizons (https://ssd.jpl.nasa.gov/horizons/), USNO Alman
 
 1. Reference-value assertions at a known epoch (J2000.0 or a dated event)
 2. Mocked provider tests (use Rocks for `IStateVectorProvider`, `ITimeConverter`)
-3. Snapshot tests for batch output and export round-trips (use Verify)
+3. TUnit assertions for batch output and export round-trips
 4. Edge cases: polar observer, body below horizon, midnight sun
 5. Round-trip: `EclipticToEquatorial` → `EquatorialToEcliptic`
 
 ## After writing tests
 
-1. Run `dotnet test` — first run of Verify tests will fail; approve snapshots.
-2. Commit approved `*.verified.*` files with `test(<scope>): <description>`.
+1. Run `dotnet test` and confirm all tests pass.
+2. Commit test changes with `test(<scope>): <description>`.
